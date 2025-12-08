@@ -11,6 +11,7 @@ interface Flight {
   arrivalAirport: string;
   scheduledDeparture: Date;
   scheduledArrival: Date;
+  pilots?: string[]; // NEW: Array of assigned pilot names
 }
 
 interface NASImpact {
@@ -228,7 +229,7 @@ export const useFlightNASImpact = () => {
             estimatedDelay: delay.averageDelay,
             details: `Average delay of ${delay.averageDelay} minutes at ${delay.airport}`,
             actionRequired: delay.averageDelay >= 30,
-            recommendation: delay.averageDelay >= 60 
+            recommendation: delay.averageDelay >= 60
               ? `Significant delays expected. Consider passenger notifications and catering adjustments.`
               : `Monitor delays and update passengers as needed.`
           });
@@ -237,13 +238,13 @@ export const useFlightNASImpact = () => {
 
       // Check flow programs
       nasData.airspaceFlowPrograms.forEach(program => {
-        if (program.affectedAirports.includes(flight.departureAirport) || 
-            program.affectedAirports.includes(flight.arrivalAirport)) {
+        if (program.affectedAirports.includes(flight.departureAirport) ||
+          program.affectedAirports.includes(flight.arrivalAirport)) {
           impacts.push({
             flightId: flight.id,
             impactType: 'flow_program',
-            affectedAirport: program.affectedAirports.includes(flight.departureAirport) 
-              ? flight.departureAirport 
+            affectedAirport: program.affectedAirports.includes(flight.departureAirport)
+              ? flight.departureAirport
               : flight.arrivalAirport,
             severity: program.impact,
             reason: program.reason,
@@ -258,13 +259,13 @@ export const useFlightNASImpact = () => {
 
       // Check facility outages
       nasData.facilityOutages.forEach(outage => {
-        if (outage.affectedAirports?.includes(flight.departureAirport) || 
-            outage.affectedAirports?.includes(flight.arrivalAirport)) {
+        if (outage.affectedAirports?.includes(flight.departureAirport) ||
+          outage.affectedAirports?.includes(flight.arrivalAirport)) {
           impacts.push({
             flightId: flight.id,
             impactType: 'facility_outage',
-            affectedAirport: outage.affectedAirports.includes(flight.departureAirport) 
-              ? flight.departureAirport 
+            affectedAirport: outage.affectedAirports.includes(flight.departureAirport)
+              ? flight.departureAirport
               : flight.arrivalAirport,
             severity: outage.status === 'Out of Service' ? 'High' : 'Medium',
             reason: `${outage.type} system ${outage.status.toLowerCase()}`,
@@ -284,7 +285,7 @@ export const useFlightNASImpact = () => {
 
     // Calculate summary statistics
     const totalImpacted = impactedFlights.length;
-    const highSeverityCount = impactedFlights.filter(flight => 
+    const highSeverityCount = impactedFlights.filter(flight =>
       flight.impacts.some(impact => impact.severity === 'High')
     ).length;
     const estimatedTotalDelay = impactedFlights.reduce((total, flight) => {
@@ -306,10 +307,10 @@ export const useFlightNASImpact = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const impacts = analyzeFlightImpacts();
       setImpactData(impacts);
     } catch (err) {
@@ -321,7 +322,7 @@ export const useFlightNASImpact = () => {
 
   useEffect(() => {
     fetchFlightImpacts();
-    
+
     // Refresh every 5 minutes
     const interval = setInterval(fetchFlightImpacts, 5 * 60 * 1000);
     return () => clearInterval(interval);
@@ -334,3 +335,15 @@ export const useFlightNASImpact = () => {
     refetch: fetchFlightImpacts
   };
 };
+
+/**
+ * Helper function to get impacted flights for a specific pilot
+ */
+export function getImpactedFlightsForPilot(
+  impactData: ReturnType<typeof useFlightNASImpact>['impactData'],
+  pilotName: string
+) {
+  return impactData.impactedFlights.filter(flight =>
+    flight.pilots?.includes(pilotName)
+  );
+}

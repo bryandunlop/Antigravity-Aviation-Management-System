@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Checkbox } from './ui/checkbox';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { 
   Shield, 
   AlertTriangle, 

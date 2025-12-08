@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { Link } from 'react-router-dom';
-import { 
-  Plane, 
-  MapPin, 
+import { useSatcomDirect } from './hooks/useSatcomDirect';
+import {
+  Plane,
+  MapPin,
   Wrench,
   CheckCircle,
   AlertTriangle,
@@ -16,7 +17,8 @@ import {
   Activity,
   Settings,
   XCircle,
-  TrendingUp
+  TrendingUp,
+  Loader2
 } from 'lucide-react';
 
 interface AircraftStatus {
@@ -45,66 +47,58 @@ interface FleetStatusWidgetProps {
 }
 
 export default function FleetStatusWidget({ compact = false, showDetailsLink = true }: FleetStatusWidgetProps) {
-  const [aircraft, setAircraft] = useState<AircraftStatus[]>([]);
+  // Get real-time data from SatCom Direct API
+  const { aircraftPositions, aircraftStatuses, loading, error } = useSatcomDirect();
 
-  // Initialize mock data - this would come from Supabase in production
-  useEffect(() => {
-    const mockAircraft: AircraftStatus[] = [
-      {
-        id: 'ac1',
-        tailNumber: 'N650GX',
-        model: 'Gulfstream G650',
-        flightStatus: 'in-flight',
-        serviceStatus: 'in-service',
-        cleaningStatus: {
-          status: 'verified',
-          lastCleaned: new Date(Date.now() - 3600000).toISOString(),
-          cleanedBy: 'Sarah Johnson'
-        },
-        location: 'En Route TEB-LAX',
-        currentFlight: 'FO-1234',
-        nextMaintenance: '2025-02-15',
-        issues: 0,
-        hobbsTime: '4,523.5',
-        utilization: 85
-      },
-      {
-        id: 'ac2',
-        tailNumber: 'N650ER',
-        model: 'Gulfstream G650',
-        flightStatus: 'on-ground',
-        serviceStatus: 'in-service',
-        cleaningStatus: {
-          status: 'cleaning-in-progress',
-          lastCleaned: new Date(Date.now() - 86400000).toISOString(),
-          nextDue: new Date(Date.now() + 3600000).toISOString()
-        },
-        location: 'VNY - Parking Ramp',
-        nextMaintenance: '2025-02-08',
-        issues: 1,
-        hobbsTime: '3,892.2',
-        utilization: 72
-      },
-      {
-        id: 'ac3',
-        tailNumber: 'N650EX',
-        model: 'Gulfstream G650',
-        flightStatus: 'parked',
-        serviceStatus: 'in-maintenance',
-        cleaningStatus: {
-          status: 'needs-cleaning',
-          lastCleaned: new Date(Date.now() - 172800000).toISOString()
-        },
-        location: 'LAX - Hangar 5',
-        nextMaintenance: 'In Progress',
-        issues: 3,
-        hobbsTime: '5,234.8',
-        utilization: 45
+  // Transform API data to component format
+  const aircraft = useMemo<AircraftStatus[]>(() => {
+    return aircraftPositions.map((position, index) => {
+      const status = aircraftStatuses.find(s => s.tailNumber === position.tailNumber);
+
+      // Map flight phase to flight status
+      let flightStatus: 'in-flight' | 'on-ground' | 'taxi' | 'parked' = 'parked';
+      if (position.flightPhase === 'Cruise' || position.flightPhase === 'Climb' || position.flightPhase === 'Descent') {
+        flightStatus = 'in-flight';
+      } else if (position.flightPhase === 'Taxiing') {
+        flightStatus = 'taxi';
+      } else if (position.flightPhase === 'Takeoff' || position.flightPhase === 'Approach' || position.flightPhase === 'Landing') {
+        flightStatus = 'on-ground';
       }
-    ];
 
-    setAircraft(mockAircraft);
-  }, []);
+      // Map satcom status to service status
+      let serviceStatus: 'in-service' | 'out-of-service' | 'in-maintenance' | 'aog' = 'in-service';
+      if (status?.satcomStatus === 'Maintenance') {
+        serviceStatus = 'in-maintenance';
+      } else if (!status?.isOnline) {
+        serviceStatus = 'out-of-service';
+      }
+
+      // Generate cleaning status (this would come from a separate system)
+      const cleaningStatus = {
+        status: (index % 3 === 0 ? 'verified' : index % 3 === 1 ? 'cleaning-in-progress' : 'needs-cleaning') as 'clean' | 'needs-cleaning' | 'cleaning-in-progress' | 'verified',
+        lastCleaned: new Date(Date.now() - (index + 1) * 3600000).toISOString()
+      };
+
+      return {
+        id: position.tailNumber,
+        tailNumber: position.tailNumber,
+        model: 'Gulfstream G650', // Could be extended in API
+        flightStatus,
+        serviceStatus,
+        cleaningStatus,
+        location: position.flightPhase === 'Parked'
+          ? `${position.departureAirport || 'Unknown'} - Ramp`
+          : position.departureAirport && position.arrivalAirport
+            ? `En Route ${position.departureAirport}-${position.arrivalAirport}`
+            : 'In Flight',
+        currentFlight: position.callSign,
+        nextMaintenance: '2025-02-15', // Would come from maintenance system
+        issues: status?.alerts.filter(a => !a.acknowledged).length || 0,
+        hobbsTime: `${(4000 + index * 500).toFixed(1)}`,
+        utilization: Math.floor(65 + index * 10)
+      };
+    });
+  }, [aircraftPositions, aircraftStatuses]);
 
   const getFlightStatusColor = (status: string) => {
     switch (status) {
@@ -167,7 +161,7 @@ export default function FleetStatusWidget({ compact = false, showDetailsLink = t
   };
 
   const formatStatusText = (status: string) => {
-    return status.split('-').map(word => 
+    return status.split('-').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
   };
@@ -175,8 +169,8 @@ export default function FleetStatusWidget({ compact = false, showDetailsLink = t
   const getFleetSummary = () => {
     const inFlight = aircraft.filter(a => a.flightStatus === 'in-flight').length;
     const inService = aircraft.filter(a => a.serviceStatus === 'in-service').length;
-    const needsCleaning = aircraft.filter(a => 
-      a.cleaningStatus.status === 'needs-cleaning' || 
+    const needsCleaning = aircraft.filter(a =>
+      a.cleaningStatus.status === 'needs-cleaning' ||
       a.cleaningStatus.status === 'cleaning-in-progress'
     ).length;
     const totalIssues = aircraft.reduce((sum, a) => sum + (a.issues || 0), 0);
@@ -185,6 +179,34 @@ export default function FleetStatusWidget({ compact = false, showDetailsLink = t
   };
 
   const summary = getFleetSummary();
+
+  // Loading state
+  if (loading) {
+    return (
+      <Card className="hover:shadow-lg transition-shadow">
+        <CardContent className="p-8 flex items-center justify-center">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading fleet data...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Card className="hover:shadow-lg transition-shadow border-red-200">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 text-red-600">
+            <AlertTriangle className="w-4 h-4" />
+            <span className="text-sm">Unable to load fleet data</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (compact) {
     return (
@@ -359,8 +381,8 @@ export default function FleetStatusWidget({ compact = false, showDetailsLink = t
                     {/* Flight Status */}
                     <div className="space-y-1">
                       <div className="text-xs text-gray-500">Flight Status</div>
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className={`w-full justify-start gap-1 ${getFlightStatusColor(ac.flightStatus)}`}
                       >
                         {getFlightStatusIcon(ac.flightStatus)}
@@ -371,8 +393,8 @@ export default function FleetStatusWidget({ compact = false, showDetailsLink = t
                     {/* Service Status */}
                     <div className="space-y-1">
                       <div className="text-xs text-gray-500">Service Status</div>
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className={`w-full justify-start gap-1 ${getServiceStatusColor(ac.serviceStatus)}`}
                       >
                         {getServiceStatusIcon(ac.serviceStatus)}
@@ -406,9 +428,9 @@ export default function FleetStatusWidget({ compact = false, showDetailsLink = t
                       </Button>
                     </Link>
                     <Link to="/aircraft-cleaning" className="flex-1">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="w-full"
                         disabled={ac.cleaningStatus.status === 'verified'}
                       >

@@ -123,7 +123,7 @@ export default function TripBuilder({ tripId, onSave, onCancel, isReadOnly = fal
         localStorage.removeItem('itinerary_to_trip');
         
         // Show success message
-        import('sonner@2.0.3').then(({ toast }) => {
+        import('sonner').then(({ toast }) => {
           toast.success('Itinerary imported successfully!');
         });
       } catch (error) {

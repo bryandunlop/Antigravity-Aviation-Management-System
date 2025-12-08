@@ -27,7 +27,7 @@ import {
 import { useForeFlightConfig, useForeFlightSyncStatus } from './hooks/useForeFlight';
 import { createRealForeFlightClient } from '../utils/foreflight/realClient';
 import { getSyncService } from '../utils/foreflight/syncService';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export default function ForeFlightSettings() {
   const { config, updateConfig, toggleIntegration } = useForeFlightConfig();

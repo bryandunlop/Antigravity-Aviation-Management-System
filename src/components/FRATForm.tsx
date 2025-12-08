@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { CheckCircle, AlertTriangle, XCircle, FileText, Eye, ClipboardList, Save, Send } from 'lucide-react';
 
 interface FRATFormProps {

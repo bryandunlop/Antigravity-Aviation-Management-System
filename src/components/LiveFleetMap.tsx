@@ -5,12 +5,12 @@ import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 import { useSatcomDirect } from './hooks/useSatcomDirect';
-import { 
-  Plane, 
-  MapPin, 
-  Navigation, 
-  Clock, 
-  Fuel, 
+import {
+  Plane,
+  MapPin,
+  Navigation,
+  Clock,
+  Fuel,
   RefreshCw,
   Loader2,
   Zap,
@@ -102,7 +102,7 @@ export default function LiveFleetMap() {
     if (!mapLoaded || mapRef.current) return;
 
     const L = window.L;
-    
+
     // Initialize map centered on US
     const map = L.map('fleet-map', {
       center: [39.8283, -98.5795], // Center of US
@@ -133,7 +133,7 @@ export default function LiveFleetMap() {
     if (!mapRef.current || !mapLoaded) return;
 
     const L = window.L;
-    
+
     // Remove all tile layers
     mapRef.current.eachLayer((layer: any) => {
       if (layer instanceof L.TileLayer) {
@@ -158,24 +158,39 @@ export default function LiveFleetMap() {
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
-    
+
     if (polylineRef.current) {
       polylineRef.current.remove();
       polylineRef.current = null;
     }
 
-    // Create custom aircraft icon
+    // Create custom aircraft icon - different styling for parked vs flying
     const createAircraftIcon = (aircraft: any, isSelected: boolean) => {
       const isOnline = aircraftStatuses.find(s => s.tailNumber === aircraft.tailNumber)?.isOnline;
-      const color = isSelected ? '#3b82f6' : isOnline ? '#10b981' : '#ef4444';
-      
+      const isParked = aircraft.flightPhase === 'Parked';
+
+      // Different colors for parked aircraft
+      let color;
+      if (isSelected) {
+        color = '#3b82f6'; // Blue when selected
+      } else if (isParked) {
+        color = '#9ca3af'; // Gray for parked
+      } else if (isOnline) {
+        color = '#10b981'; // Green for flying online
+      } else {
+        color = '#ef4444'; // Red for offline
+      }
+
+      const size = isParked ? 24 : 32; // Smaller icon for parked aircraft
+      const iconSize = isSelected ? size * 1.3 : size;
+
       return L.divIcon({
         className: 'custom-aircraft-marker',
         html: `
           <div style="position: relative;">
             <div style="
-              width: 32px;
-              height: 32px;
+              width: ${iconSize}px;
+              height: ${iconSize}px;
               background: ${color};
               border: 2px solid white;
               border-radius: 50%;
@@ -184,10 +199,16 @@ export default function LiveFleetMap() {
               justify-content: center;
               box-shadow: 0 2px 8px rgba(0,0,0,0.3);
               transform: rotate(${aircraft.heading || 0}deg);
-              ${isSelected ? 'transform: scale(1.3); z-index: 1000;' : ''}
+              opacity: ${isParked ? '0.7' : '1'};
             ">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+              <svg width="${iconSize * 0.5}" height="${iconSize * 0.5}" viewBox="0 0 24 24" fill="white">
+                ${isParked ?
+            // Landing icon for parked aircraft
+            '<path d="M2.5 19h19v2h-19v-2zm7.18-5.73l4.35 1.16 5.31 1.42c.8.21 1.62-.26 1.84-1.06.21-.8-.26-1.62-1.06-1.84l-5.31-1.42-2.76-9.02L10.12 2v8.28L5.15 8.95l-.93-2.32-1.45-.39v5.17l1.45.39 4.46 1.47z"/>'
+            :
+            // Flying icon for in-air aircraft  
+            '<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>'
+          }
               </svg>
             </div>
             ${isOnline !== undefined ? `
@@ -202,17 +223,31 @@ export default function LiveFleetMap() {
                 border-radius: 50%;
               "></div>
             ` : ''}
+            ${isParked ? `
+              <div style="
+                position: absolute;
+                bottom: -20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.7);
+                color: white;
+                padding: 2px 6px;
+                border-radius: 3px;
+                font-size: 10px;
+                white-space: nowrap;
+                pointer-events: none;
+              ">PARKED</div>
+            ` : ''}
           </div>
         `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -16]
+        iconSize: [iconSize, iconSize],
+        iconAnchor: [iconSize / 2, iconSize / 2],
+        popupAnchor: [0, -iconSize / 2]
       });
     };
 
-    // Add markers for each aircraft
+    // Add markers for each aircraft (including parked)
     aircraftPositions.forEach(aircraft => {
-      if (aircraft.flightPhase === 'Parked') return;
 
       const isSelected = selectedAircraft === aircraft.tailNumber;
       const marker = L.marker([aircraft.latitude, aircraft.longitude], {
@@ -283,21 +318,60 @@ export default function LiveFleetMap() {
 
       markersRef.current.push(marker);
 
-      // Draw flight path if selected
-      if (isSelected && aircraft.departureAirport && aircraft.arrivalAirport) {
-        // This is simplified - in production you'd use actual airport coordinates
-        const pathCoordinates = [
-          [aircraft.latitude - 1, aircraft.longitude - 2],
-          [aircraft.latitude, aircraft.longitude],
-          [aircraft.latitude + 1, aircraft.longitude + 2]
-        ];
+      // Draw flight path for in-flight aircraft (not parked)
+      if (aircraft.flightPhase !== 'Parked' && aircraft.departureAirport && aircraft.arrivalAirport) {
+        // Approximate airport locations (in production, use actual coordinates from airport database)
+        const airportCoords: { [key: string]: [number, number] } = {
+          'LAX': [33.9416, -118.4085],
+          'JFK': [40.6413, -73.7781],
+          'MIA': [25.7959, -80.2870],
+          'ORD': [41.9742, -87.9073],
+          'LGA': [40.7769, -73.8740],
+          'EWR': [40.6895, -74.1745],
+          'ATL': [33.6407, -84.4277]
+        };
 
-        polylineRef.current = L.polyline(pathCoordinates, {
-          color: '#3b82f6',
-          weight: 2,
-          opacity: 0.6,
-          dashArray: '5, 10'
-        }).addTo(mapRef.current);
+        const depCoords = airportCoords[aircraft.departureAirport];
+        const arrCoords = airportCoords[aircraft.arrivalAirport];
+
+        if (depCoords && arrCoords) {
+          // Create flight path from departure through current position to arrival
+          const pathCoordinates = [
+            depCoords,
+            [aircraft.latitude, aircraft.longitude],
+            arrCoords
+          ];
+
+          const flightPath = L.polyline(pathCoordinates, {
+            color: isSelected ? '#3b82f6' : '#10b981',
+            weight: isSelected ? 3 : 2,
+            opacity: isSelected ? 0.8 : 0.5,
+            dashArray: '10, 5'
+          }).addTo(mapRef.current);
+
+          markersRef.current.push(flightPath);
+
+          // Add departure and arrival airport markers
+          const depMarker = L.circleMarker(depCoords, {
+            radius: 5,
+            fillColor: '#3b82f6',
+            color: 'white',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+          }).addTo(mapRef.current).bindPopup(`Departure: ${aircraft.departureAirport}`);
+
+          const arrMarker = L.circleMarker(arrCoords, {
+            radius: 5,
+            fillColor: '#ef4444',
+            color: 'white',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+          }).addTo(mapRef.current).bindPopup(`Arrival: ${aircraft.arrivalAirport}`);
+
+          markersRef.current.push(depMarker, arrMarker);
+        }
       }
     });
 
@@ -383,7 +457,7 @@ export default function LiveFleetMap() {
               </Button>
             ))}
           </div>
-          
+
           {/* Refresh Button */}
           <Button
             variant="outline"
@@ -403,12 +477,12 @@ export default function LiveFleetMap() {
         <div className={isFullscreen ? 'lg:col-span-3' : 'lg:col-span-3'}>
           <Card className="h-full">
             <CardContent className="p-0 relative">
-              <div 
-                id="fleet-map" 
+              <div
+                id="fleet-map"
                 className={isFullscreen ? 'h-[calc(100vh-8rem)]' : 'h-[600px]'}
                 style={{ width: '100%' }}
               />
-              
+
               {/* Fullscreen Toggle */}
               <Button
                 variant="secondary"
@@ -490,9 +564,8 @@ export default function LiveFleetMap() {
                         </div>
                         <div>
                           <span className="text-muted-foreground">Connection:</span>
-                          <div className={`flex items-center gap-1 ${
-                            selectedAircraftStatus.isOnline ? 'text-green-600' : 'text-red-600'
-                          }`}>
+                          <div className={`flex items-center gap-1 ${selectedAircraftStatus.isOnline ? 'text-green-600' : 'text-red-600'
+                            }`}>
                             {selectedAircraftStatus.isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                             {selectedAircraftStatus.satcomStatus}
                           </div>
@@ -592,31 +665,27 @@ export default function LiveFleetMap() {
                           <h5 className="font-medium text-sm mb-2">System Health</h5>
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div className="flex items-center gap-1">
-                              <Activity className={`w-3 h-3 ${
-                                selectedAircraftStatus.systemHealth.engine === 'Normal' ? 'text-green-600' :
-                                selectedAircraftStatus.systemHealth.engine === 'Caution' ? 'text-yellow-600' : 'text-red-600'
-                              }`} />
+                              <Activity className={`w-3 h-3 ${selectedAircraftStatus.systemHealth.engine === 'Normal' ? 'text-green-600' :
+                                  selectedAircraftStatus.systemHealth.engine === 'Caution' ? 'text-yellow-600' : 'text-red-600'
+                                }`} />
                               <span>Engine: {selectedAircraftStatus.systemHealth.engine}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Activity className={`w-3 h-3 ${
-                                selectedAircraftStatus.systemHealth.hydraulics === 'Normal' ? 'text-green-600' :
-                                selectedAircraftStatus.systemHealth.hydraulics === 'Caution' ? 'text-yellow-600' : 'text-red-600'
-                              }`} />
+                              <Activity className={`w-3 h-3 ${selectedAircraftStatus.systemHealth.hydraulics === 'Normal' ? 'text-green-600' :
+                                  selectedAircraftStatus.systemHealth.hydraulics === 'Caution' ? 'text-yellow-600' : 'text-red-600'
+                                }`} />
                               <span>Hydraulics: {selectedAircraftStatus.systemHealth.hydraulics}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Zap className={`w-3 h-3 ${
-                                selectedAircraftStatus.systemHealth.electrical === 'Normal' ? 'text-green-600' :
-                                selectedAircraftStatus.systemHealth.electrical === 'Caution' ? 'text-yellow-600' : 'text-red-600'
-                              }`} />
+                              <Zap className={`w-3 h-3 ${selectedAircraftStatus.systemHealth.electrical === 'Normal' ? 'text-green-600' :
+                                  selectedAircraftStatus.systemHealth.electrical === 'Caution' ? 'text-yellow-600' : 'text-red-600'
+                                }`} />
                               <span>Electrical: {selectedAircraftStatus.systemHealth.electrical}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Radio className={`w-3 h-3 ${
-                                selectedAircraftStatus.systemHealth.avionics === 'Normal' ? 'text-green-600' :
-                                selectedAircraftStatus.systemHealth.avionics === 'Caution' ? 'text-yellow-600' : 'text-red-600'
-                              }`} />
+                              <Radio className={`w-3 h-3 ${selectedAircraftStatus.systemHealth.avionics === 'Normal' ? 'text-green-600' :
+                                  selectedAircraftStatus.systemHealth.avionics === 'Caution' ? 'text-yellow-600' : 'text-red-600'
+                                }`} />
                               <span>Avionics: {selectedAircraftStatus.systemHealth.avionics}</span>
                             </div>
                           </div>
@@ -634,12 +703,11 @@ export default function LiveFleetMap() {
                         </h5>
                         <div className="space-y-1">
                           {selectedAircraftStatus.alerts.map((alert) => (
-                            <div key={alert.id} className={`p-2 rounded text-xs border ${
-                              alert.severity === 'Emergency' ? 'bg-red-50 border-red-200 text-red-800' :
-                              alert.severity === 'Warning' ? 'bg-orange-50 border-orange-200 text-orange-800' :
-                              alert.severity === 'Caution' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
-                              'bg-blue-50 border-blue-200 text-blue-800'
-                            }`}>
+                            <div key={alert.id} className={`p-2 rounded text-xs border ${alert.severity === 'Emergency' ? 'bg-red-50 border-red-200 text-red-800' :
+                                alert.severity === 'Warning' ? 'bg-orange-50 border-orange-200 text-orange-800' :
+                                  alert.severity === 'Caution' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
+                                    'bg-blue-50 border-blue-200 text-blue-800'
+                              }`}>
                               <div className="font-medium">{alert.type} Alert</div>
                               <div>{alert.message}</div>
                               {alert.acknowledged && (

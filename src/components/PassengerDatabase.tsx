@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { 
   Users, 
   Plus, 

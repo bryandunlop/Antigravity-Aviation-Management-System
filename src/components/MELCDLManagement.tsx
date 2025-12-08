@@ -25,7 +25,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useMaintenanceContext } from './contexts/MaintenanceContext';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export default function MELCDLManagement() {
   const { squawks, updateSquawk } = useMaintenanceContext();

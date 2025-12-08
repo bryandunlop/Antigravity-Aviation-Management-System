@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Progress } from './ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Label } from './ui/label';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { 
   CheckCircle,
   Clock,

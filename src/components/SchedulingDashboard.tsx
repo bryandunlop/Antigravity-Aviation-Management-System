@@ -5,14 +5,15 @@ import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
-import FlightImpactAlerts from './FlightImpactAlerts';
 import FleetStatusWidget from './FleetStatusWidget';
-import { 
-  Calendar, 
-  Users, 
-  FileText, 
-  AlertTriangle, 
-  CheckCircle, 
+import NASImpactWidget from './NASImpactWidget';
+
+import {
+  Calendar,
+  Users,
+  FileText,
+  AlertTriangle,
+  CheckCircle,
   Clock,
   Plane,
   UserCheck,
@@ -111,6 +112,9 @@ export default function SchedulingDashboard() {
         <TabsContent value="overview" className="space-y-6">
           {/* Fleet Status Widget */}
           <FleetStatusWidget compact={true} showDetailsLink={true} />
+
+          {/* NAS Impact Alerts - Prominently displayed */}
+          <NASImpactWidget compact={false} maxFlights={5} />
 
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -281,7 +285,7 @@ export default function SchedulingDashboard() {
                   <h3 className="font-medium">Pending Forms</h3>
                   <Button>Send New Form</Button>
                 </div>
-                
+
                 <div className="space-y-3">
                   {pendingPassengerForms.map((form) => (
                     <div key={form.id} className="flex items-center justify-between p-4 border rounded-lg">

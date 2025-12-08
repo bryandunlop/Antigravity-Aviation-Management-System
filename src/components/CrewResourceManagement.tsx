@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Alert, AlertDescription } from './ui/alert';
 import { Progress } from './ui/progress';
 import { Calendar, Clock, AlertTriangle, Users, CheckCircle, XCircle, Plane, User, Bell } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface CrewMember {
   id: string;

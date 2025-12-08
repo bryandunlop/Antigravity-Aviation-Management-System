@@ -46,7 +46,7 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 type EventType = 'flight' | 'hotel' | 'meeting' | 'dining' | 'ground-transport' | 'activity' | 'other';

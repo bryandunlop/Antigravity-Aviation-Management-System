@@ -13,7 +13,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Alert, AlertDescription } from './ui/alert';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { 
   AlertTriangle, 
   Plus, 

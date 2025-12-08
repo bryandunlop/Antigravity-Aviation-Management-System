@@ -23,7 +23,7 @@ import {
   FileText,
   UserCheck
 } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export default function WaiverManagement() {
   const [filter, setFilter] = useState('all');

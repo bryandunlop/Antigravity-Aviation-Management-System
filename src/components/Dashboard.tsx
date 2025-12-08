@@ -7,14 +7,15 @@ import LiveFleetMap from './LiveFleetMap';
 import InflightUpcomingFlights from './InflightUpcomingFlights';
 import FleetStatusWidget from './FleetStatusWidget';
 import ScheduleCalendar from './ScheduleCalendar';
+import NASImpactWidget from './NASImpactWidget';
 import { useFlightNASImpact } from './hooks/useFlightNASImpact';
 import { useSatcomDirect } from './hooks/useSatcomDirect';
-import { 
-  Plane, 
-  Users, 
-  Clock, 
-  AlertTriangle, 
-  CheckCircle, 
+import {
+  Plane,
+  Users,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
   Calendar,
   FileText,
   Wrench,
@@ -134,7 +135,7 @@ export default function Dashboard({ userRole }: DashboardProps) {
   const getCriticalFlights = () => {
     const now = new Date();
     const currentHour = now.getHours();
-    
+
     // Show only flights that are happening now or soon
     return [
       { id: 'FO001', departure: '08:00', arrival: '11:30', route: 'LAX → JFK', status: 'On Time', aircraft: 'N123AB' },
@@ -226,8 +227,8 @@ export default function Dashboard({ userRole }: DashboardProps) {
                 </p>
               </div>
               <div className={`p-2 rounded-lg ${fleetSummary?.systemAlerts === 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                {fleetSummary?.systemAlerts === 0 ? 
-                  <CheckCircle className="w-5 h-5 text-green-600" /> : 
+                {fleetSummary?.systemAlerts === 0 ?
+                  <CheckCircle className="w-5 h-5 text-green-600" /> :
                   <AlertTriangle className="w-5 h-5 text-red-600" />
                 }
               </div>
@@ -243,8 +244,8 @@ export default function Dashboard({ userRole }: DashboardProps) {
                 <p className="text-2xl font-bold text-orange-600">{impactData.totalImpacted}</p>
               </div>
               <div className={`p-2 rounded-lg ${impactData.totalImpacted === 0 ? 'bg-green-100' : 'bg-orange-100'}`}>
-                {impactData.totalImpacted === 0 ? 
-                  <CheckCircle className="w-5 h-5 text-green-600" /> : 
+                {impactData.totalImpacted === 0 ?
+                  <CheckCircle className="w-5 h-5 text-green-600" /> :
                   <CloudRain className="w-5 h-5 text-orange-600" />
                 }
               </div>
@@ -269,13 +270,13 @@ export default function Dashboard({ userRole }: DashboardProps) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {quickActions.map((action, index) => {
               const Icon = action.icon;
-              
+
               if (action.external) {
                 return (
-                  <a 
-                    key={index} 
-                    href={action.href} 
-                    target="_blank" 
+                  <a
+                    key={index}
+                    href={action.href}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="block"
                   >
@@ -293,7 +294,7 @@ export default function Dashboard({ userRole }: DashboardProps) {
                   </a>
                 );
               }
-              
+
               return (
                 <Link key={index} to={action.href}>
                   <div className="group p-4 border rounded-lg hover:bg-accent/5 hover:border-accent/20 transition-all cursor-pointer">
@@ -317,6 +318,11 @@ export default function Dashboard({ userRole }: DashboardProps) {
       {/* Upcoming Flights for Inflight Users */}
       {userRole === 'inflight' && (
         <InflightUpcomingFlights compact={true} />
+      )}
+
+      {/* NAS Impact Alerts for Pilots */}
+      {userRole === 'pilot' && (
+        <NASImpactWidget pilotName="Current Pilot" compact={false} maxFlights={3} />
       )}
 
       {/* Fleet Map - Enhanced with Real Map */}

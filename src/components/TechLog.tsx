@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
 import { ScrollArea } from './ui/scroll-area';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { useMaintenanceContext } from './contexts/MaintenanceContext';
 import { 
   Plus, 

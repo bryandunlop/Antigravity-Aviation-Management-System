@@ -28,7 +28,7 @@ import {
   Download,
   Hash
 } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export default function DocumentCompliance() {
   const [filter, setFilter] = useState('all');

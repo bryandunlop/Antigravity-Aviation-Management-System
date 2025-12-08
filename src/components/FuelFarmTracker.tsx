@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Badge } from './ui/badge';
 import { TrendingUp, TrendingDown, Plus, Plane, Download, FileText, ArrowLeft, Info } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { useNavigate, Link } from 'react-router-dom';
 import { FuelingRecord, FuelFarmStatus, NewRecordForm } from './FuelFarm/types';
 import { FUEL_TYPES, TECHNICIANS, MOCK_RECORDS } from './FuelFarm/constants';

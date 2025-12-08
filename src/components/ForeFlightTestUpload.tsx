@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useForeFlightConfig, useForeFlightFlightPlans } from './hooks/useForeFlight';
 import { createRealForeFlightClient } from '../utils/foreflight/realClient';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export default function ForeFlightTestUpload() {
   const { config } = useForeFlightConfig();

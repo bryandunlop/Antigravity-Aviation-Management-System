@@ -6,7 +6,7 @@ import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Sparkles, Plane, ArrowLeft, Clock } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 const SESSION_TYPES = {
   'quick-turn': { name: 'Quick Turn', duration: '30 min', description: 'Essential cleaning between flights' },

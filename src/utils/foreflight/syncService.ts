@@ -4,7 +4,7 @@
 import { RealForeFlightAPIClient } from './realClient';
 import { MockForeFlightClient } from './client';
 import { ForeFlightConfig, ForeFlightSyncStatus } from './types';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export class ForeFlightSyncService {
   private client: RealForeFlightAPIClient | MockForeFlightClient;

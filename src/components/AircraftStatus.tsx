@@ -1,86 +1,57 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import FleetStatusWidget from './FleetStatusWidget';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { Link } from 'react-router-dom';
-import { 
-  Plane, 
-  Wrench, 
+import { useSatcomDirect } from './hooks/useSatcomDirect';
+import {
+  Plane,
+  Wrench,
   Sparkles,
   FileText,
-  Settings
+  Settings,
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function AircraftStatus() {
-  const [filter, setFilter] = useState('all');
-  
-  const aircraftData = [
-    {
-      id: 'N123AB',
-      type: 'Boeing 737-800',
-      status: 'In Flight',
-      location: 'En Route LAX-JFK',
-      altitude: '35,000 ft',
-      speed: '420 kts',
-      eta: '11:30 EST',
-      fuel: '85%',
-      passengers: '156/180',
-      crew: '6',
-      issues: [],
-      nextMaintenance: '2025-02-15',
-      flightNumber: 'FO001'
-    },
-    {
-      id: 'N456CD',
-      type: 'Airbus A320',
-      status: 'Ground',
-      location: 'JFK Gate 12',
-      altitude: '0 ft',
-      speed: '0 kts',
-      eta: 'Boarding',
-      fuel: '92%',
-      passengers: '0/150',
-      crew: '5',
-      issues: ['Cabin pressure warning light'],
-      nextMaintenance: '2025-02-08',
-      flightNumber: 'FO002'
-    },
-    {
-      id: 'N789EF',
-      type: 'Boeing 777-300',
-      status: 'Maintenance',
-      location: 'MIA Hangar 3',
-      altitude: '0 ft',
-      speed: '0 kts',
-      eta: 'TBD',
-      fuel: '15%',
-      passengers: '0/350',
-      crew: '0',
-      issues: ['Engine 2 oil pressure low', 'Landing gear actuator replacement'],
-      nextMaintenance: '2025-02-05',
-      flightNumber: null
-    },
-    {
-      id: 'N321GH',
-      type: 'Embraer E175',
-      status: 'Available',
-      location: 'LAX Ramp A4',
-      altitude: '0 ft',
-      speed: '0 kts',
-      eta: 'Ready',
-      fuel: '78%',
-      passengers: '0/76',
-      crew: '0',
-      issues: [],
-      nextMaintenance: '2025-02-20',
-      flightNumber: null
-    }
-  ];
+  const { aircraftPositions, aircraftStatuses, loading, error } = useSatcomDirect();
 
-  const filteredAircraft = aircraftData.filter(aircraft => {
-    if (filter === 'all') return true;
-    return aircraft.status.toLowerCase().replace(' ', '') === filter;
-  });
+  // Filter flights by status (currently showing all)
+  const [filter, setFilter] = React.useState('all');
+
+  // Transform API data to display format
+  const aircraftData = useMemo(() => {
+    return aircraftPositions.map((position) => {
+      const status = aircraftStatuses.find(s => s.tailNumber === position.tailNumber);
+
+      return {
+        id: position.tailNumber,
+        type: 'Gulfstream G650', // Could be extended in API
+        status: position.flightPhase === 'Parked' ? 'Ground' :
+          position.flightPhase === 'Cruise' || position.flightPhase === 'Climb' || position.flightPhase === 'Descent' ? 'In Flight' :
+            status?.satcomStatus === 'Maintenance' ? 'Maintenance' : 'Available',
+        location: position.flightPhase === 'Parked'
+          ? `${position.departureAirport || 'Unknown'} Ramp`
+          : position.departureAirport && position.arrivalAirport
+            ? `En Route ${position.departureAirport}-${position.arrivalAirport}`
+            : 'In Flight',
+        altitude: `${position.altitude.toLocaleString()} ft`,
+        speed: `${position.groundSpeed} kts`,
+        eta: position.estimatedArrival
+          ? new Date(position.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : 'N/A',
+        fuel: position.fuelRemaining ? `${Math.round((position.fuelRemaining / 25000) * 100)}%` : 'N/A',
+        passengers: '0/180', // Would come from separate system
+        crew: '6',
+        issues: status?.alerts.filter(a => !a.acknowledged) || [],
+        nextMaintenance: '2025-02-15', // Would come from maintenance system
+        flightNumber: position.callSign || null
+      };
+    });
+  }, [aircraftPositions, aircraftStatuses]);
+
+  const filteredAircraft = aircraftData;  // Can add filtering logic later
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -95,12 +66,44 @@ export default function AircraftStatus() {
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case 'in flight': return <Plane className="w-4 h-4" />;
-      case 'ground': return <MapPin className="w-4 h-4" />;
+      case 'ground': return <Plane className="w-4 h-4" />;
       case 'maintenance': return <Settings className="w-4 h-4" />;
-      case 'available': return <CheckCircle className="w-4 h-4" />;
+      case 'available': return <Plane className="w-4 h-4" />;
       default: return <Plane className="w-4 h-4" />;
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="p-4 max-w-7xl mx-auto space-y-6">
+        <Card>
+          <CardContent className="p-8 flex items-center justify-center">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading aircraft status...
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="p-4 max-w-7xl mx-auto space-y-6">
+        <Card className="border-red-200">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="text-sm">Unable to load aircraft data: {error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 max-w-7xl mx-auto space-y-6">

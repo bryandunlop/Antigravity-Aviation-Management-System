@@ -35,7 +35,7 @@ import {
   Upload,
   Paperclip
 } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { Checkbox } from './ui/checkbox';
 
 // Workflow stages

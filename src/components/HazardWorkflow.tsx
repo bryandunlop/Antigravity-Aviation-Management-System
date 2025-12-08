@@ -33,7 +33,7 @@ import {
   Eye,
   Edit
 } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 // Workflow stages
 const WORKFLOW_STAGES = {
