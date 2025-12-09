@@ -1,19 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  TrendingUp, TrendingDown, Minus, Plane, AlertTriangle, 
-  Users, Wrench, FileCheck, Clock, DollarSign, 
+import {
+  TrendingUp, TrendingDown, Minus, Plane, AlertTriangle,
+  Users, Wrench, FileCheck, Clock, DollarSign,
   CheckCircle, XCircle, Activity, Zap, Target,
-  ThermometerSun, Fuel, Calendar, Award, Shield
+  ThermometerSun, Fuel, Calendar, Award, Shield,
+  Search, Bell, Menu, LayoutGrid, Settings, ChevronDown
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
-// Mock data generators - in production, these would come from Supabase
+// --- Types & Interfaces ---
+
+interface MetricCardProps {
+  title: string;
+  value: string | number;
+  unit?: string;
+  icon: any;
+  trend?: 'up' | 'down' | 'stable';
+  trendValue?: string;
+  status?: 'good' | 'warning' | 'critical' | 'neutral';
+  subtitle?: string;
+  delay?: number;
+}
+
+interface GaugeCardProps {
+  title: string;
+  value: number;
+  max: number;
+  unit: string;
+  icon: any;
+  status?: 'good' | 'warning' | 'critical';
+  delay?: number;
+}
+
+// --- Mock Data Generators ---
+
 const generateMockData = () => {
-  const now = new Date();
-  
   return {
     // Fleet Operations
     fleetUtilization: 87.5,
@@ -29,7 +53,7 @@ const generateMockData = () => {
     turnaroundTrend: 'up',
     dispatchReliability: 97.8,
     dispatchTrend: 'up',
-    
+
     // Safety & Risk
     fratGreen: 145,
     fratYellow: 23,
@@ -40,7 +64,7 @@ const generateMockData = () => {
     daysSinceIncident: 847,
     complianceRate: 98.5,
     complianceTrend: 'up',
-    
+
     // Aircraft Health
     aircraftOperational: 7,
     aircraftMaintenance: 1,
@@ -49,27 +73,27 @@ const generateMockData = () => {
     openMaintenanceRoutine: 8,
     maintenanceCompletionRate: 96.3,
     maintenanceTrend: 'up',
-    
+
     // Crew Readiness
     availablePilots: 12,
     availableInflight: 8,
     avgDutyTimeRemaining: 6.2,
     certsExpiring30Days: 3,
     avgCrewFlightHours: 68.5,
-    
+
     // Passenger Operations
     passengerLoadFactor: 76.3,
     vipFlightsToday: 2,
     avgPassengerRating: 4.8,
     passengerRatingTrend: 'up',
-    
+
     // Resource Management
     fuelEfficiencyVariance: -2.3, // negative is good (under planned)
     avgCostPerFlightHour: 4250,
     costTrend: 'down',
     fuelLoadsPending: 3,
     documentsExpiring: 7,
-    
+
     // Scheduling
     scheduleAdherence: 95.8,
     scheduleAdherenceTrend: 'up',
@@ -118,118 +142,111 @@ const generateTopRoutes = () => {
   ];
 };
 
+// --- Modern Fluid Components ---
+
+const LiquidCard = ({ children, className = "", delay = 0 }: { children: React.ReactNode, className?: string, delay?: number }) => (
+  <div
+    className={`
+      relative overflow-hidden rounded-3xl 
+      bg-slate-900/40 backdrop-blur-xl 
+      border border-white/5 ring-1 ring-white/10
+      transition-all duration-300 ease-out
+      hover:scale-[1.02] hover:shadow-[0_0_30px_-5px_var(--color-pg-blue)]/20 hover:bg-slate-800/50
+      animate-in fade-in slide-in-from-bottom-4 fill-mode-forwards
+      ${className}
+    `}
+    style={{ animationDelay: `${delay}ms` }}
+  >
+    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+    {children}
+  </div>
+);
+
 const TrendIndicator = ({ trend, value }: { trend: 'up' | 'down' | 'stable', value?: string }) => {
-  if (trend === 'up') {
-    return (
-      <div className="flex items-center gap-1 text-green-600">
-        <TrendingUp className="w-4 h-4" />
-        {value && <span className="text-xs">{value}</span>}
-      </div>
-    );
-  }
-  if (trend === 'down') {
-    return (
-      <div className="flex items-center gap-1 text-red-600">
-        <TrendingDown className="w-4 h-4" />
-        {value && <span className="text-xs">{value}</span>}
-      </div>
-    );
-  }
+  const getColors = () => {
+    if (trend === 'up') return 'text-emerald-400 bg-emerald-400/10';
+    if (trend === 'down') return 'text-rose-400 bg-rose-400/10';
+    return 'text-slate-400 bg-slate-400/10';
+  };
+
+  const Icon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
+
   return (
-    <div className="flex items-center gap-1 text-gray-600">
-      <Minus className="w-4 h-4" />
-      {value && <span className="text-xs">{value}</span>}
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${getColors()}`}>
+      <Icon className="w-3.5 h-3.5" />
+      {value && <span>{value}</span>}
     </div>
   );
 };
 
-const MetricCard = ({ 
-  title, 
-  value, 
-  unit, 
-  icon: Icon, 
-  trend, 
-  trendValue,
-  status,
-  subtitle 
-}: { 
-  title: string;
-  value: string | number;
-  unit?: string;
-  icon: any;
-  trend?: 'up' | 'down' | 'stable';
-  trendValue?: string;
-  status?: 'good' | 'warning' | 'critical';
-  subtitle?: string;
-}) => {
-  const getStatusColor = () => {
-    if (status === 'good') return 'border-green-500 bg-green-50';
-    if (status === 'warning') return 'border-yellow-500 bg-yellow-50';
-    if (status === 'critical') return 'border-red-500 bg-red-50';
-    return 'border-gray-200 bg-white';
+const MetricCard = ({
+  title, value, unit, icon: Icon, trend, trendValue, status = 'neutral', subtitle, delay
+}: MetricCardProps) => {
+  const getIconColor = () => {
+    switch (status) {
+      case 'good': return 'text-emerald-400';
+      case 'warning': return 'text-[var(--color-pg-yellow)]';
+      case 'critical': return 'text-rose-400';
+      default: return 'text-[var(--color-pg-cyan)]';
+    }
   };
 
   return (
-    <div className={`rounded-lg border-2 p-4 ${getStatusColor()}`}>
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-white">
-            <Icon className="w-5 h-5 text-blue-600" />
-          </div>
-          <div>
-            <div className="text-sm text-gray-600">{title}</div>
-            {subtitle && <div className="text-xs text-gray-500">{subtitle}</div>}
-          </div>
+    <LiquidCard delay={delay} className="p-5 flex flex-col justify-between h-full group">
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-2.5 rounded-2xl bg-white/5 group-hover:bg-white/10 transition-colors ${getIconColor()}`}>
+          <Icon className="w-5 h-5" />
         </div>
         {trend && <TrendIndicator trend={trend} value={trendValue} />}
       </div>
-      <div className="flex items-baseline gap-1 mt-2">
-        <span className="text-3xl">{value}</span>
-        {unit && <span className="text-sm text-gray-600">{unit}</span>}
+
+      <div>
+        <div className="text-3xl font-mono tracking-tight text-white mb-1">
+          {value}
+          {unit && <span className="ml-1.5 text-sm font-sans text-slate-400 font-normal">{unit}</span>}
+        </div>
+        <div className="text-sm font-medium text-slate-400 group-hover:text-slate-300 transition-colors">{title}</div>
+        {subtitle && <div className="text-xs text-slate-500 mt-1">{subtitle}</div>}
       </div>
-    </div>
+    </LiquidCard>
   );
 };
 
-const GaugeCard = ({ 
-  title, 
-  value, 
-  max, 
-  unit,
-  icon: Icon,
-  status 
-}: { 
-  title: string;
-  value: number;
-  max: number;
-  unit: string;
-  icon: any;
-  status?: 'good' | 'warning' | 'critical';
-}) => {
-  const percentage = (value / max) * 100;
-  
+const GaugeCard = ({ title, value, max, unit, icon: Icon, status, delay }: GaugeCardProps) => {
+  const percentage = Math.min((value / max) * 100, 100);
+
   const getColor = () => {
-    if (status === 'good' || percentage >= 90) return 'bg-green-500';
-    if (status === 'warning' || percentage >= 70) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (status === 'good' || percentage >= 90) return 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]';
+    if (status === 'warning' || percentage >= 70) return 'bg-[var(--color-pg-yellow)] shadow-[0_0_15px_rgba(254,219,0,0.4)]';
+    return 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.4)]';
   };
 
   return (
-    <div className="rounded-lg border-2 border-gray-200 bg-white p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="p-2 rounded-lg bg-gray-50">
-          <Icon className="w-5 h-5 text-blue-600" />
+    <LiquidCard delay={delay} className="p-5">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 rounded-2xl bg-white/5 text-[var(--color-pg-cyan)]">
+          <Icon className="w-5 h-5" />
         </div>
-        <div className="text-sm text-gray-600">{title}</div>
+        <div className="text-sm font-medium text-slate-400">{title}</div>
       </div>
-      <div className="text-3xl mb-2">{value}<span className="text-sm text-gray-600 ml-1">/ {max}</span></div>
-      <div className="w-full bg-gray-200 rounded-full h-3">
-        <div className={`h-3 rounded-full ${getColor()}`} style={{ width: `${percentage}%` }} />
+
+      <div className="flex items-baseline gap-2 mb-3">
+        <span className="text-3xl font-mono text-white">{value}</span>
+        <span className="text-sm text-slate-500">/ {max}</span>
       </div>
-      <div className="text-xs text-gray-500 mt-1">{percentage.toFixed(1)}% {unit}</div>
-    </div>
+
+      <div className="relative w-full h-3 bg-slate-800 rounded-full overflow-hidden">
+        <div
+          className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out ${getColor()}`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+      <div className="text-right text-xs text-slate-400 mt-2">{percentage.toFixed(1)}% {unit}</div>
+    </LiquidCard>
   );
 };
+
+// --- Main Dashboard Component ---
 
 export default function LiveMetricsDashboard() {
   const [data, setData] = useState(generateMockData());
@@ -239,438 +256,334 @@ export default function LiveMetricsDashboard() {
   const [topRoutes] = useState(generateTopRoutes());
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  // Simulate live updates every 30 seconds
+  // Simulate live updates
   useEffect(() => {
     const interval = setInterval(() => {
       setData(generateMockData());
       setLastUpdate(new Date());
     }, 30000);
-
     return () => clearInterval(interval);
   }, []);
 
-  const fratPieData = [
-    { name: 'Green (Low Risk)', value: data.fratGreen, color: '#22c55e' },
-    { name: 'Yellow (Medium Risk)', value: data.fratYellow, color: '#eab308' },
-    { name: 'Red (High Risk)', value: data.fratRed, color: '#ef4444' }
-  ];
-
-  const getOTPStatus = (value: number): 'good' | 'warning' | 'critical' => {
+  const getOTPStatus = (value: number) => {
     if (value >= 95) return 'good';
     if (value >= 85) return 'warning';
     return 'critical';
   };
 
-  const getComplianceStatus = (value: number): 'good' | 'warning' | 'critical' => {
+  const getComplianceStatus = (value: number) => {
     if (value >= 98) return 'good';
     if (value >= 95) return 'warning';
     return 'critical';
   };
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-900/90 backdrop-blur-md border border-white/10 p-4 rounded-xl shadow-xl">
+          <p className="text-slate-300 text-sm mb-2">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} className="text-sm font-mono" style={{ color: entry.color }}>
+              {entry.name}: {entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-[1800px] mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-[#001a5c] to-black text-slate-200 font-sans selection:bg-[var(--color-pg-cyan)] selection:text-white pb-20">
+
+      {/* Top Navigation Bar */}
+      <nav className="sticky top-0 z-50 border-b border-white/5 bg-slate-900/40 backdrop-blur-2xl">
+        <div className="max-w-[1920px] mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--color-pg-blue)] to-[var(--color-pg-blue-vivid)] flex items-center justify-center shadow-[0_0_15px_var(--color-pg-blue)]">
+                <Plane className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-sm font-bold text-white tracking-wide uppercase">P&G Global Flight Ops</h1>
+                <div className="text-[10px] text-[var(--color-pg-cyan)] tracking-wider">LIVE DASHBOARD</div>
+              </div>
+            </div>
+
+            <div className="h-6 w-px bg-white/10" />
+
+            <div className="flex gap-1">
+              {['Overview', 'Fleet', 'Crew', 'Maintenance', 'Schedule'].map((item, i) => (
+                <button
+                  key={item}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${i === 0
+                      ? 'bg-white/10 text-white ring-1 ring-white/10'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              SYSTEMS NORMAL
+            </div>
+
+            <button className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-full transition-colors">
+              <Search className="w-5 h-5" />
+            </button>
+            <button className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-full transition-colors relative">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--color-pg-yellow)] rounded-full shadow-[0_0_8px_var(--color-pg-yellow)]" />
+            </button>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border border-white/10 ring-2 ring-white/5" />
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-[1920px] mx-auto p-8 space-y-8">
+
+        {/* Header Section */}
+        <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-3xl text-gray-900 mb-2">Live Operations Dashboard</h1>
-            <p className="text-gray-600">Real-time fleet metrics and performance indicators</p>
+            <h2 className="text-4xl font-light text-white mb-2">Fleet Overview</h2>
+            <p className="text-slate-400">Real-time telemetry and operational metrics</p>
           </div>
           <div className="text-right">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Activity className="w-4 h-4 text-green-500 animate-pulse" />
-              <span>Live</span>
-            </div>
-            <div className="text-xs text-gray-500">Last updated: {lastUpdate.toLocaleTimeString()}</div>
+            <div className="text-3xl font-mono text-white tracking-widest">{lastUpdate.toLocaleTimeString([], { hour12: false })}</div>
+            <div className="text-sm text-slate-500 uppercase tracking-widest">Zulu Time: {new Date().toISOString().split('T')[1].split('.')[0]}Z</div>
           </div>
         </div>
 
-        {/* Fleet Operations KPIs */}
-        <div>
-          <h2 className="text-xl text-gray-900 mb-4 flex items-center gap-2">
-            <Plane className="w-6 h-6 text-blue-600" />
-            Fleet Operations
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Fleet Utilization Rate"
-              value={data.fleetUtilization}
-              unit="%"
-              icon={Target}
-              trend={data.fleetUtilizationTrend}
-              trendValue="+2.3%"
-              status={data.fleetUtilization >= 85 ? 'good' : 'warning'}
-            />
-            <MetricCard
-              title="Flight Hours"
-              value={data.flightHoursWeek}
-              unit="hrs this week"
-              icon={Clock}
-              trend={data.flightHoursTrend}
-              trendValue="+12.5%"
-              subtitle={`${data.flightHoursToday} hrs today`}
-            />
-            <MetricCard
-              title="On-Time Performance"
-              value={`${data.onTimePerformance}%`}
-              icon={CheckCircle}
-              trend={data.onTimeTrend}
-              trendValue="-1.2%"
-              status={getOTPStatus(data.onTimePerformance)}
-            />
-            <MetricCard
-              title="Dispatch Reliability"
-              value={`${data.dispatchReliability}%`}
-              icon={Zap}
-              trend={data.dispatchTrend}
-              trendValue="+0.5%"
-              status="good"
-            />
-            <GaugeCard
-              title="Active Flights"
-              value={data.activeFlights}
-              max={data.totalFleet}
-              unit="of fleet active"
-              icon={Plane}
-              status="good"
-            />
-            <MetricCard
-              title="Avg Turnaround Time"
-              value={data.avgTurnaroundTime}
-              unit="hours"
-              icon={Clock}
-              trend={data.turnaroundTrend}
-              trendValue="+0.2 hrs"
-              status={data.avgTurnaroundTime <= 2.5 ? 'good' : 'warning'}
-            />
-          </div>
+        {/* Fleet Operations Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard
+            title="Fleet Utilization"
+            value={data.fleetUtilization}
+            unit="%"
+            icon={Target}
+            trend={data.fleetUtilizationTrend as any}
+            trendValue="+2.3%"
+            status={data.fleetUtilization >= 85 ? 'good' : 'warning'}
+            delay={100}
+          />
+          <MetricCard
+            title="Weekly Flight Hours"
+            value={data.flightHoursWeek}
+            unit="hrs"
+            icon={Clock}
+            trend={data.flightHoursTrend as any}
+            trendValue="+12.5%"
+            subtitle={`${data.flightHoursToday} hrs today`}
+            delay={200}
+          />
+          <GaugeCard
+            title="Active Fleet"
+            value={data.activeFlights}
+            max={data.totalFleet}
+            unit="active"
+            icon={Plane}
+            status="good"
+            delay={300}
+          />
+          <MetricCard
+            title="On-Time Perf"
+            value={`${data.onTimePerformance}%`}
+            icon={CheckCircle}
+            trend={data.onTimeTrend as any}
+            trendValue="-1.2%"
+            status={getOTPStatus(data.onTimePerformance) as any}
+            delay={400}
+          />
         </div>
 
-        {/* Flight Hours Chart */}
-        <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
-          <h3 className="text-lg text-gray-900 mb-4">Flight Hours - Last 7 Days</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={flightHoursData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Area type="monotone" dataKey="planned" stroke="#94a3b8" fill="#e2e8f0" name="Planned Hours" />
-              <Area type="monotone" dataKey="hours" stroke="#3b82f6" fill="#93c5fd" name="Actual Hours" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Safety & Risk Metrics */}
-        <div>
-          <h2 className="text-xl text-gray-900 mb-4 flex items-center gap-2">
-            <Shield className="w-6 h-6 text-blue-600" />
-            Safety & Risk Management
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Average FRAT Score"
-              value={data.avgFratScore}
-              unit="/ 100"
-              icon={Activity}
-              trend="stable"
-              status="good"
-              subtitle="30-day moving average"
-            />
-            <MetricCard
-              title="Active Weather Alerts"
-              value={data.activeWeatherAlerts}
-              icon={ThermometerSun}
-              status={data.activeWeatherAlerts === 0 ? 'good' : 'warning'}
-              subtitle="Affecting scheduled routes"
-            />
-            <MetricCard
-              title="Compliance Rate"
-              value={`${data.complianceRate}%`}
-              icon={FileCheck}
-              trend={data.complianceTrend}
-              trendValue="+0.3%"
-              status={getComplianceStatus(data.complianceRate)}
-            />
-            <MetricCard
-              title="Safety Reports (Month)"
-              value={data.safetyReportsMonth}
-              icon={AlertTriangle}
-              status={data.safetyReportsMonth <= 5 ? 'good' : 'warning'}
-            />
-          </div>
-        </div>
-
-        {/* FRAT Distribution and Trend */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
-            <h3 className="text-lg text-gray-900 mb-4">FRAT Score Distribution (Last 30 Days)</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={fratPieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry) => `${entry.name}: ${entry.value}`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {fratPieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
-            <h3 className="text-lg text-gray-900 mb-4">FRAT Score Trend (30 Days)</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={fratTrendData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" label={{ value: 'Day', position: 'insideBottom', offset: -5 }} />
-                <YAxis label={{ value: 'Avg Score', angle: -90, position: 'insideLeft' }} />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={2} name="Avg FRAT Score" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Aircraft Health */}
-        <div>
-          <h2 className="text-xl text-gray-900 mb-4 flex items-center gap-2">
-            <Wrench className="w-6 h-6 text-blue-600" />
-            Aircraft Health & Maintenance
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <GaugeCard
-              title="Aircraft Availability"
-              value={data.aircraftOperational}
-              max={data.totalFleet}
-              unit="operational"
-              icon={Plane}
-              status="good"
-            />
-            <MetricCard
-              title="AOG Time"
-              value={data.aogHours}
-              unit="hours"
-              icon={XCircle}
-              status={data.aogHours === 0 ? 'good' : 'critical'}
-              subtitle="Unscheduled maintenance"
-            />
-            <MetricCard
-              title="Open Maintenance Items"
-              value={data.openMaintenanceCritical + data.openMaintenanceRoutine}
-              icon={AlertTriangle}
-              status={data.openMaintenanceCritical > 0 ? 'warning' : 'good'}
-              subtitle={`${data.openMaintenanceCritical} critical, ${data.openMaintenanceRoutine} routine`}
-            />
-            <MetricCard
-              title="Maintenance Completion"
-              value={`${data.maintenanceCompletionRate}%`}
-              icon={CheckCircle}
-              trend={data.maintenanceTrend}
-              trendValue="+1.2%"
-              status="good"
-              subtitle="On-time completion rate"
-            />
-          </div>
-        </div>
-
-        {/* Utilization by Aircraft */}
-        <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
-          <h3 className="text-lg text-gray-900 mb-4">Utilization by Aircraft (Month)</h3>
-          <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={utilizationData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="tail" />
-              <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" label={{ value: 'Flight Hours', angle: -90, position: 'insideLeft' }} />
-              <YAxis yAxisId="right" orientation="right" stroke="#10b981" label={{ value: 'Utilization %', angle: 90, position: 'insideRight' }} />
-              <Tooltip />
-              <Legend />
-              <Bar yAxisId="left" dataKey="hours" fill="#3b82f6" name="Flight Hours" />
-              <Bar yAxisId="right" dataKey="utilization" fill="#10b981" name="Utilization %" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Crew Readiness */}
-        <div>
-          <h2 className="text-xl text-gray-900 mb-4 flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-600" />
-            Crew Readiness
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Available Crew"
-              value={data.availablePilots + data.availableInflight}
-              icon={Users}
-              status="good"
-              subtitle={`${data.availablePilots} pilots, ${data.availableInflight} inflight`}
-            />
-            <MetricCard
-              title="Avg Duty Time Remaining"
-              value={data.avgDutyTimeRemaining}
-              unit="hours"
-              icon={Clock}
-              status={data.avgDutyTimeRemaining >= 6 ? 'good' : 'warning'}
-            />
-            <MetricCard
-              title="Certifications Expiring"
-              value={data.certsExpiring30Days}
-              icon={AlertTriangle}
-              status={data.certsExpiring30Days <= 3 ? 'good' : 'warning'}
-              subtitle="Within 30 days"
-            />
-            <MetricCard
-              title="Avg Crew Flight Hours"
-              value={data.avgCrewFlightHours}
-              unit="hrs this month"
-              icon={Award}
-              status="good"
-            />
-          </div>
-        </div>
-
-        {/* Passenger Operations */}
-        <div>
-          <h2 className="text-xl text-gray-900 mb-4 flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-600" />
-            Passenger Operations
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Passenger Load Factor"
-              value={`${data.passengerLoadFactor}%`}
-              icon={Users}
-              status="good"
-              subtitle="% of available seats filled"
-            />
-            <MetricCard
-              title="VIP Flights Today"
-              value={data.vipFlightsToday}
-              icon={Award}
-              status="good"
-              subtitle="BOD/C-Suite passengers"
-            />
-            <MetricCard
-              title="Passenger Feedback"
-              value={data.avgPassengerRating}
-              unit="/ 5.0"
-              icon={CheckCircle}
-              trend={data.passengerRatingTrend}
-              trendValue="+0.2"
-              status="good"
-            />
-          </div>
-        </div>
-
-        {/* Top Routes */}
-        <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
-          <h3 className="text-lg text-gray-900 mb-4">Most Requested Routes (Month)</h3>
-          <div className="space-y-3">
-            {topRoutes.map((route, index) => (
-              <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                <div className="text-2xl text-blue-600 w-8">{index + 1}</div>
-                <div className="flex-1">
-                  <div className="text-gray-900">{route.route}</div>
-                  <div className="text-sm text-gray-600">{route.flights} flights • {route.hours} flight hours</div>
-                </div>
-                <div className="w-64 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="h-2 rounded-full bg-blue-600" 
-                    style={{ width: `${(route.flights / topRoutes[0].flights) * 100}%` }}
-                  />
-                </div>
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <LiquidCard className="lg:col-span-2 p-6" delay={500}>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-medium text-white mb-1">Flight Hours Analysis</h3>
+                <p className="text-sm text-slate-400">Past 7 days vs Planned</p>
               </div>
-            ))}
-          </div>
+              <select className="bg-white/5 border border-white/10 rounded-lg text-sm text-slate-300 px-3 py-1 outline-none focus:ring-1 focus:ring-[var(--color-pg-blue)]">
+                <option>Last 7 Days</option>
+                <option>Last 30 Days</option>
+              </select>
+            </div>
+
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={flightHoursData}>
+                  <defs>
+                    <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-pg-blue-vivid)" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="var(--color-pg-blue-vivid)" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorPlanned" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} dx={-10} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 2 }} />
+                  <Area type="monotone" dataKey="hours" stroke="var(--color-pg-blue-vivid)" strokeWidth={3} fillOpacity={1} fill="url(#colorHours)" />
+                  <Area type="monotone" dataKey="planned" stroke="#94a3b8" strokeDasharray="5 5" strokeWidth={2} fillOpacity={1} fill="url(#colorPlanned)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </LiquidCard>
+
+          <LiquidCard className="p-6" delay={600}>
+            <div className="flex items-center gap-3 mb-6">
+              <Shield className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-lg font-medium text-white">Risk Profile (FRAT)</h3>
+            </div>
+
+            <div className="relative h-[200px] flex items-center justify-center mb-6">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Low Risk', value: data.fratGreen, color: '#10b981' },
+                      { name: 'Medium Risk', value: data.fratYellow, color: '#facc15' },
+                      { name: 'High Risk', value: data.fratRed, color: '#f43f5e' }
+                    ]}
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {[0, 1, 2].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={['#10b981', 'var(--color-pg-yellow)', '#f43f5e'][index]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-3xl font-mono text-white font-bold">{data.avgFratScore}</span>
+                <span className="text-xs text-slate-500 uppercase tracking-wide">Avg Score</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+                  <span className="text-sm text-slate-300">Low Risk Flights</span>
+                </div>
+                <span className="text-white font-mono">{data.fratGreen}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[var(--color-pg-yellow)] shadow-[0_0_8px_rgba(254,219,0,0.5)]" />
+                  <span className="text-sm text-slate-300">Medium Risk</span>
+                </div>
+                <span className="text-white font-mono">{data.fratYellow}</span>
+              </div>
+            </div>
+          </LiquidCard>
         </div>
 
-        {/* Resource Management */}
-        <div>
-          <h2 className="text-xl text-gray-900 mb-4 flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-blue-600" />
-            Resource Management
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Fuel Efficiency Variance"
-              value={data.fuelEfficiencyVariance}
-              unit="%"
-              icon={Fuel}
-              status={data.fuelEfficiencyVariance < 0 ? 'good' : 'warning'}
-              subtitle="vs. ForeFlight planned"
-            />
-            <MetricCard
-              title="Avg Cost Per Flight Hour"
-              value={`$${data.avgCostPerFlightHour.toLocaleString()}`}
-              icon={DollarSign}
-              trend={data.costTrend}
-              trendValue="-3.2%"
-              status="good"
-            />
-            <MetricCard
-              title="Fuel Loads Pending"
-              value={data.fuelLoadsPending}
-              icon={Fuel}
-              status={data.fuelLoadsPending <= 5 ? 'good' : 'warning'}
-              subtitle="Requests to maintenance"
-            />
-            <MetricCard
-              title="Documents Expiring"
-              value={data.documentsExpiring}
-              icon={FileCheck}
-              status={data.documentsExpiring <= 10 ? 'good' : 'warning'}
-              subtitle="Within 30 days"
-            />
-          </div>
+        {/* Secondary Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard
+            title="Avg Turnaround"
+            value={data.avgTurnaroundTime}
+            unit="hrs"
+            icon={Clock}
+            trend={data.turnaroundTrend as any}
+            status="good"
+            delay={700}
+          />
+          <MetricCard
+            title="Maintenance"
+            value={data.maintenanceCompletionRate}
+            unit="%"
+            icon={Wrench}
+            trend="up"
+            status="good"
+            subtitle="Completion Rate"
+            delay={800}
+          />
+          <MetricCard
+            title="Crew Readiness"
+            value={data.availablePilots}
+            unit="pilots"
+            icon={Users}
+            status="good"
+            subtitle={`${data.availableInflight} Inflight Available`}
+            delay={900}
+          />
+          <MetricCard
+            title="Cost / Flight Hr"
+            value={`$${data.avgCostPerFlightHour.toLocaleString()}`}
+            icon={DollarSign}
+            trend={data.costTrend as any}
+            trendValue="-3.2%"
+            status="good"
+            delay={1000}
+          />
         </div>
 
-        {/* Scheduling & Live Status */}
-        <div>
-          <h2 className="text-xl text-gray-900 mb-4 flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-blue-600" />
-            Scheduling & Live Status
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Schedule Adherence"
-              value={`${data.scheduleAdherence}%`}
-              icon={CheckCircle}
-              trend={data.scheduleAdherenceTrend}
-              trendValue="+0.8%"
-              status="good"
-            />
-            <MetricCard
-              title="Avg Booking Lead Time"
-              value={data.avgBookingLeadTime}
-              unit="days"
-              icon={Calendar}
-              status="good"
-            />
-            <MetricCard
-              title="Active Delays"
-              value={data.activeDelays}
-              icon={AlertTriangle}
-              status={data.activeDelays === 0 ? 'good' : 'warning'}
-            />
-            <MetricCard
-              title="Crew on Duty"
-              value={data.crewOnDuty}
-              icon={Users}
-              status="good"
-              subtitle="Currently active"
-            />
-          </div>
+        {/* Maintenance & Health */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <LiquidCard className="lg:col-span-2 p-6" delay={1100}>
+            <h3 className="text-lg font-medium text-white mb-6">Aircraft Utilization Report</h3>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={utilizationData} barSize={20}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis dataKey="tail" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} dx={-10} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'white', opacity: 0.05 }} />
+                  <Bar dataKey="hours" radius={[4, 4, 0, 0]}>
+                    {utilizationData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.utilization > 90 ? 'var(--color-pg-blue-vivid)' : 'var(--color-pg-cyan)'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </LiquidCard>
+
+          <LiquidCard className="p-0 overflow-hidden" delay={1200}>
+            <div className="p-6 border-b border-white/5 bg-white/5">
+              <h3 className="text-lg font-medium text-white">Top Routes</h3>
+              <p className="text-sm text-slate-400">Most frequent flight paths</p>
+            </div>
+            <div className="divide-y divide-white/5">
+              {topRoutes.map((route, i) => (
+                <div key={i} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer group">
+                  <div className="flex items-center gap-4">
+                    <span className="text-slate-500 font-mono w-6 text-sm">0{i + 1}</span>
+                    <div>
+                      <div className="text-white font-medium group-hover:text-[var(--color-pg-cyan)] transition-colors">{route.route}</div>
+                      <div className="text-xs text-slate-500">{route.flights} Flights</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-slate-300 font-mono text-sm">{route.hours}h</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-white/5 border-t border-white/5 text-center">
+              <button className="text-sm text-[var(--color-pg-blue-vivid)] hover:text-white transition-colors">View All Routes</button>
+            </div>
+          </LiquidCard>
         </div>
+
       </div>
     </div>
   );

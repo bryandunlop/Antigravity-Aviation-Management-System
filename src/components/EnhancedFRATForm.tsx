@@ -11,10 +11,10 @@ import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { Progress } from './ui/progress';
 import { toast } from 'sonner';
-import { 
-  Shield, 
-  AlertTriangle, 
-  CheckCircle, 
+import {
+  Shield,
+  AlertTriangle,
+  CheckCircle,
   Info,
   Plane,
   Calendar,
@@ -43,13 +43,16 @@ interface FRATSection {
 }
 
 interface EnhancedFRATFormProps {
-  userRole: string;
+  userRole?: string;
+  initialData?: any;
+  onClose?: () => void;
+  onSave?: (data: any) => void;
 }
 
-export default function EnhancedFRATForm({ userRole }: EnhancedFRATFormProps) {
+export default function EnhancedFRATForm({ userRole = 'pilot', initialData, onClose, onSave }: EnhancedFRATFormProps) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const flightData = location.state?.flightData;
+  // Use initialData or fall back to defaults
+  const flightData = initialData;
 
   // Basic flight information
   const [flightNumber, setFlightNumber] = useState(flightData?.flightNumber || '');
@@ -199,51 +202,68 @@ export default function EnhancedFRATForm({ userRole }: EnhancedFRATFormProps) {
     });
   };
 
-  // Handle form submission
-  const handleSubmit = (status: 'draft' | 'submitted') => {
-    if (!flightNumber || !departure || !destination || !picName) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
+  const [status, setStatus] = useState('draft');
 
-    // Here you would save to database
-    toast.success(`FRAT ${status === 'draft' ? 'saved as draft' : 'submitted successfully'}`);
-    
-    if (status === 'submitted') {
-      navigate('/frat/my-submissions');
-    }
+  // Helper helper to calculate section score
+  const getSectionScore = (section: FRATSection) => {
+    return section.items.reduce((acc, item) => item.selected ? acc + item.score : acc, 0);
   };
 
-  // Get section score
-  const getSectionScore = (section: FRATSection) => {
-    return section.items.reduce((sum, item) => item.selected ? sum + item.score : sum, 0);
+  // Handle form submission
+  const handleSubmit = (newStatus: string) => {
+    setStatus(newStatus);
+    const data = {
+      flightNumber,
+      aircraft,
+      departure,
+      destination,
+      date: flightDate,
+      time: departureTime,
+      pic: picName,
+      sic: sicName,
+      items: fratSections,
+      totalScore,
+      status: newStatus
+    };
+
+    if (onSave) {
+      onSave(data);
+    } else {
+      console.log('Form saved:', data);
+      toast.success(newStatus === 'draft' ? 'Draft saved successfully' : 'FRAT submitted successfully');
+      if (newStatus === 'submitted' && onClose) {
+        onClose();
+      }
+    }
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto space-y-6 pb-20">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-muted-foreground mb-2">
-            <Shield className="w-8 h-8" />
-            Enhanced FRAT Form
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Flight Risk Assessment Tool - Gulfstream G650
-          </p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <Shield className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Enhanced FRAT Form</h1>
+            <p className="text-sm text-muted-foreground">
+              Flight Risk Assessment Tool - Gulfstream G650
+            </p>
+          </div>
         </div>
-        <Button variant="outline" onClick={() => navigate('/frat')}>
+        <Button variant="outline" onClick={() => onClose ? onClose() : navigate('/frat')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
       </div>
 
       {/* Risk Score Card */}
-      <Card className={`border-2 ${
-        riskLevel.level === 'low' ? 'border-green-500 bg-green-50 dark:bg-green-950' :
+      < Card className={`border-2 ${riskLevel.level === 'low' ? 'border-green-500 bg-green-50 dark:bg-green-950' :
         riskLevel.level === 'medium' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' :
-        'border-red-500 bg-red-50 dark:bg-red-950'
-      }`}>
+          'border-red-500 bg-red-50 dark:bg-red-950'
+        }`
+      }>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -254,19 +274,17 @@ export default function EnhancedFRATForm({ userRole }: EnhancedFRATFormProps) {
                 Current Risk Score: {totalScore}
               </CardTitle>
               <CardDescription>
-                Risk Level: <span className={`font-semibold ${
-                  riskLevel.level === 'low' ? 'text-green-700 dark:text-green-400' :
+                Risk Level: <span className={`font-semibold ${riskLevel.level === 'low' ? 'text-green-700 dark:text-green-400' :
                   riskLevel.level === 'medium' ? 'text-yellow-700 dark:text-yellow-400' :
-                  'text-red-700 dark:text-red-400'
-                }`}>{riskLevel.label}</span>
+                    'text-red-700 dark:text-red-400'
+                  }`}>{riskLevel.label}</span>
               </CardDescription>
             </div>
             <div className="text-right">
-              <div className={`text-4xl font-bold ${
-                riskLevel.level === 'low' ? 'text-green-600' :
+              <div className={`text-4xl font-bold ${riskLevel.level === 'low' ? 'text-green-600' :
                 riskLevel.level === 'medium' ? 'text-yellow-600' :
-                'text-red-600'
-              }`}>
+                  'text-red-600'
+                }`}>
                 {totalScore}
               </div>
               <div className="text-sm text-muted-foreground">Total Points</div>
@@ -274,8 +292,8 @@ export default function EnhancedFRATForm({ userRole }: EnhancedFRATFormProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <Progress 
-            value={Math.min((totalScore / 30) * 100, 100)} 
+          <Progress
+            value={Math.min((totalScore / 30) * 100, 100)}
             className="h-3"
           />
           <div className="mt-4 flex justify-between text-xs text-muted-foreground">
@@ -292,10 +310,10 @@ export default function EnhancedFRATForm({ userRole }: EnhancedFRATFormProps) {
             </Alert>
           )}
         </CardContent>
-      </Card>
+      </Card >
 
       {/* Flight Information */}
-      <Card>
+      < Card >
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plane className="w-5 h-5" />
@@ -389,88 +407,91 @@ export default function EnhancedFRATForm({ userRole }: EnhancedFRATFormProps) {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card >
 
       {/* FRAT Sections */}
-      {fratSections.map((section, sectionIndex) => {
-        const Icon = section.icon;
-        const sectionScore = getSectionScore(section);
-        const hasSelectedItems = section.items.some(item => item.selected);
+      {
+        fratSections.map((section, sectionIndex) => {
+          const Icon = section.icon;
+          const sectionScore = getSectionScore(section);
+          const hasSelectedItems = section.items.some(item => item.selected);
 
-        return (
-          <Card key={sectionIndex} className={hasSelectedItems ? 'border-blue-500' : ''}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Icon className="w-5 h-5" />
-                  {section.title}
-                </CardTitle>
-                {sectionScore > 0 && (
-                  <Badge variant="secondary" className="text-lg px-3 py-1">
-                    +{sectionScore} points
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {section.items.map((item, itemIndex) => (
-                  <div 
-                    key={item.id} 
-                    className={`flex items-start space-x-3 p-3 rounded-lg transition-colors ${
-                      item.selected ? 'bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800' : 'hover:bg-muted/50'
-                    }`}
-                  >
-                    <Checkbox
-                      id={item.id}
-                      checked={item.selected}
-                      onCheckedChange={() => handleItemToggle(sectionIndex, itemIndex)}
-                      className="mt-1"
-                    />
-                    <div className="flex-1 flex items-center justify-between gap-4">
-                      <Label 
-                        htmlFor={item.id} 
-                        className="cursor-pointer flex-1"
-                      >
-                        {item.label}
-                      </Label>
-                      <Badge 
-                        variant={item.selected ? "default" : "outline"}
-                        className={item.score === 0 ? 'bg-gray-500' : ''}
-                      >
-                        {item.score === 0 ? '0' : `+${item.score}`}
-                      </Badge>
+          return (
+            <Card key={sectionIndex} className={hasSelectedItems ? 'border-blue-500' : ''}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon className="w-5 h-5" />
+                    {section.title}
+                  </CardTitle>
+                  {sectionScore > 0 && (
+                    <Badge variant="secondary" className="text-lg px-3 py-1">
+                      +{sectionScore} points
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {section.items.map((item, itemIndex) => (
+                    <div
+                      key={item.id}
+                      className={`flex items-start space-x-3 p-3 rounded-lg transition-colors ${item.selected ? 'bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800' : 'hover:bg-muted/50'
+                        }`}
+                    >
+                      <Checkbox
+                        id={item.id}
+                        checked={item.selected}
+                        onCheckedChange={() => handleItemToggle(sectionIndex, itemIndex)}
+                        className="mt-1"
+                      />
+                      <div className="flex-1 flex items-center justify-between gap-4 py-1">
+                        <Label
+                          htmlFor={item.id}
+                          className="cursor-pointer flex-1"
+                        >
+                          {item.label}
+                        </Label>
+                        <Badge
+                          variant={item.selected ? "default" : "outline"}
+                          className={item.score === 0 ? 'bg-gray-500' : ''}
+                        >
+                          {item.score === 0 ? '0' : `+${item.score}`}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })
+      }
 
       {/* Mitigation Notes */}
-      {mitigationRequired && (
-        <Card className="border-yellow-500">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-yellow-600" />
-              Mitigation Strategies
-            </CardTitle>
-            <CardDescription>
-              Document how identified risks will be mitigated for this flight (optional but recommended)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              value={mitigationNotes}
-              onChange={(e) => setMitigationNotes(e.target.value)}
-              placeholder="Describe specific mitigation strategies for the risks identified above. Include any additional crew briefings, alternate airports, fuel reserves, or other safety measures..."
-              rows={6}
-            />
-          </CardContent>
-        </Card>
-      )}
+      {
+        mitigationRequired && (
+          <Card className="border-yellow-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                Mitigation Strategies
+              </CardTitle>
+              <CardDescription>
+                Document how identified risks will be mitigated for this flight (optional but recommended)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={mitigationNotes}
+                onChange={(e) => setMitigationNotes(e.target.value)}
+                placeholder="Describe specific mitigation strategies for the risks identified above. Include any additional crew briefings, alternate airports, fuel reserves, or other safety measures..."
+                rows={6}
+              />
+            </CardContent>
+          </Card>
+        )
+      }
 
       {/* Additional Notes */}
       <Card>
@@ -504,6 +525,6 @@ export default function EnhancedFRATForm({ userRole }: EnhancedFRATFormProps) {
           Submit FRAT
         </Button>
       </div>
-    </div>
+    </div >
   );
 }

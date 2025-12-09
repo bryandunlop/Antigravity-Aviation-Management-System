@@ -22,6 +22,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
+import EnhancedFRATForm from './EnhancedFRATForm';
 
 interface Leg {
   id: string;
@@ -580,7 +581,7 @@ export default function PreflightWorkflow() {
     };
     const config = statusConfig[status] || statusConfig['not-started'];
     const Icon = config.icon;
-    
+
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${config.color}`}>
         <Icon className="w-3 h-3" />
@@ -621,7 +622,7 @@ export default function PreflightWorkflow() {
     const today = new Date();
     const tripDate = parseISO(startDate);
     const days = differenceInDays(tripDate, today);
-    
+
     if (days < 0) return 'In Progress';
     if (days === 0) return 'Today';
     if (days === 1) return 'Tomorrow';
@@ -631,48 +632,44 @@ export default function PreflightWorkflow() {
   if (currentView === 'frat' && selectedLeg) {
     const trip = trips.find(t => t.id === selectedLeg.tripId);
     const leg = trip?.legs.find(l => l.id === selectedLeg.legId);
-    
+
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Button
-              variant="ghost"
-              onClick={() => setCurrentView('trips')}
-              className="mb-2"
-            >
-              <ChevronRight className="w-4 h-4 rotate-180 mr-2" />
-              Back to Trips
-            </Button>
-            <h1 className="text-2xl">FRAT Form - Leg {leg?.legNumber}</h1>
-            <p className="text-muted-foreground">
-              {leg?.departure} ({leg?.departureICAO}) → {leg?.arrival} ({leg?.arrivalICAO})
-            </p>
-          </div>
-        </div>
-
-        <Card className="p-6">
-          <div className="text-center py-12">
-            <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg mb-2">FRAT Form Integration</h3>
-            <p className="text-muted-foreground mb-6">
-              The existing FRAT form component would be embedded here with trip/leg context
-            </p>
-            <div className="flex gap-3 justify-center">
-              <Button onClick={() => setCurrentView('trips')}>
-                <Save className="w-4 h-4 mr-2" />
-                Save Progress
-              </Button>
-              <Button 
-                onClick={() => viewAirportEvals(selectedLeg.tripId, selectedLeg.legId)}
-                variant="outline"
-              >
-                Continue to Airport Evaluations
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        </Card>
+        <EnhancedFRATForm
+          initialData={{
+            flightNumber: trip?.tripNumber,
+            aircraft: trip?.tailNumber,
+            departure: leg?.departureICAO,
+            destination: leg?.arrivalICAO,
+            date: leg?.departureTime.split('T')[0],
+            time: leg?.departureTime.split('T')[1].substring(0, 5),
+            pic: trip?.crewMembers.find(c => c.includes('Capt'))
+          }}
+          onClose={() => setCurrentView('trips')}
+          onSave={(data) => {
+            console.log('FRAT Saved', data);
+            // Here we would actually update the trip/leg state
+            if (data.status === 'submitted') {
+              // Update local state to show completed
+              const updatedTrips = trips.map(t => {
+                if (t.id === selectedLeg.tripId) {
+                  return {
+                    ...t,
+                    legs: t.legs.map(l => {
+                      if (l.id === selectedLeg.legId) {
+                        return { ...l, fratStatus: 'completed' as const, fratScore: data.totalScore };
+                      }
+                      return l;
+                    })
+                  };
+                }
+                return t;
+              });
+              setTrips(updatedTrips);
+              setCurrentView('trips');
+            }
+          }}
+        />
       </div>
     );
   }
@@ -680,7 +677,7 @@ export default function PreflightWorkflow() {
   if (currentView === 'airport-evals' && selectedLeg) {
     const trip = trips.find(t => t.id === selectedLeg.tripId);
     const leg = trip?.legs.find(l => l.id === selectedLeg.legId);
-    
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -777,7 +774,7 @@ export default function PreflightWorkflow() {
             <div>
               <p className="text-sm text-muted-foreground">Pending FRATs</p>
               <p className="text-2xl">
-                {trips.reduce((sum, trip) => 
+                {trips.reduce((sum, trip) =>
                   sum + trip.legs.filter(leg => leg.fratStatus !== 'completed').length, 0
                 )}
               </p>
@@ -793,7 +790,7 @@ export default function PreflightWorkflow() {
             <div>
               <p className="text-sm text-muted-foreground">Completed</p>
               <p className="text-2xl">
-                {trips.reduce((sum, trip) => 
+                {trips.reduce((sum, trip) =>
                   sum + trip.legs.filter(leg => leg.fratStatus === 'completed').length, 0
                 )}
               </p>
@@ -831,7 +828,7 @@ export default function PreflightWorkflow() {
             const isExpanded = expandedTrips.has(trip.id);
             const completedLegs = trip.legs.filter(leg => leg.fratStatus === 'completed').length;
             const totalLegs = trip.legs.length;
-            
+
             return (
               <Card key={trip.id} className="overflow-hidden">
                 {/* Trip Header */}
@@ -853,7 +850,7 @@ export default function PreflightWorkflow() {
                           {getDaysUntilTrip(trip.startDate)}
                         </span>
                       </div>
-                      
+
                       <div className="ml-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                         <div className="flex items-center gap-2">
                           <Plane className="w-4 h-4 text-muted-foreground" />
@@ -956,7 +953,7 @@ export default function PreflightWorkflow() {
                                   </span>
                                 )}
                               </div>
-                              
+
                               <div className="grid md:grid-cols-3 gap-4 text-sm">
                                 <div>
                                   <p className="text-muted-foreground mb-1">Route</p>

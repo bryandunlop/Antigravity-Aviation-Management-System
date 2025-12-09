@@ -256,9 +256,24 @@
     --default-font-family: var(--font-sans);
     --default-font-feature-settings: var(--font-sans--font-feature-settings);
     --default-font-variation-settings: var(--font-sans--font-variation-settings);
-    --default-mono-font-family: var(--font-mono);
-    --default-mono-font-feature-settings: var(--font-mono--font-feature-settings);
     --default-mono-font-variation-settings: var(--font-mono--font-variation-settings);
+
+    /* P&G Corporate Aviation - Modern Fluid Theme */
+    --color-pg-blue: #0037B1; /* P&G "Endeavour" Blue - The Deep Ocean */
+    --color-pg-blue-vivid: #2563EB; /* A more digital, glowing blue for active states */
+    --color-pg-cyan: #00A3E0; /* P&G "Picton" Blue - The Sky */
+    --color-pg-yellow: #FEDB00; /* P&G Yellow - Optimism/Alerts */
+    
+    /* Modern Glass System (Fluent 2 / Liquid Glass) */
+    --glass-base: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.15);
+    --surface-elevation-0: #020617; /* Deepest Navy/Black */
+    --surface-elevation-1: rgba(15, 23, 42, 0.4);
+    
+    /* Effects */
+    --shadow-glow-blue: 0 0 40px -10px rgba(0, 55, 177, 0.5);
+    --shadow-glow-cyan: 0 0 40px -10px rgba(0, 163, 224, 0.4);
   }
 }
 

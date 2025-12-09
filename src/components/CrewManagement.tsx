@@ -10,15 +10,15 @@ import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Alert, AlertDescription } from './ui/alert';
 import { Progress } from './ui/progress';
-import { 
-  Calendar, 
-  Clock, 
-  AlertTriangle, 
-  Users, 
-  CheckCircle, 
-  XCircle, 
-  Plane, 
-  User, 
+import {
+  Calendar,
+  Clock,
+  AlertTriangle,
+  Users,
+  CheckCircle,
+  XCircle,
+  Plane,
+  User,
   Bell,
   Award,
   FileText,
@@ -52,7 +52,7 @@ interface CrewMember {
   status: 'available' | 'on-duty' | 'rest' | 'unavailable' | 'training';
   currentLocation: string;
   nextDutyStart?: string;
-  
+
   // Currency Information
   medicalCertificate: {
     type: 'Class 1' | 'Class 2' | 'Class 3';
@@ -61,21 +61,21 @@ interface CrewMember {
     expiryDate: string;
     restrictions?: string;
   };
-  
+
   flightReview: {
     lastCompleted: string;
     expiryDate: string;
     instructor: string;
     aircraftType: string;
   };
-  
+
   instrumentProficiency: {
     lastCompleted: string;
     expiryDate: string;
     approach: string;
     instructor: string;
   };
-  
+
   typeRatings: Array<{
     aircraftType: string;
     rating: string;
@@ -83,14 +83,14 @@ interface CrewMember {
     expiryDate: string;
     examiner: string;
   }>;
-  
+
   recurrentTraining: {
     lastCompleted: string;
     expiryDate: string;
     trainingCenter: string;
     completedModules: string[];
   };
-  
+
   lineChecks: Array<{
     date: string;
     examiner: string;
@@ -214,7 +214,7 @@ export default function CrewManagement() {
         status: 'on-duty',
         currentLocation: 'KATL',
         nextDutyStart: '2025-01-02T06:00:00',
-        
+
         medicalCertificate: {
           type: 'Class 1',
           number: 'FAA123456789',
@@ -222,21 +222,21 @@ export default function CrewManagement() {
           expiryDate: '2025-06-15',
           restrictions: 'Must wear corrective lenses'
         },
-        
+
         flightReview: {
           lastCompleted: '2024-03-20',
           expiryDate: '2025-03-20',
           instructor: 'CFI Mike Johnson',
           aircraftType: 'G650'
         },
-        
+
         instrumentProficiency: {
           lastCompleted: '2024-08-10',
           expiryDate: '2025-02-10',
           approach: 'ILS/RNAV',
           instructor: 'CFII Sarah Wilson'
         },
-        
+
         typeRatings: [
           {
             aircraftType: 'G650',
@@ -246,14 +246,14 @@ export default function CrewManagement() {
             examiner: 'DPE Robert Brown'
           }
         ],
-        
+
         recurrentTraining: {
           lastCompleted: '2024-09-05',
           expiryDate: '2025-09-05',
           trainingCenter: 'FlightSafety International',
           completedModules: ['CRM', 'Emergency Procedures', 'Systems Review']
         },
-        
+
         lineChecks: [
           {
             date: '2024-07-22',
@@ -279,28 +279,28 @@ export default function CrewManagement() {
         status: 'on-duty',
         currentLocation: 'KATL',
         nextDutyStart: '2025-01-02T06:00:00',
-        
+
         medicalCertificate: {
           type: 'Class 1',
           number: 'FAA987654321',
           issueDate: '2024-04-30',
           expiryDate: '2025-04-30'
         },
-        
+
         flightReview: {
           lastCompleted: '2024-02-15',
           expiryDate: '2025-02-15',
           instructor: 'CFI Mike Johnson',
           aircraftType: 'G650'
         },
-        
+
         instrumentProficiency: {
           lastCompleted: '2024-09-12',
           expiryDate: '2025-03-12',
           approach: 'ILS/RNAV/VOR',
           instructor: 'CFII Sarah Wilson'
         },
-        
+
         typeRatings: [
           {
             aircraftType: 'G650',
@@ -310,14 +310,14 @@ export default function CrewManagement() {
             examiner: 'DPE Robert Brown'
           }
         ],
-        
+
         recurrentTraining: {
           lastCompleted: '2024-08-15',
           expiryDate: '2025-08-15',
           trainingCenter: 'FlightSafety International',
           completedModules: ['CRM', 'Emergency Procedures', 'Systems Review']
         },
-        
+
         lineChecks: [
           {
             date: '2024-06-18',
@@ -342,37 +342,37 @@ export default function CrewManagement() {
         status: 'available',
         currentLocation: 'KMIA',
         nextDutyStart: '2025-01-02T14:00:00',
-        
+
         medicalCertificate: {
           type: 'Class 2',
           number: 'FAA555666777',
           issueDate: '2024-05-20',
           expiryDate: '2025-05-20'
         },
-        
+
         flightReview: {
           lastCompleted: '2024-01-10',
           expiryDate: '2025-01-10',
           instructor: 'Training Supervisor Lopez',
           aircraftType: 'G650 Cabin Systems'
         },
-        
+
         instrumentProficiency: {
           lastCompleted: 'N/A',
           expiryDate: 'N/A',
           approach: 'N/A',
           instructor: 'N/A'
         },
-        
+
         typeRatings: [],
-        
+
         recurrentTraining: {
           lastCompleted: '2024-09-05',
           expiryDate: '2025-09-05',
           trainingCenter: 'Corporate Aviation Training',
           completedModules: ['Safety Procedures', 'Emergency Equipment', 'Customer Service']
         },
-        
+
         lineChecks: [
           {
             date: '2024-05-14',
@@ -540,7 +540,7 @@ export default function CrewManagement() {
     const calculateCrewTravelStats = (): CrewTravelStats[] => {
       return mockCrewMembers.map(crew => {
         const crewRecords = mockTravelRecords.filter(record => record.crewId === crew.id);
-        
+
         const totalTrips = crewRecords.length;
         const totalNightsAway = crewRecords.reduce((sum, record) => sum + record.totalNightsAway, 0);
         const internationalTrips = crewRecords.filter(r => r.tripType === 'international' || r.tripType === 'multi-country').length;
@@ -548,7 +548,7 @@ export default function CrewManagement() {
 
         // Calculate country visits
         const countryVisitsMap = new Map<string, { visits: number; nights: number; lastVisit: string }>();
-        
+
         crewRecords.forEach(record => {
           record.destinations.forEach(dest => {
             const existing = countryVisitsMap.get(dest.country);
@@ -576,7 +576,7 @@ export default function CrewManagement() {
           averageStayLength: stats.visits > 0 ? stats.nights / stats.visits : 0
         }));
 
-        const mostVisitedCountry = countryVisits.reduce((max, country) => 
+        const mostVisitedCountry = countryVisits.reduce((max, country) =>
           country.visits > (max?.visits || 0) ? country : max, countryVisits[0])?.country || 'None';
 
         const currentYear = new Date().getFullYear();
@@ -622,7 +622,7 @@ export default function CrewManagement() {
       const calculateStats = (): CrewTravelStats[] => {
         return crewMembers.map(crew => {
           const crewRecords = travelRecords.filter(record => record.crewId === crew.id);
-          
+
           const totalTrips = crewRecords.length;
           const totalNightsAway = crewRecords.reduce((sum, record) => sum + record.totalNightsAway, 0);
           const internationalTrips = crewRecords.filter(r => r.tripType === 'international' || r.tripType === 'multi-country').length;
@@ -630,7 +630,7 @@ export default function CrewManagement() {
 
           // Calculate country visits
           const countryVisitsMap = new Map<string, { visits: number; nights: number; lastVisit: string }>();
-          
+
           crewRecords.forEach(record => {
             record.destinations.forEach(dest => {
               const existing = countryVisitsMap.get(dest.country);
@@ -658,8 +658,8 @@ export default function CrewManagement() {
             averageStayLength: stats.visits > 0 ? stats.nights / stats.visits : 0
           }));
 
-          const mostVisitedCountry = countryVisits.length > 0 ? 
-            countryVisits.reduce((max, country) => 
+          const mostVisitedCountry = countryVisits.length > 0 ?
+            countryVisits.reduce((max, country) =>
               country.visits > (max?.visits || 0) ? country : max, countryVisits[0])?.country || 'None' : 'None';
 
           const currentYear = new Date().getFullYear();
@@ -695,7 +695,7 @@ export default function CrewManagement() {
           };
         });
       };
-      
+
       setCrewTravelStats(calculateStats());
     }
   }, [crewMembers, travelRecords]);
@@ -745,11 +745,11 @@ export default function CrewManagement() {
 
   const getCurrencyStatus = (expiryDate: string) => {
     if (expiryDate === 'N/A') return { status: 'n/a', days: 0, color: 'gray' };
-    
+
     const today = new Date();
     const expiry = new Date(expiryDate);
     const daysRemaining = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 3600 * 24));
-    
+
     if (daysRemaining < 0) return { status: 'expired', days: daysRemaining, color: 'red' };
     if (daysRemaining <= 30) return { status: 'expiring', days: daysRemaining, color: 'orange' };
     if (daysRemaining <= 90) return { status: 'due-soon', days: daysRemaining, color: 'yellow' };
@@ -757,8 +757,8 @@ export default function CrewManagement() {
   };
 
   const acknowledgeAlert = (alertId: string) => {
-    setAlerts(prev => 
-      prev.map(alert => 
+    setAlerts(prev =>
+      prev.map(alert =>
         alert.id === alertId ? { ...alert, acknowledged: true } : alert
       )
     );
@@ -774,7 +774,7 @@ export default function CrewManagement() {
   const filteredCrewMembers = crewMembers.filter(crew => {
     const matchesRole = filterRole === 'all' || crew.role === filterRole;
     const matchesSearch = crew.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         crew.employeeId.toLowerCase().includes(searchTerm.toLowerCase());
+      crew.employeeId.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesRole && matchesSearch;
   });
 
@@ -895,7 +895,7 @@ export default function CrewManagement() {
                   {crewMembers.slice(0, 5).map((crew) => {
                     const dutyProgress = getDutyProgress(crew.currentDutyHours, crew.maxDutyHours);
                     const fatigue = getFatigueLevel(crew.fatigueLevelCurrent);
-                    
+
                     return (
                       <div key={crew.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center space-x-3">
@@ -989,125 +989,204 @@ export default function CrewManagement() {
               <CardDescription>Monitor crew duty times and FAR compliance</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Crew Member</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Current Duty</TableHead>
-                    <TableHead>Rest Hours</TableHead>
-                    <TableHead>Fatigue Level</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCrewMembers.map((crew) => {
-                    const dutyProgress = getDutyProgress(crew.currentDutyHours, crew.maxDutyHours);
-                    const fatigue = getFatigueLevel(crew.fatigueLevelCurrent);
-                    
-                    return (
-                      <TableRow key={crew.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{crew.name}</p>
-                            <p className="text-sm text-muted-foreground">{crew.employeeId} • {crew.currentLocation}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{crew.role.replace('-', ' ')}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span>{formatDuration(crew.currentDutyHours)}</span>
-                              <span>{formatDuration(crew.maxDutyHours)}</span>
+              <div className="hidden lg:block rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Crew Member</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Current Duty</TableHead>
+                      <TableHead>Rest Hours</TableHead>
+                      <TableHead>Fatigue Level</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCrewMembers.map((crew) => {
+                      const dutyProgress = getDutyProgress(crew.currentDutyHours, crew.maxDutyHours);
+                      const fatigue = getFatigueLevel(crew.fatigueLevelCurrent);
+
+                      return (
+                        <TableRow key={crew.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{crew.name}</p>
+                              <p className="text-sm text-muted-foreground">{crew.employeeId} • {crew.currentLocation}</p>
                             </div>
-                            <Progress 
-                              value={dutyProgress} 
-                              className={`h-2 ${dutyProgress > 80 ? 'bg-red-100' : dutyProgress > 60 ? 'bg-yellow-100' : 'bg-green-100'}`}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <span className={crew.restHours < crew.minRestHours ? 'text-red-600' : 'text-green-600'}>
-                              {formatDuration(crew.restHours)}
-                            </span>
-                            <span className="text-muted-foreground"> / {formatDuration(crew.minRestHours)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <div className={`w-3 h-3 rounded-full ${fatigue.color}`}></div>
-                            <span className="text-sm">{fatigue.text}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(crew.status)}</TableCell>
-                        <TableCell>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" onClick={() => setSelectedCrew(crew)}>
-                                View Details
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
-                              <DialogHeader>
-                                <DialogTitle>{crew.name} - Duty & Compliance Details</DialogTitle>
-                                <DialogDescription>Employee ID: {crew.employeeId}</DialogDescription>
-                              </DialogHeader>
-                              {selectedCrew && (
-                                <div className="space-y-6">
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <Label>Current Duty Hours</Label>
-                                      <p className="text-lg font-semibold">{formatDuration(selectedCrew.currentDutyHours)}</p>
-                                    </div>
-                                    <div>
-                                      <Label>Maximum Duty Hours</Label>
-                                      <p className="text-lg">{formatDuration(selectedCrew.maxDutyHours)}</p>
-                                    </div>
-                                    <div>
-                                      <Label>Rest Hours</Label>
-                                      <p className="text-lg">{formatDuration(selectedCrew.restHours)}</p>
-                                    </div>
-                                    <div>
-                                      <Label>Minimum Rest Required</Label>
-                                      <p className="text-lg">{formatDuration(selectedCrew.minRestHours)}</p>
-                                    </div>
-                                  </div>
-                                  
-                                  <div>
-                                    <Label>Fatigue Assessment</Label>
-                                    <div className="mt-2 space-y-2">
-                                      <div className="flex justify-between text-sm">
-                                        <span>Start of Duty: {selectedCrew.fatigueLevelStart}/10</span>
-                                        <span>Current: {selectedCrew.fatigueLevelCurrent}/10</span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{crew.role.replace('-', ' ')}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span>{formatDuration(crew.currentDutyHours)}</span>
+                                <span>{formatDuration(crew.maxDutyHours)}</span>
+                              </div>
+                              <Progress
+                                value={dutyProgress}
+                                className={`h-2 ${dutyProgress > 80 ? 'bg-red-100' : dutyProgress > 60 ? 'bg-yellow-100' : 'bg-green-100'}`}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <span className={crew.restHours < crew.minRestHours ? 'text-red-600' : 'text-green-600'}>
+                                {formatDuration(crew.restHours)}
+                              </span>
+                              <span className="text-muted-foreground"> / {formatDuration(crew.minRestHours)}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <div className={`w-3 h-3 rounded-full ${fatigue.color}`}></div>
+                              <span className="text-sm">{fatigue.text}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(crew.status)}</TableCell>
+                          <TableCell>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" onClick={() => setSelectedCrew(crew)}>
+                                  View Details
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-3xl">
+                                <DialogHeader>
+                                  <DialogTitle>{crew.name} - Duty & Compliance Details</DialogTitle>
+                                  <DialogDescription>Employee ID: {crew.employeeId}</DialogDescription>
+                                </DialogHeader>
+                                {selectedCrew && (
+                                  <div className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <Label>Current Duty Hours</Label>
+                                        <p className="text-lg font-semibold">{formatDuration(selectedCrew.currentDutyHours)}</p>
                                       </div>
-                                      <Progress value={selectedCrew.fatigueLevelCurrent * 10} className="h-2" />
+                                      <div>
+                                        <Label>Maximum Duty Hours</Label>
+                                        <p className="text-lg">{formatDuration(selectedCrew.maxDutyHours)}</p>
+                                      </div>
+                                      <div>
+                                        <Label>Rest Hours</Label>
+                                        <p className="text-lg">{formatDuration(selectedCrew.restHours)}</p>
+                                      </div>
+                                      <div>
+                                        <Label>Minimum Rest Required</Label>
+                                        <p className="text-lg">{formatDuration(selectedCrew.minRestHours)}</p>
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <Label>Fatigue Assessment</Label>
+                                      <div className="mt-2 space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                          <span>Start of Duty: {selectedCrew.fatigueLevelStart}/10</span>
+                                          <span>Current: {selectedCrew.fatigueLevelCurrent}/10</span>
+                                        </div>
+                                        <Progress value={selectedCrew.fatigueLevelCurrent * 10} className="h-2" />
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <Label>Next Duty Period</Label>
+                                      <p className="text-lg">{selectedCrew.nextDutyStart ? new Date(selectedCrew.nextDutyStart).toLocaleString() : 'Not scheduled'}</p>
+                                    </div>
+
+                                    <div className="flex space-x-2 pt-4">
+                                      <Button>Update Duty Status</Button>
+                                      <Button variant="outline">Schedule Rest</Button>
+                                      <Button variant="outline">View History</Button>
                                     </div>
                                   </div>
+                                )}
+                              </DialogContent>
+                            </Dialog>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
 
-                                  <div>
-                                    <Label>Next Duty Period</Label>
-                                    <p className="text-lg">{selectedCrew.nextDutyStart ? new Date(selectedCrew.nextDutyStart).toLocaleString() : 'Not scheduled'}</p>
-                                  </div>
+              {/* Mobile Card List View */}
+              <div className="lg:hidden space-y-4">
+                {filteredCrewMembers.map((crew) => {
+                  const dutyProgress = getDutyProgress(crew.currentDutyHours, crew.maxDutyHours);
+                  const fatigue = getFatigueLevel(crew.fatigueLevelCurrent);
 
-                                  <div className="flex space-x-2 pt-4">
-                                    <Button>Update Duty Status</Button>
-                                    <Button variant="outline">Schedule Rest</Button>
-                                    <Button variant="outline">View History</Button>
-                                  </div>
+                  return (
+                    <div key={crew.id} className="border rounded-lg p-4 space-y-4 bg-card">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold">{crew.name}</h3>
+                          <p className="text-sm text-muted-foreground">{crew.role.replace('-', ' ')}</p>
+                        </div>
+                        {getStatusBadge(crew.status)}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground block text-xs">Duty Hours</span>
+                          <span className="font-medium">{formatDuration(crew.currentDutyHours)} / {formatDuration(crew.maxDutyHours)}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-xs">Rest Hours</span>
+                          <span className={crew.restHours < crew.minRestHours ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+                            {formatDuration(crew.restHours)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Duty Limits</span>
+                          <span>{Math.round(dutyProgress)}%</span>
+                        </div>
+                        <Progress value={dutyProgress} className={`h-1.5 ${dutyProgress > 80 ? 'bg-red-100' : dutyProgress > 60 ? 'bg-yellow-100' : 'bg-green-100'}`} />
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-muted-foreground">Fatigue:</span>
+                          <div className={`w-2 h-2 rounded-full ${fatigue.color}`}></div>
+                          <span className="text-sm font-medium">{fatigue.text}</span>
+                        </div>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => setSelectedCrew(crew)}>
+                              Details
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-3xl">
+                            <DialogHeader>
+                              <DialogTitle>{crew.name}</DialogTitle>
+                            </DialogHeader>
+                            <div className="p-4">
+                              <p>Mobile Detail View Placeholder - Same details as desktop</p>
+                              {/* Reuse the detailed view logic here if creating a separate component, but for now just show basic placeholder or clone the logic if strictly necessary. 
+                                            Since I can't clone nice internal logic easily without huge duplication, I'll rely on the desktop dialog which is responsive enough (DialogContent is decently responsive).
+                                        */}
+                              <div className="grid grid-cols-1 gap-4 mt-4">
+                                <div>
+                                  <Label>Current Duty</Label>
+                                  <div className="text-lg">{formatDuration(crew.currentDutyHours)}</div>
                                 </div>
-                              )}
-                            </DialogContent>
-                          </Dialog>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                                <div>
+                                  <Label>Location</Label>
+                                  <div className="text-lg">{crew.currentLocation}</div>
+                                </div>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -1333,51 +1412,115 @@ export default function CrewManagement() {
               <CardDescription>Current and upcoming crew assignments for G650 operations</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Flight</TableHead>
-                    <TableHead>Aircraft</TableHead>
-                    <TableHead>Route</TableHead>
-                    <TableHead>Departure</TableHead>
-                    <TableHead>Duty Period</TableHead>
-                    <TableHead>Captain</TableHead>
-                    <TableHead>First Officer</TableHead>
-                    <TableHead>Flight Attendants</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {flightAssignments.map((flight) => (
-                    <TableRow key={flight.id}>
-                      <TableCell className="font-medium">{flight.flightNumber}</TableCell>
-                      <TableCell>{flight.aircraft}</TableCell>
-                      <TableCell>{flight.departure} → {flight.arrival}</TableCell>
-                      <TableCell>
-                        {new Date(flight.departureTime).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <p>{new Date(flight.dutyStart).toLocaleTimeString()}</p>
-                          <p className="text-muted-foreground">to {new Date(flight.dutyEnd).toLocaleTimeString()}</p>
+              <div className="hidden lg:block rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Flight</TableHead>
+                      <TableHead>Aircraft</TableHead>
+                      <TableHead>Route</TableHead>
+                      <TableHead>Departure</TableHead>
+                      <TableHead>Duty Period</TableHead>
+                      <TableHead>Captain</TableHead>
+                      <TableHead>First Officer</TableHead>
+                      <TableHead>Flight Attendants</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {flightAssignments.map((flight) => (
+                      <TableRow key={flight.id}>
+                        <TableCell className="font-medium">{flight.flightNumber}</TableCell>
+                        <TableCell>{flight.aircraft}</TableCell>
+                        <TableCell>{flight.departure} → {flight.arrival}</TableCell>
+                        <TableCell>
+                          {new Date(flight.departureTime).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <p>{new Date(flight.dutyStart).toLocaleTimeString()}</p>
+                            <p className="text-muted-foreground">to {new Date(flight.dutyEnd).toLocaleTimeString()}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{flight.captain}</TableCell>
+                        <TableCell>{flight.firstOfficer}</TableCell>
+                        <TableCell>
+                          {flight.flightAttendants.map((fa, index) => (
+                            <div key={index} className="text-sm">{fa}</div>
+                          ))}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={flight.status === 'active' ? 'default' : 'secondary'}>
+                            {flight.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Flight Assignments View */}
+              <div className="lg:hidden space-y-4">
+                {flightAssignments.map((flight) => (
+                  <Card key={flight.id} className="overflow-hidden">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-bold text-lg">{flight.flightNumber}</h3>
+                          <div className="text-sm text-muted-foreground">{flight.aircraft}</div>
                         </div>
-                      </TableCell>
-                      <TableCell>{flight.captain}</TableCell>
-                      <TableCell>{flight.firstOfficer}</TableCell>
-                      <TableCell>
-                        {flight.flightAttendants.map((fa, index) => (
-                          <div key={index} className="text-sm">{fa}</div>
-                        ))}
-                      </TableCell>
-                      <TableCell>
                         <Badge variant={flight.status === 'active' ? 'default' : 'secondary'}>
                           {flight.status}
                         </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-xs text-muted-foreground block">Route</span>
+                          <span className="font-medium">{flight.departure} → {flight.arrival}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-muted-foreground block">Departure</span>
+                          <span className="font-medium">{new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-muted/30 p-2 rounded text-xs space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Duty Start:</span>
+                          <span>{new Date(flight.dutyStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Duty End:</span>
+                          <span>{new Date(flight.dutyEnd).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-sm space-y-1 pt-2 border-t text-xs">
+                        <div className="grid grid-cols-[80px_1fr] items-center">
+                          <span className="text-muted-foreground">Captain:</span>
+                          <span className="truncate font-medium">{flight.captain}</span>
+                        </div>
+                        <div className="grid grid-cols-[80px_1fr] items-center">
+                          <span className="text-muted-foreground">First Officer:</span>
+                          <span className="truncate font-medium">{flight.firstOfficer}</span>
+                        </div>
+                        {flight.flightAttendants.length > 0 && (
+                          <div className="grid grid-cols-[80px_1fr] items-start">
+                            <span className="text-muted-foreground pt-0.5">Cabin:</span>
+                            <div>
+                              {flight.flightAttendants.map((fa, i) => (
+                                <div key={i} className="truncate">{fa}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -1391,20 +1534,18 @@ export default function CrewManagement() {
             <CardContent>
               <div className="space-y-4">
                 {alerts.map((alert) => (
-                  <div 
-                    key={alert.id} 
-                    className={`p-4 border rounded-lg ${
-                      alert.acknowledged ? 'bg-gray-50 border-gray-200' : 'bg-white border-orange-200'
-                    }`}
+                  <div
+                    key={alert.id}
+                    className={`p-4 border rounded-lg ${alert.acknowledged ? 'bg-gray-50 border-gray-200' : 'bg-white border-orange-200'
+                      }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
-                          <AlertTriangle className={`h-4 w-4 ${
-                            alert.severity === 'critical' ? 'text-red-500' : 
-                            alert.severity === 'high' ? 'text-orange-500' : 
-                            'text-yellow-500'
-                          }`} />
+                          <AlertTriangle className={`h-4 w-4 ${alert.severity === 'critical' ? 'text-red-500' :
+                            alert.severity === 'high' ? 'text-orange-500' :
+                              'text-yellow-500'
+                            }`} />
                           <span className="font-medium">{alert.crewName}</span>
                           {getSeverityBadge(alert.severity)}
                           <Badge variant="outline" className="text-xs">
@@ -1424,8 +1565,8 @@ export default function CrewManagement() {
                       </div>
                       <div className="flex space-x-2">
                         {!alert.acknowledged && (
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
                             onClick={() => acknowledgeAlert(alert.id)}
                           >
@@ -1491,7 +1632,7 @@ export default function CrewManagement() {
                   {crewTravelStats.map((crew) => {
                     const maxNights = crewTravelStats.length > 0 ? Math.max(...crewTravelStats.map(c => c.currentYear.nightsAway)) : 0;
                     const percentage = maxNights > 0 ? (crew.currentYear.nightsAway / maxNights) * 100 : 0;
-                    
+
                     return (
                       <div key={crew.crewId} className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -1521,7 +1662,7 @@ export default function CrewManagement() {
                   {(() => {
                     // Aggregate country visits across all crew
                     const countryTotals = new Map<string, { visits: number; nights: number; crewCount: number }>();
-                    
+
                     crewTravelStats.forEach(crew => {
                       crew.countryVisits.forEach(country => {
                         const existing = countryTotals.get(country.country);
@@ -1586,9 +1727,9 @@ export default function CrewManagement() {
                 <TableBody>
                   {crewTravelStats.map((crew) => {
                     const avgNightsAllCrew = crewTravelStats.length > 0 ? crewTravelStats.reduce((sum, c) => sum + c.currentYear.nightsAway, 0) / crewTravelStats.length : 0;
-                    const balanceStatus = crew.currentYear.nightsAway > avgNightsAllCrew * 1.2 ? 'high' : 
-                                        crew.currentYear.nightsAway < avgNightsAllCrew * 0.8 ? 'low' : 'balanced';
-                    
+                    const balanceStatus = crew.currentYear.nightsAway > avgNightsAllCrew * 1.2 ? 'high' :
+                      crew.currentYear.nightsAway < avgNightsAllCrew * 0.8 ? 'low' : 'balanced';
+
                     return (
                       <TableRow key={crew.crewId}>
                         <TableCell>
@@ -1638,11 +1779,11 @@ export default function CrewManagement() {
                         <TableCell>
                           <Badge className={
                             balanceStatus === 'high' ? 'bg-red-100 text-red-800' :
-                            balanceStatus === 'low' ? 'bg-blue-100 text-blue-800' :
-                            'bg-green-100 text-green-800'
+                              balanceStatus === 'low' ? 'bg-blue-100 text-blue-800' :
+                                'bg-green-100 text-green-800'
                           }>
                             {balanceStatus === 'high' ? 'Above Average' :
-                             balanceStatus === 'low' ? 'Below Average' : 'Balanced'}
+                              balanceStatus === 'low' ? 'Below Average' : 'Balanced'}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -1807,20 +1948,18 @@ export default function CrewManagement() {
             <CardContent>
               <div className="space-y-4">
                 {alerts.map((alert) => (
-                  <div 
-                    key={alert.id} 
-                    className={`p-4 border rounded-lg ${
-                      alert.acknowledged ? 'bg-gray-50 border-gray-200' : 'bg-white border-orange-200'
-                    }`}
+                  <div
+                    key={alert.id}
+                    className={`p-4 border rounded-lg ${alert.acknowledged ? 'bg-gray-50 border-gray-200' : 'bg-white border-orange-200'
+                      }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
-                          <AlertTriangle className={`h-4 w-4 ${
-                            alert.severity === 'critical' ? 'text-red-500' : 
-                            alert.severity === 'high' ? 'text-orange-500' : 
-                            'text-yellow-500'
-                          }`} />
+                          <AlertTriangle className={`h-4 w-4 ${alert.severity === 'critical' ? 'text-red-500' :
+                            alert.severity === 'high' ? 'text-orange-500' :
+                              'text-yellow-500'
+                            }`} />
                           <span className="font-medium">{alert.crewName}</span>
                           {getSeverityBadge(alert.severity)}
                           <Badge variant="outline" className="text-xs">
@@ -1840,8 +1979,8 @@ export default function CrewManagement() {
                       </div>
                       <div className="flex space-x-2">
                         {!alert.acknowledged && (
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
                             onClick={() => acknowledgeAlert(alert.id)}
                           >
@@ -1993,7 +2132,7 @@ export default function CrewManagement() {
                   {crewTravelStats.map((crew, index) => {
                     const maxNights = Math.max(...crewTravelStats.map(c => c.currentYear.nightsAway));
                     const percentage = maxNights > 0 ? (crew.currentYear.nightsAway / maxNights) * 100 : 0;
-                    
+
                     return (
                       <div key={crew.crewId} className="space-y-2">
                         <div className="flex justify-between items-center">
@@ -2001,9 +2140,9 @@ export default function CrewManagement() {
                           <div className="flex items-center space-x-2">
                             <span className="text-sm">{crew.currentYear.nightsAway} nights</span>
                             <Badge variant={
-                              percentage > 80 ? "destructive" : 
-                              percentage > 60 ? "default" : 
-                              "secondary"
+                              percentage > 80 ? "destructive" :
+                                percentage > 60 ? "default" :
+                                  "secondary"
                             }>
                               {Math.round(percentage)}%
                             </Badge>
@@ -2068,11 +2207,10 @@ export default function CrewManagement() {
                       const Icon = rec.icon;
                       return (
                         <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg">
-                          <Icon className={`h-5 w-5 mt-0.5 ${
-                            rec.type === 'warning' ? 'text-orange-500' :
+                          <Icon className={`h-5 w-5 mt-0.5 ${rec.type === 'warning' ? 'text-orange-500' :
                             rec.type === 'success' ? 'text-green-500' :
-                            'text-blue-500'
-                          }`} />
+                              'text-blue-500'
+                            }`} />
                           <div className="flex-1">
                             <p className="text-sm">{rec.message}</p>
                             <Badge variant="outline" className="mt-1 text-xs">

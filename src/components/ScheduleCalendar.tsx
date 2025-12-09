@@ -59,13 +59,13 @@ export default function ScheduleCalendar() {
   const getEventsForDate = (date: Date) => {
     const dateKey = formatDateKey(date);
     let events = scheduleData[dateKey as keyof typeof scheduleData] || [];
-    
+
     // Filter by schedule view (full fleet vs my schedule)
     // In production, this would query MyAirOps API with appropriate filters
     if (scheduleView === 'my') {
       events = events.filter(event => event.assignedCrew?.includes(currentUser));
     }
-    
+
     // Filter by event type
     if (filterBy === 'all') return events;
     return events.filter(event => event.type === filterBy);
@@ -100,9 +100,8 @@ export default function ScheduleCalendar() {
       days.push(
         <div
           key={day}
-          className={`h-24 border border-border p-1 cursor-pointer hover:bg-accent ${
-            isToday ? 'bg-primary/5' : ''
-          } ${isSelected ? 'bg-primary/10 border-primary' : ''}`}
+          className={`h-24 border border-border p-1 cursor-pointer hover:bg-accent ${isToday ? 'bg-primary/5' : ''
+            } ${isSelected ? 'bg-primary/10 border-primary' : ''}`}
           onClick={() => setSelectedDate(date)}
         >
           <div className={`text-sm font-medium mb-1 ${isToday ? 'text-primary' : ''}`}>
@@ -128,22 +127,64 @@ export default function ScheduleCalendar() {
     return days;
   };
 
+  const renderMobileView = () => {
+    const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+    const days = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentYear, currentMonth, day);
+      const events = getEventsForDate(date);
+
+      // In mobile view, maybe only show days with events or today?
+      // For now, let's show all days but in a compact list
+
+      if (events.length === 0 && date.toDateString() !== new Date().toDateString()) continue;
+
+      days.push(
+        <div key={day} className="flex gap-4 p-4 border rounded-lg mb-3 bg-card" onClick={() => setSelectedDate(date)}>
+          <div className="flex flex-col items-center justify-center w-12 h-12 bg-muted rounded-full shrink-0">
+            <span className="text-xs font-bold uppercase">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+            <span className="text-lg font-bold">{day}</span>
+          </div>
+          <div className="flex-1 space-y-2">
+            {events.length > 0 ? (
+              events.map((event, idx) => (
+                <div key={idx} className={`text-sm p-2 rounded ${getEventTypeColor(event.type)}`}>
+                  <div className="font-semibold">{event.id} - {event.route}</div>
+                  <div className="text-xs opacity-75">{event.time} | {event.aircraft}</div>
+                </div>
+              ))
+            ) : (
+              <div className="text-sm text-muted-foreground italic flex items-center h-full">No scheduled flights</div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (days.length === 0) {
+      return <div className="text-center py-8 text-muted-foreground">No events scheduled for this month.</div>;
+    }
+
+    return <div className="space-y-2">{days}</div>;
+  };
+
   const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : [];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
         <div>
-          <h1>Flight Schedule</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Flight Schedule</h1>
           <p className="text-muted-foreground">View and manage flight assignments and inflight schedules</p>
         </div>
-        
-        <div className="flex gap-2">
-          <Button variant="outline">
+
+        <div className="flex gap-2 w-full lg:w-auto">
+          <Button variant="outline" className="flex-1 lg:flex-none">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button>
+          <Button className="flex-1 lg:flex-none">
             <Plus className="w-4 h-4 mr-2" />
             Add Flight
           </Button>
@@ -154,27 +195,26 @@ export default function ScheduleCalendar() {
         {/* Calendar */}
         <div className="lg:col-span-3">
           <Card>
-            <CardHeader>
+            <CardHeader className="p-4 md:p-6">
               <div className="flex flex-col gap-4">
                 {/* MyAirOps Schedule Toggle */}
-                <div className="flex items-center justify-between pb-3 border-b">
+                <div className="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b gap-3">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                       MyAirOps Integration
                     </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {scheduleView === 'full' ? 'Showing all fleet flights' : 'Showing your assigned flights'}
-                    </span>
                   </div>
-                  <Tabs value={scheduleView} onValueChange={(value) => setScheduleView(value as 'full' | 'my')}>
-                    <TabsList>
+                  <Tabs value={scheduleView} onValueChange={(value) => setScheduleView(value as 'full' | 'my')} className="w-full md:w-auto">
+                    <TabsList className="grid w-full grid-cols-2 md:w-auto">
                       <TabsTrigger value="full" className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
-                        Full Fleet
+                        <span className="hidden md:inline">Full Fleet</span>
+                        <span className="md:hidden">Fleet</span>
                       </TabsTrigger>
                       <TabsTrigger value="my" className="flex items-center gap-1">
                         <User className="w-4 h-4" />
-                        My Schedule
+                        <span className="hidden md:inline">My Schedule</span>
+                        <span className="md:hidden">Me</span>
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
@@ -182,60 +222,72 @@ export default function ScheduleCalendar() {
 
                 {/* Month Navigation */}
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                     <CalendarIcon className="w-5 h-5" />
                     {monthNames[currentMonth]} {currentYear}
                   </CardTitle>
-                
+
                   <div className="flex items-center gap-2">
                     <Select value={filterBy} onValueChange={setFilterBy}>
-                      <SelectTrigger className="w-40">
-                        <Filter className="w-4 h-4 mr-2" />
+                      <SelectTrigger className="w-[110px] md:w-40">
+                        <Filter className="w-4 h-4 mr-2 hidden md:inline" />
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Events</SelectItem>
+                        <SelectItem value="all">All</SelectItem>
                         <SelectItem value="scheduled">Flights</SelectItem>
                         <SelectItem value="maintenance">Maintenance</SelectItem>
                         <SelectItem value="training">Training</SelectItem>
                       </SelectContent>
                     </Select>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const newDate = new Date(currentYear, currentMonth - 1, 1);
-                        setSelectedDate(newDate);
-                      }}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const newDate = new Date(currentYear, currentMonth + 1, 1);
-                        setSelectedDate(newDate);
-                      }}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+
+                    <div className="flex items-center rounded-md border text-card-foreground">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => {
+                          const newDate = new Date(currentYear, currentMonth - 1, 1);
+                          setSelectedDate(newDate);
+                        }}
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <div className="w-px h-6 bg-border" />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => {
+                          const newDate = new Date(currentYear, currentMonth + 1, 1);
+                          setSelectedDate(newDate);
+                        }}
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 gap-0 mb-4">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground border border-border">
-                    {day}
-                  </div>
-                ))}
+            <CardContent className="p-4 md:p-6">
+              {/* Desktop View */}
+              <div className="hidden lg:block">
+                <div className="grid grid-cols-7 gap-0 mb-4">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground border border-border">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-0">
+                  {renderCalendarView()}
+                </div>
               </div>
-              <div className="grid grid-cols-7 gap-0">
-                {renderCalendarView()}
+
+              {/* Mobile/Tablet View (List) */}
+              <div className="lg:hidden">
+                {renderMobileView()}
               </div>
             </CardContent>
           </Card>
@@ -246,10 +298,10 @@ export default function ScheduleCalendar() {
           <Card className="sticky top-20">
             <CardHeader>
               <CardTitle>
-                {selectedDate ? selectedDate.toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  month: 'long', 
-                  day: 'numeric' 
+                {selectedDate ? selectedDate.toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric'
                 }) : 'Select Date'}
               </CardTitle>
             </CardHeader>

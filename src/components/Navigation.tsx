@@ -7,16 +7,16 @@ import BreadcrumbNav from './BreadcrumbNav';
 import CommandPalette from './CommandPalette';
 import FloatingActionButton from './FloatingActionButton';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { 
-  Home, 
-  Plane, 
-  ClipboardList, 
-  Wrench, 
-  Users, 
-  Settings, 
-  Calendar, 
-  FileText, 
+import { TouchBackend } from 'react-dnd-touch-backend';
+import {
+  Home,
+  Plane,
+  ClipboardList,
+  Wrench,
+  Users,
+  Settings,
+  Calendar,
+  FileText,
   BarChart3,
   LogOut,
   Building2,
@@ -67,13 +67,13 @@ interface NavigationGroup {
 }
 
 // Draggable navigation group component
-const DraggableNavigationGroup = ({ 
-  group, 
-  index, 
-  moveGroup, 
+const DraggableNavigationGroup = ({
+  group,
+  index,
+  moveGroup,
   isCustomizing,
-  location 
-}: { 
+  location
+}: {
   group: NavigationGroup;
   index: number;
   moveGroup: (dragIndex: number, hoverIndex: number) => void;
@@ -120,12 +120,12 @@ const DraggableNavigationGroup = ({
             {group.items.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
-              
+
               return (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={isActive}>
+                  <SidebarMenuButton asChild isActive={isActive} className={`hover:bg-white/5 hover:text-white ${isActive ? 'bg-[var(--color-pg-blue)] text-white font-medium shadow-[0_0_15px_-3px_var(--color-pg-blue)]' : 'text-slate-400'}`}>
                     <Link to={item.href} className="flex items-center gap-3">
-                      <Icon className="w-4 h-4" />
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-[var(--color-pg-cyan)]' : 'text-slate-500 group-hover:text-white'}`} />
                       <span>{item.name}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -152,7 +152,7 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
         event.preventDefault();
         setIsCommandPaletteOpen(true);
       }
-      
+
       // Escape to close command palette
       if (event.key === 'Escape' && isCommandPaletteOpen) {
         setIsCommandPaletteOpen(false);
@@ -297,7 +297,7 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
   // Initialize navigation groups with custom order if available
   const [navigationGroups, setNavigationGroups] = useState<NavigationGroup[]>(() => {
     const customOrder = loadCustomOrder();
-    
+
     // Filter groups and items based on user role
     const filtered = defaultNavigationGroups.map(group => ({
       ...group,
@@ -313,17 +313,17 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
           orderedGroups.push(group);
         }
       });
-      
+
       // Add any new groups that weren't in the saved order
       filtered.forEach(group => {
         if (!orderedGroups.find(g => g.label === group.label)) {
           orderedGroups.push(group);
         }
       });
-      
+
       return orderedGroups;
     }
-    
+
     return filtered;
   });
 
@@ -354,7 +354,7 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
       ...group,
       items: group.items.filter(item => item.roles.includes(userRole))
     })).filter(group => group.items.length > 0);
-    
+
     setNavigationGroups(filtered);
     localStorage.removeItem(`nav-order-${userRole}`);
   };
@@ -385,58 +385,54 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <Sidebar className="border-r">
-          <SidebarHeader className="border-b p-4 aviation-gradient-subtle">
-            <div className="flex items-center gap-2">
-              <Plane className="w-6 h-6 text-primary" />
+        <Sidebar className="border-r border-white/5 bg-slate-900/60 backdrop-blur-xl">
+          <SidebarHeader className="border-b border-white/5 p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--color-pg-blue)] to-[var(--color-pg-blue-vivid)] flex items-center justify-center shadow-[0_0_15px_var(--color-pg-blue)]">
+                <Plane className="w-5 h-5 text-white" />
+              </div>
               <div>
-                <h2 className="font-semibold text-primary">Flight Ops</h2>
-                <p className="text-sm text-primary/70">{getRoleDisplayName(userRole)}</p>
+                <h2 className="font-bold text-white tracking-wide text-sm">P&G Flight Ops</h2>
+                <p className="text-[10px] text-[var(--color-pg-cyan)] uppercase tracking-wider">{getRoleDisplayName(userRole)}</p>
               </div>
             </div>
-            
+
             {/* Customization controls */}
-            <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+            <div className="mt-3 pt-3 border-t border-white/5 space-y-2">
               <Button
-                variant={isCustomizing ? "default" : "outline"}
+                variant={isCustomizing ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setIsCustomizing(!isCustomizing)}
-                className="w-full text-xs"
+                className="w-full text-xs justify-start text-slate-400 hover:text-white hover:bg-white/5"
               >
                 <Settings className="w-3 h-3 mr-2" />
                 {isCustomizing ? 'Done Customizing' : 'Customize Order'}
               </Button>
-              
+
               {isCustomizing && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={resetToDefault}
-                  className="w-full text-xs"
+                  className="w-full text-xs justify-start text-slate-400 hover:text-white hover:bg-white/5"
                 >
                   <RotateCcw className="w-3 h-3 mr-2" />
                   Reset to Default
                 </Button>
               )}
             </div>
-            
-            <div className="mt-3 pt-3 border-t border-border/50">
-              <p className="text-xs text-muted-foreground/70 text-center">
-                Created by <span className="font-medium text-muted-foreground">Bryan Dunlop</span>
-              </p>
-            </div>
           </SidebarHeader>
-          
-          <SidebarContent className="px-2">
+
+          <SidebarContent className="px-2 py-2">
             {isCustomizing && (
-              <div className="p-3 mb-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <p className="text-xs text-blue-900 dark:text-blue-100 flex items-center gap-2">
+              <div className="p-3 mb-2 bg-[var(--color-pg-blue)]/20 border border-[var(--color-pg-blue)]/30 rounded-lg">
+                <p className="text-xs text-[var(--color-pg-cyan)] flex items-center gap-2">
                   <GripVertical className="w-3 h-3" />
                   Drag sections to reorder
                 </p>
               </div>
             )}
-            
+
             {navigationGroups.map((group, index) => (
               <DraggableNavigationGroup
                 key={group.label}
@@ -450,61 +446,49 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
           </SidebarContent>
         </Sidebar>
 
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
           {/* Enhanced top bar with notification center */}
-          <header className="border-b bg-background px-6 py-4 flex items-center justify-between">
+          <header className="sticky top-0 z-40 border-b border-white/5 bg-slate-900/40 backdrop-blur-2xl px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Large, prominent sidebar toggle */}
               <div className="flex items-center gap-3">
-                <SidebarTrigger className="h-12 w-12 p-0 border-2 border-primary/20 bg-background hover:bg-primary/5 hover:border-primary/40 transition-all duration-200 shadow-sm rounded-lg">
-                  <PanelLeft className="h-6 w-6 text-primary" />
+                <SidebarTrigger className="h-10 w-10 p-0 border border-white/10 bg-white/5 hover:bg-white/10 text-white transition-all duration-200 shadow-sm rounded-lg">
+                  <PanelLeft className="h-5 w-5" />
                   <span className="sr-only">Toggle navigation menu</span>
                 </SidebarTrigger>
               </div>
-              
-              {/* Company branding and user role info */}
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-px bg-border"></div>
-                <Plane className="w-5 h-5 text-primary" />
-                <div>
-                  <h1 className="font-semibold text-lg">Flight Operations</h1>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <User className="w-3 h-3" />
-                    <span>{getRoleDisplayName(userRole)}</span>
-                    <span>•</span>
-                    <span>{getCurrentTime()}</span>
-                    <span>•</span>
-                    <span className="text-xs">by Bryan Dunlop</span>
-                  </div>
-                </div>
+
+              {/* Breadcrumbs / Page Title Placeholder */}
+              <div className="hidden md:flex items-center gap-2 text-sm text-slate-400">
+                <span className="text-white font-medium">{getRoleDisplayName(userRole)} Workspace</span>
               </div>
             </div>
-            
+
             {/* Right side with notifications and logout */}
             <div className="flex items-center gap-3">
               {/* Global Search Button */}
               <Button
-                variant="outline"
+                variant="ghost"
                 onClick={() => setIsCommandPaletteOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 min-w-48 justify-start text-muted-foreground hover:border-accent/50 hover:text-accent aviation-focus"
+                className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all w-64 justify-between group"
               >
-                <Search className="w-4 h-4" />
-                <span>Search...</span>
-                <div className="ml-auto flex gap-1">
-                  <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 flex">
-                    <span className="text-xs">⌘</span>K
-                  </kbd>
+                <div className="flex items-center gap-2">
+                  <Search className="w-4 h-4 group-hover:text-[var(--color-pg-cyan)] transition-colors" />
+                  <span>Search system...</span>
                 </div>
+                <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-slate-500">
+                  <span className="text-xs">⌘</span>K
+                </kbd>
               </Button>
-              
+
               {/* Notification Center */}
               <NotificationCenter userRole={userRole} />
-              
+
               {/* Logout button */}
               <Button
                 variant="ghost"
                 onClick={onLogout}
-                className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors rounded-full"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>
@@ -518,14 +502,14 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
             {children}
           </main>
         </div>
-        
+
         {/* Command Palette */}
-        <CommandPalette 
-          isOpen={isCommandPaletteOpen} 
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
           onClose={() => setIsCommandPaletteOpen(false)}
           userRole={userRole}
         />
-        
+
         {/* Floating Action Button */}
         <FloatingActionButton userRole={userRole} />
       </div>
@@ -535,7 +519,7 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
 
 export default function Navigation(props: NavigationProps) {
   return (
-    <DndProvider backend={HTML5Backend}>
+    <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
       <NavigationContent {...props} />
     </DndProvider>
   );

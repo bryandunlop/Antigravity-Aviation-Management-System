@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Checkbox } from './ui/checkbox';
 import { Separator } from './ui/separator';
 import { Progress } from './ui/progress';
-import { 
+import {
   ArrowLeft,
   Shield,
   AlertTriangle,
@@ -18,53 +18,49 @@ import {
   XCircle,
   Send,
   Save,
-  User,
-  Users,
   Mail,
-  Calendar,
   Clock,
   FileText,
   Target,
   PlayCircle,
   PauseCircle,
-  Archive,
   Plus,
   Trash2,
-  Eye,
-  Edit
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-// Workflow stages
-const WORKFLOW_STAGES = {
-  SUBMITTED: 'Submitted',
-  SM_INITIAL_REVIEW: 'Safety Manager Initial Review',
-  ASSIGNED_CORRECTIVE_ACTION: 'Assigned for Corrective Action',
-  SM_CA_REVIEW: 'SM Review of Corrective Action',
-  LINE_MANAGER_APPROVAL: 'Line Manager Approval',
-  EXEC_APPROVAL: 'Accountable Executive Approval',
-  IMPLEMENTATION_ASSIGNMENT: 'Implementation Assignment',
-  IMPLEMENTATION_IN_PROGRESS: 'Implementation in Progress',
-  PUBLISHED: 'Published',
-  EFFECTIVENESS_REVIEW: 'Review for Effectiveness',
-  CLOSED: 'Closed'
-};
+import { useHazards, WORKFLOW_STAGES } from '../contexts/HazardContext';
 
 export default function HazardWorkflow() {
   const { id } = useParams();
-  
-  // State for workflow data
+  const { getHazardById, updateHazard } = useHazards();
+
+  const hazard = id ? getHazardById(id) : null;
+
+  // State for workflow data - initialized from hazard data if available
   const [currentStage, setCurrentStage] = useState(WORKFLOW_STAGES.SM_INITIAL_REVIEW);
+
+  // Risk Analysis
   const [riskSeverity, setRiskSeverity] = useState(3);
   const [riskLikelihood, setRiskLikelihood] = useState(3);
+
+  // RCA
   const [whyAnalysis, setWhyAnalysis] = useState(['', '', '', '', '']);
   const [investigationNotes, setInvestigationNotes] = useState('');
-  const [paceAssignments, setPaceAssignments] = useState({
+
+  // PACE
+  const [paceAssignments, setPaceAssignments] = useState<{
+    processOwner: { type: string; value: string; customName?: string; customEmail?: string };
+    approver: { type: string; value: string; customName?: string; customEmail?: string };
+    contributors: Array<{ type: string; value: string; customName?: string; customEmail?: string }>;
+    executers: Array<{ type: string; value: string; customName?: string; customEmail?: string }>;
+  }>({
     processOwner: { type: 'user', value: '', customName: '', customEmail: '' },
     approver: { type: 'user', value: '', customName: '', customEmail: '' },
     contributors: [],
     executers: []
   });
+
+  // Corrective Action
   const [correctiveActionComponents, setCorrectiveActionComponents] = useState({
     communications: false,
     training: false,
@@ -72,15 +68,51 @@ export default function HazardWorkflow() {
     equipment: false
   });
   const [correctiveActionDetails, setCorrectiveActionDetails] = useState('');
+
+  // Reviews & Notes (Note: These might need to be added to Hazard interface if persistence is required)
   const [smReviewNotes, setSmReviewNotes] = useState('');
-  const [nimblNotes, setNimblNotes] = useState('');
   const [implementationNotes, setImplementationNotes] = useState('');
   const [publicationContent, setPublicationContent] = useState('');
   const [effectivenessReviewNotes, setEffectivenessReviewNotes] = useState('');
+
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState('');
 
-  // Mock users list
+  // Hydrate state from hazard when loaded
+  useEffect(() => {
+    if (hazard) {
+      setCurrentStage(hazard.workflowStage || WORKFLOW_STAGES.SM_INITIAL_REVIEW);
+      if (hazard.riskAnalysis) {
+        setRiskSeverity(hazard.riskAnalysis.severity);
+        setRiskLikelihood(hazard.riskAnalysis.likelihood);
+      }
+      if (hazard.whyAnalysis && hazard.whyAnalysis.length > 0) setWhyAnalysis(hazard.whyAnalysis);
+      if (hazard.investigationNotes) setInvestigationNotes(hazard.investigationNotes);
+      if (hazard.paceAssignments) setPaceAssignments(hazard.paceAssignments);
+      if (hazard.correctiveActionComponents) setCorrectiveActionComponents(hazard.correctiveActionComponents);
+      if (hazard.correctiveActionDetails) setCorrectiveActionDetails(hazard.correctiveActionDetails);
+
+      // Notes usually wouldn't be overwritten if simpler implementation, but for full persistence:
+      // We would map these to fields in Hazard if they existed. For now, they will reset on reload unless we add them.
+      // Assuming for this demo, we might lose "notes" fields if not adding to context, 
+      // but essential workflow data is mapped.
+    }
+  }, [hazard]);
+
+  if (!hazard) {
+    return (
+      <div className="p-8 text-center text-red-600">
+        <AlertTriangle className="w-12 h-12 mx-auto mb-4" />
+        <h2 className="text-xl font-bold">Hazard Report Not Found</h2>
+        <p className="mb-4">The requested hazard report ID "{id}" could not be found.</p>
+        <Link to="/safety/manager-dashboard">
+          <Button>Return to Dashboard</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // Mock users list - same as before
   const users = [
     { id: '1', name: 'Mike Johnson', role: 'Chief Pilot', email: 'mike.johnson@gfo.com' },
     { id: '2', name: 'Sarah Wilson', role: 'Director of Maintenance', email: 'sarah.wilson@gfo.com' },
@@ -89,20 +121,6 @@ export default function HazardWorkflow() {
     { id: '5', name: 'David Brown', role: 'Facilities Manager', email: 'david.brown@gfo.com' },
     { id: '6', name: 'Emily Davis', role: 'Standards Manager', email: 'emily.davis@gfo.com' }
   ];
-
-  // Mock hazard data
-  const hazardData = {
-    id: id || 'HZ-001',
-    title: 'Runway Surface Contamination - LAX Runway 24L',
-    submittedBy: 'John Smith',
-    submitDate: '2024-02-06',
-    severity: 'Critical',
-    location: 'LAX - Runway 24L',
-    description: 'Standing water and oil contamination observed on runway 24L during pre-flight inspection. Surface conditions presented significant safety risk for takeoff and landing operations.',
-    immediateActions: 'Runway closed to traffic, maintenance notified, alternative runway procedures implemented',
-    potentialConsequences: 'Reduced braking effectiveness, potential aircraft damage or incident, risk to passenger safety',
-    riskFactors: ['Lack of Awareness', 'Lack of Communications', 'Normalization of Deviance']
-  };
 
   // Calculate risk level
   const calculateRiskLevel = (severity: number, likelihood: number) => {
@@ -116,6 +134,21 @@ export default function HazardWorkflow() {
   const riskLevel = calculateRiskLevel(riskSeverity, riskLikelihood);
   const riskScore = riskSeverity * riskLikelihood;
 
+  const saveChanges = () => {
+    if (!id) return;
+    updateHazard(id, {
+      workflowStage: currentStage,
+      riskAnalysis: { severity: riskSeverity, likelihood: riskLikelihood },
+      whyAnalysis,
+      investigationNotes,
+      paceAssignments,
+      correctiveActionComponents,
+      correctiveActionDetails,
+      // For demonstration, strictly mapped fields are saved. 
+      // Notes would require extending the Hazard interface.
+    });
+  };
+
   // Handle stage advancement
   const handleAdvanceStage = () => {
     const stages = Object.values(WORKFLOW_STAGES);
@@ -123,8 +156,22 @@ export default function HazardWorkflow() {
     if (currentIndex < stages.length - 1) {
       const nextStage = stages[currentIndex + 1];
       setCurrentStage(nextStage);
+
+      // Save all data including new stage
+      if (id) {
+        updateHazard(id, {
+          workflowStage: nextStage,
+          riskAnalysis: { severity: riskSeverity, likelihood: riskLikelihood },
+          whyAnalysis,
+          investigationNotes,
+          paceAssignments,
+          correctiveActionComponents,
+          correctiveActionDetails,
+        });
+      }
+
       toast.success(`Advanced to: ${nextStage}`);
-      
+
       // Simulate email notification
       setShowEmailModal(true);
       setEmailRecipients(getEmailRecipientsForStage(nextStage));
@@ -147,12 +194,14 @@ export default function HazardWorkflow() {
   };
 
   const handleSave = () => {
+    saveChanges();
     toast.success('Progress saved successfully');
   };
 
   const handlePublish = () => {
+    saveChanges();
+    if (id) updateHazard(id, { workflowStage: WORKFLOW_STAGES.PUBLISHED }); // Example logic, or keep current stage
     toast.success('Hazard report published to all employees');
-    // Can publish at any stage
   };
 
   const addPaceContributor = () => {
@@ -202,13 +251,13 @@ export default function HazardWorkflow() {
           <div className="flex items-center gap-3">
             <h1 className="flex items-center gap-2">
               <Shield className="w-6 h-6" />
-              Hazard Workflow: {hazardData.id}
+              Hazard Workflow: {hazard.id}
             </h1>
             <Badge className="bg-red-100 text-red-800 border-red-200">
-              {hazardData.severity}
+              {hazard.severity}
             </Badge>
           </div>
-          <p className="text-muted-foreground">{hazardData.title}</p>
+          <p className="text-muted-foreground">{hazard.title}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleSave}>
@@ -258,44 +307,44 @@ export default function HazardWorkflow() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-muted-foreground">Submitted By</Label>
-              <p>{hazardData.submittedBy}</p>
+              <Label className="text-muted-foreground">Reported By</Label>
+              <p>{hazard.reportedBy}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground">Submit Date</Label>
-              <p>{hazardData.submitDate}</p>
+              <Label className="text-muted-foreground">Date</Label>
+              <p>{hazard.reportedDate}</p>
             </div>
             <div>
               <Label className="text-muted-foreground">Location</Label>
-              <p>{hazardData.location}</p>
+              <p>{hazard.location}</p>
             </div>
             <div>
               <Label className="text-muted-foreground">Severity</Label>
-              <Badge className="bg-red-100 text-red-800 border-red-200">{hazardData.severity}</Badge>
+              <Badge className="bg-red-100 text-red-800 border-red-200">{hazard.severity}</Badge>
             </div>
           </div>
-          
+
           <Separator />
-          
+
           <div>
             <Label className="text-muted-foreground">Description</Label>
-            <p className="mt-1">{hazardData.description}</p>
+            <p className="mt-1">{hazard.description}</p>
           </div>
-          
+
           <div>
             <Label className="text-muted-foreground">Immediate Actions Taken</Label>
-            <p className="mt-1">{hazardData.immediateActions}</p>
+            <p className="mt-1">{hazard.immediateActions}</p>
           </div>
-          
+
           <div>
             <Label className="text-muted-foreground">Potential Consequences</Label>
-            <p className="mt-1">{hazardData.potentialConsequences}</p>
+            <p className="mt-1">{hazard.potentialConsequences}</p>
           </div>
 
           <div>
             <Label className="text-muted-foreground">Risk Factors Identified</Label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {hazardData.riskFactors.map((factor, index) => (
+              {(hazard.riskFactors || []).map((factor, index) => (
                 <Badge key={index} variant="outline">{factor}</Badge>
               ))}
             </div>
@@ -372,13 +421,12 @@ export default function HazardWorkflow() {
                       if (score >= 20) bgColor = 'bg-red-600';
                       else if (score >= 12) bgColor = 'bg-orange-500';
                       else if (score >= 6) bgColor = 'bg-yellow-400';
-                      
+
                       return (
                         <div
                           key={`${s}-${l}`}
-                          className={`${bgColor} p-4 text-center font-medium rounded ${
-                            isSelected ? 'ring-4 ring-blue-600 scale-110' : ''
-                          } transition-all cursor-pointer hover:opacity-80`}
+                          className={`${bgColor} p-4 text-center font-medium rounded ${isSelected ? 'ring-4 ring-blue-600 scale-110' : ''
+                            } transition-all cursor-pointer hover:opacity-80`}
                           onClick={() => {
                             setRiskSeverity(s);
                             setRiskLikelihood(l);

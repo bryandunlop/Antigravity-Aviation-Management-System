@@ -12,12 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 import { toast } from 'sonner';
-import { 
-  Users, 
-  Plus, 
-  Search, 
-  Edit, 
-  Eye, 
+import {
+  Users,
+  Plus,
+  Search,
+  Edit,
+  Eye,
   Star,
   Calendar,
   Phone,
@@ -34,8 +34,14 @@ import {
   Cake,
   Wine,
   Save,
-  X
+  X,
+  FileText,
+  Trash2
 } from 'lucide-react';
+
+interface PassengerDatabaseProps {
+  userRole?: string;
+}
 
 interface Passenger {
   id: string;
@@ -44,13 +50,8 @@ interface Passenger {
     email?: string;
     phone?: string;
     address?: string;
-    vipLevel: 'Standard' | 'VIP' | 'VVIP';
   };
-  classification: {
-    category: 'BOD' | 'C-Suite' | 'Authorized User' | 'Standard';
-    role?: string; // For C-Suite and Role category
-    notes?: string; // For Standard category or additional notes
-  };
+  role: string;
   allergies: Array<{
     allergen: string;
     severity: 'Critical' | 'Moderate' | 'Mild';
@@ -68,19 +69,18 @@ interface Passenger {
     specialRequests?: string;
   };
   additionalNotes: string;
+  flightAttendantNotes?: string;
 }
 
-export default function PassengerDatabase() {
+export default function PassengerDatabase({ userRole = 'pilot' }: PassengerDatabaseProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [vipFilter, setVipFilter] = useState('all');
   const [allergyFilter, setAllergyFilter] = useState('all');
-  const [classificationFilter, setClassificationFilter] = useState('all');
   const [selectedPassenger, setSelectedPassenger] = useState<Passenger | null>(null);
   const [isAddingPassenger, setIsAddingPassenger] = useState(false);
   const [isEditingPassenger, setIsEditingPassenger] = useState(false);
   const [isPassengerDetailOpen, setIsPassengerDetailOpen] = useState(false);
 
-  // Mock passengers data with new structure
+  // Mock passengers data
   const [passengers, setPassengers] = useState<Passenger[]>([
     {
       id: 'PAX001',
@@ -88,25 +88,21 @@ export default function PassengerDatabase() {
       info: {
         email: 'robert.johnson@email.com',
         phone: '+1 (555) 123-4567',
-        address: '123 Park Avenue, New York, NY 10021',
-        vipLevel: 'VVIP'
+        address: '123 Park Avenue, New York, NY 10021'
       },
-      classification: {
-        category: 'BOD',
-        notes: 'Board Chairman - highest priority passenger'
-      },
+      role: 'Board Chairman',
       allergies: [
-        { 
-          allergen: 'Shellfish', 
-          severity: 'Critical', 
-          reaction: 'Anaphylaxis', 
-          medication: 'EpiPen - seat pocket' 
+        {
+          allergen: 'Shellfish',
+          severity: 'Critical',
+          reaction: 'Anaphylaxis',
+          medication: 'EpiPen - seat pocket'
         },
-        { 
-          allergen: 'Tree nuts', 
-          severity: 'Moderate', 
-          reaction: 'Hives, swelling', 
-          medication: 'Benadryl' 
+        {
+          allergen: 'Tree nuts',
+          severity: 'Moderate',
+          reaction: 'Hives, swelling',
+          medication: 'Benadryl'
         }
       ],
       birthday: '1975-03-15',
@@ -119,21 +115,17 @@ export default function PassengerDatabase() {
         lighting: 'Dimmed lighting preferred',
         specialRequests: 'Fresh orchids for cabin, Evian water only, prefers to board last for privacy'
       },
-      additionalNotes: 'High-profile business executive. Values privacy and premium service. Always travels with personal security. Enjoys discussing business and golf. Prefers traditional preparations and formal service style.'
+      additionalNotes: 'High-profile business executive. Values privacy and premium service. Always travels with personal security. Enjoys discussing business and golf. Prefers traditional preparations and formal service style.',
+      flightAttendantNotes: 'Prefers to be addressed as "Mr. Chairman". Very particular about napkin folding.'
     },
     {
       id: 'PAX002',
       name: 'Sarah Chen',
       info: {
         email: 'sarah.chen@techcorp.com',
-        phone: '+1 (555) 987-6543',
-        vipLevel: 'VIP'
+        phone: '+1 (555) 987-6543'
       },
-      classification: {
-        category: 'C-Suite',
-        role: 'CEO',
-        notes: 'Chief Executive Officer of TechCorp'
-      },
+      role: 'CEO',
       allergies: [],
       birthday: '1985-08-22',
       beverage: ['Green tea', 'Kombucha', 'Sparkling water', 'Oat milk latte'],
@@ -152,19 +144,15 @@ export default function PassengerDatabase() {
       name: 'Michael Rodriguez',
       info: {
         email: 'mrodriguez@email.com',
-        phone: '+1 (555) 456-7890',
-        vipLevel: 'Standard'
+        phone: '+1 (555) 456-7890'
       },
-      classification: {
-        category: 'Authorized User',
-        notes: 'Authorized by company for business travel'
-      },
+      role: 'Authorized User',
       allergies: [
-        { 
-          allergen: 'Peanuts', 
-          severity: 'Critical', 
-          reaction: 'Severe breathing difficulty', 
-          medication: 'EpiPen required immediately' 
+        {
+          allergen: 'Peanuts',
+          severity: 'Critical',
+          reaction: 'Severe breathing difficulty',
+          medication: 'EpiPen required immediately'
         }
       ],
       birthday: '1990-12-03',
@@ -184,25 +172,21 @@ export default function PassengerDatabase() {
       name: 'Emily Watson',
       info: {
         email: 'emily.watson@email.com',
-        phone: '+1 (555) 234-5678',
-        vipLevel: 'VIP'
+        phone: '+1 (555) 234-5678'
       },
-      classification: {
-        category: 'Standard',
-        notes: 'Frequent business traveler - lactose intolerant'
-      },
+      role: 'Standard',
       allergies: [
-        { 
-          allergen: 'Bee stings', 
-          severity: 'Moderate', 
-          reaction: 'Localized swelling', 
-          medication: 'Antihistamine' 
+        {
+          allergen: 'Bee stings',
+          severity: 'Moderate',
+          reaction: 'Localized swelling',
+          medication: 'Antihistamine'
         },
-        { 
-          allergen: 'Latex', 
-          severity: 'Mild', 
-          reaction: 'Skin irritation', 
-          medication: 'Avoid latex gloves' 
+        {
+          allergen: 'Latex',
+          severity: 'Mild',
+          reaction: 'Skin irritation',
+          medication: 'Avoid latex gloves'
         }
       ],
       birthday: '1978-06-10',
@@ -219,43 +203,34 @@ export default function PassengerDatabase() {
     }
   ]);
 
-  // Filter passengers based on search and filters
+  const matchesAllergy = (passenger: Passenger) => {
+    if (allergyFilter === 'all') return true;
+    if (allergyFilter === 'none') return passenger.allergies.length === 0;
+    if (allergyFilter === 'has') return passenger.allergies.length > 0;
+    if (allergyFilter === 'critical') return passenger.allergies.some(a => a.severity === 'Critical');
+    return true;
+  };
+
+  const matchesRole = true;
+
   const filteredPassengers = passengers.filter(passenger => {
-    const matchesSearch = 
+    const matchesSearch =
       passenger.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       passenger.info.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       passenger.food.some(item => item.toLowerCase().includes(searchTerm.toLowerCase())) ||
       passenger.beverage.some(item => item.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesVip = vipFilter === 'all' || passenger.info.vipLevel === vipFilter;
-    
-    const matchesAllergy = allergyFilter === 'all' || 
-      (allergyFilter === 'any' && passenger.allergies.length > 0) ||
-      (allergyFilter === 'none' && passenger.allergies.length === 0);
 
-    const matchesClassification = classificationFilter === 'all' || passenger.classification.category === classificationFilter;
-    
-    return matchesSearch && matchesVip && matchesAllergy && matchesClassification;
+    return matchesSearch && matchesAllergy(passenger);
   });
 
-  // Helper functions
-  const getVipColor = (level: string) => {
-    switch (level) {
-      case 'VVIP': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'VIP': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Standard': return 'bg-gray-100 text-gray-800 border-gray-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  const getRoleColor = (role: string) => {
+    if (['CEO', 'CFO', 'President', 'Sector CEO', 'Board Chairman', 'Board Member', 'Board of Directors'].includes(role)) {
+      return 'bg-purple-100 text-purple-800 border-purple-200';
     }
-  };
-
-  const getClassificationColor = (category: string) => {
-    switch (category) {
-      case 'BOD': return 'bg-red-100 text-red-800 border-red-200';
-      case 'C-Suite': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Authorized User': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Standard': return 'bg-gray-100 text-gray-800 border-gray-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    if (role === 'Standard') {
+      return 'bg-gray-100 text-gray-800 border-gray-200';
     }
+    return 'bg-blue-100 text-blue-800 border-blue-200';
   };
 
   const getAllergySeverityColor = (severity: string) => {
@@ -278,20 +253,10 @@ export default function PassengerDatabase() {
 
   const hasAllergies = (passenger: Passenger) => passenger.allergies.length > 0;
 
-  // New passenger form state
   const [newPassengerForm, setNewPassengerForm] = useState<Partial<Passenger>>({
     name: '',
-    info: {
-      email: '',
-      phone: '',
-      address: '',
-      vipLevel: 'Standard'
-    },
-    classification: {
-      category: 'Standard',
-      role: '',
-      notes: ''
-    },
+    info: { email: '', phone: '', address: '' },
+    role: 'Standard',
     allergies: [],
     birthday: '',
     beverage: [],
@@ -303,7 +268,8 @@ export default function PassengerDatabase() {
       lighting: '',
       specialRequests: ''
     },
-    additionalNotes: ''
+    additionalNotes: '',
+    flightAttendantNotes: ''
   });
 
   const handleAddPassenger = () => {
@@ -315,37 +281,40 @@ export default function PassengerDatabase() {
     const newPassenger: Passenger = {
       id: `PAX${String(passengers.length + 1).padStart(3, '0')}`,
       name: newPassengerForm.name!,
-      info: newPassengerForm.info!,
+      info: newPassengerForm.info || {},
+      role: newPassengerForm.role || 'Standard',
       allergies: newPassengerForm.allergies || [],
       birthday: newPassengerForm.birthday || '',
       beverage: newPassengerForm.beverage || [],
       food: newPassengerForm.food || [],
-      passengerComfort: newPassengerForm.passengerComfort!,
-      additionalNotes: newPassengerForm.additionalNotes || ''
+      passengerComfort: newPassengerForm.passengerComfort || {},
+      additionalNotes: newPassengerForm.additionalNotes || '',
+      flightAttendantNotes: newPassengerForm.flightAttendantNotes || ''
     };
 
     setPassengers([...passengers, newPassenger]);
     setNewPassengerForm({
       name: '',
-      info: { email: '', phone: '', address: '', vipLevel: 'Standard' },
-      classification: { category: 'Standard', role: '', notes: '' },
+      info: { email: '', phone: '', address: '' },
+      role: 'Standard',
       allergies: [],
       birthday: '',
       beverage: [],
       food: [],
       passengerComfort: { temperature: '70°F', seating: '', tvPreference: '', lighting: '', specialRequests: '' },
-      additionalNotes: ''
+      additionalNotes: '',
+      flightAttendantNotes: ''
     });
     setIsAddingPassenger(false);
-    
+
     toast.success('Passenger Added', {
       description: `${newPassenger.name} has been added to the database.`
     });
   };
 
-  const PassengerForm = ({ passenger, onClose, isEditing = false }: { 
-    passenger?: Passenger; 
-    onClose: () => void; 
+  const PassengerForm = ({ passenger, onClose, isEditing = false }: {
+    passenger?: Passenger;
+    onClose: () => void;
     isEditing?: boolean;
   }) => {
     const [formData, setFormData] = useState<Partial<Passenger>>(
@@ -355,7 +324,7 @@ export default function PassengerDatabase() {
     const handleSave = () => {
       if (isEditing && passenger) {
         // Update existing passenger
-        const updatedPassengers = passengers.map(p => 
+        const updatedPassengers = passengers.map(p =>
           p.id === passenger.id ? { ...formData as Passenger, id: passenger.id } : p
         );
         setPassengers(updatedPassengers);
@@ -377,173 +346,220 @@ export default function PassengerDatabase() {
       });
     };
 
-    const updateAllergyField = (value: string) => {
-      const allergies = value.split('\n')
-        .filter(line => line.trim())
-        .map(line => {
-          const [allergen, severity, reaction, medication] = line.split('|');
-          return {
-            allergen: allergen?.trim() || '',
-            severity: (severity?.trim() as 'Critical' | 'Moderate' | 'Mild') || 'Mild',
-            reaction: reaction?.trim(),
-            medication: medication?.trim()
-          };
-        });
-      setFormData({ ...formData, allergies });
+    const addAllergy = () => {
+      setFormData({
+        ...formData,
+        allergies: [
+          ...(formData.allergies || []),
+          { allergen: '', severity: 'Mild', reaction: '', medication: '' }
+        ]
+      });
+    };
+
+    const removeAllergy = (index: number) => {
+      const newAllergies = [...(formData.allergies || [])];
+      newAllergies.splice(index, 1);
+      setFormData({ ...formData, allergies: newAllergies });
+    };
+
+    const updateAllergyItem = (index: number, field: keyof Passenger['allergies'][0], value: string) => {
+      const newAllergies = [...(formData.allergies || [])];
+      newAllergies[index] = { ...newAllergies[index], [field]: value };
+      setFormData({ ...formData, allergies: newAllergies });
     };
 
     return (
-      <div className="space-y-6 max-h-[80vh] overflow-y-auto">
+      <div className="space-y-6">
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 h-auto">
             <TabsTrigger value="basic">Name & Info</TabsTrigger>
             <TabsTrigger value="allergies">Allergies</TabsTrigger>
             <TabsTrigger value="birthday">Birthday</TabsTrigger>
             <TabsTrigger value="beverage">Beverage</TabsTrigger>
             <TabsTrigger value="food">Food</TabsTrigger>
             <TabsTrigger value="comfort">Comfort</TabsTrigger>
+            {userRole === 'inflight' && (
+              <TabsTrigger value="fa-notes" className="text-blue-600">FA Notes</TabsTrigger>
+            )}
           </TabsList>
-          
+
           <TabsContent value="basic" className="space-y-4">
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  placeholder="Enter passenger full name"
-                  value={formData.name || ''}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="name">Full Name *</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="passenger@email.com"
-                    value={formData.info?.email || ''}
-                    onChange={(e) => setFormData({
-                      ...formData, 
-                      info: {...formData.info, email: e.target.value}
-                    })}
+                    id="name"
+                    placeholder="Enter passenger full name"
+                    value={formData.name || ''}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="passenger@email.com"
+                      value={formData.info?.email || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        info: { ...formData.info, email: e.target.value }
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      placeholder="+1 (555) 000-0000"
+                      value={formData.info?.phone || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        info: { ...formData.info, phone: e.target.value }
+                      })}
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="address">Address</Label>
                   <Input
-                    id="phone"
-                    placeholder="+1 (555) 000-0000"
-                    value={formData.info?.phone || ''}
+                    id="address"
+                    placeholder="Full address"
+                    value={formData.info?.address || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      info: {...formData.info, phone: e.target.value}
+                      ...formData,
+                      info: { ...formData.info, address: e.target.value }
                     })}
                   />
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  placeholder="Full address"
-                  value={formData.info?.address || ''}
-                  onChange={(e) => setFormData({
-                    ...formData, 
-                    info: {...formData.info, address: e.target.value}
-                  })}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="vipLevel">VIP Level</Label>
-                  <Select 
-                    value={formData.info?.vipLevel || 'Standard'} 
-                    onValueChange={(value: 'Standard' | 'VIP' | 'VVIP') => setFormData({
-                      ...formData, 
-                      info: {...formData.info, vipLevel: value}
-                    })}
+              <div className="space-y-4">
+                <Label>Passenger Role</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <Select
+                    value={['CEO', 'CFO', 'Sector CEO', 'President', 'Board of Directors'].includes(formData.role || '') ? formData.role : 'Custom'}
+                    onValueChange={(value: string) => {
+                      if (value === 'Custom') {
+                        setFormData({ ...formData, role: formData.role === 'Standard' ? '' : formData.role || '' });
+                      } else {
+                        setFormData({ ...formData, role: value });
+                      }
+                    }}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select Role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Standard">Standard</SelectItem>
-                      <SelectItem value="VIP">VIP</SelectItem>
-                      <SelectItem value="VVIP">VVIP</SelectItem>
+                      <SelectItem value="CEO">CEO</SelectItem>
+                      <SelectItem value="CFO">CFO</SelectItem>
+                      <SelectItem value="Sector CEO">Sector CEO</SelectItem>
+                      <SelectItem value="President">President</SelectItem>
+                      <SelectItem value="Board of Directors">Board of Directors</SelectItem>
+                      <SelectItem value="Custom">Custom / Other</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                <div>
-                  <Label htmlFor="classification">Passenger Classification</Label>
-                  <Select 
-                    value={formData.classification?.category || 'Standard'} 
-                    onValueChange={(value: 'BOD' | 'C-Suite' | 'Authorized User' | 'Standard') => setFormData({
-                      ...formData, 
-                      classification: {...formData.classification, category: value}
-                    })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BOD">BOD</SelectItem>
-                      <SelectItem value="C-Suite">C-Suite</SelectItem>
-                      <SelectItem value="Authorized User">Authorized User</SelectItem>
-                      <SelectItem value="Standard">Standard</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
-              {formData.classification?.category === 'C-Suite' && (
-                <div>
-                  <Label htmlFor="role">Role/Title</Label>
-                  <Input
-                    id="role"
-                    placeholder="e.g., CEO, CFO, CTO"
-                    value={formData.classification?.role || ''}
-                    onChange={(e) => setFormData({
-                      ...formData, 
-                      classification: {...formData.classification, role: e.target.value}
-                    })}
-                  />
+                  {(!['CEO', 'CFO', 'Sector CEO', 'President', 'Board of Directors'].includes(formData.role || '') || formData.role === '') && (
+                    <Input
+                      placeholder="Enter custom role..."
+                      value={formData.role || ''}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    />
+                  )}
                 </div>
-              )}
-
-              <div>
-                <Label htmlFor="classificationNotes">Classification Notes</Label>
-                <Input
-                  id="classificationNotes"
-                  placeholder="Additional classification details or notes"
-                  value={formData.classification?.notes || ''}
-                  onChange={(e) => setFormData({
-                    ...formData, 
-                    classification: {...formData.classification, notes: e.target.value}
-                  })}
-                />
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="allergies" className="space-y-4">
-            <div>
-              <Label className="text-red-600 font-semibold flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4" />
-                Allergies (Critical Safety Information)
-              </Label>
-              <p className="text-sm text-muted-foreground mb-2">
-                List all known allergies with severity levels. This information is critical for flight safety.
-              </p>
-              <Textarea
-                placeholder="Format: Allergen|Severity|Reaction|Medication (one per line)&#10;Example: Peanuts|Critical|Anaphylaxis|EpiPen required"
-                rows={6}
-                value={formData.allergies?.map(a => `${a.allergen}|${a.severity}|${a.reaction || ''}|${a.medication || ''}`).join('\n') || ''}
-                onChange={(e) => updateAllergyField(e.target.value)}
-              />
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <Label className="text-red-600 font-semibold flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4" />
+                    Allergies (Critical Safety Information)
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    List all known allergies with severity levels.
+                  </p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addAllergy} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Add Allergy
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {formData.allergies?.map((allergy, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-start bg-red-50/50 p-3 rounded-md border border-red-100">
+                    <div className="col-span-3">
+                      <Label className="text-xs mb-1 block">Allergen</Label>
+                      <Input
+                        placeholder="e.g. Peanuts"
+                        value={allergy.allergen}
+                        onChange={(e) => updateAllergyItem(index, 'allergen', e.target.value)}
+                        className="bg-white"
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <Label className="text-xs mb-1 block">Severity</Label>
+                      <Select
+                        value={allergy.severity}
+                        onValueChange={(value: 'Critical' | 'Moderate' | 'Mild') => updateAllergyItem(index, 'severity', value)}
+                      >
+                        <SelectTrigger className="bg-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Critical">Critical</SelectItem>
+                          <SelectItem value="Moderate">Moderate</SelectItem>
+                          <SelectItem value="Mild">Mild</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-3">
+                      <Label className="text-xs mb-1 block">Reaction</Label>
+                      <Input
+                        placeholder="Reaction"
+                        value={allergy.reaction || ''}
+                        onChange={(e) => updateAllergyItem(index, 'reaction', e.target.value)}
+                        className="bg-white"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs mb-1 block">Medication</Label>
+                      <Input
+                        placeholder="Meds"
+                        value={allergy.medication || ''}
+                        onChange={(e) => updateAllergyItem(index, 'medication', e.target.value)}
+                        className="bg-white"
+                      />
+                    </div>
+                    <div className="col-span-1 pt-6 text-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeAllergy(index)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-100 h-8 w-8"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {(!formData.allergies || formData.allergies.length === 0) && (
+                  <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground">
+                    <p>No allergies recorded</p>
+                    <Button type="button" variant="link" onClick={addAllergy}>Add one now</Button>
+                  </div>
+                )}
+              </div>
             </div>
           </TabsContent>
 
@@ -557,7 +573,7 @@ export default function PassengerDatabase() {
                 id="birthday"
                 type="date"
                 value={formData.birthday || ''}
-                onChange={(e) => setFormData({...formData, birthday: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
               />
               <p className="text-sm text-muted-foreground">
                 Used for special celebrations and personalized service during flights.
@@ -609,7 +625,7 @@ export default function PassengerDatabase() {
                   placeholder="Personal preferences, behavioral notes, special instructions..."
                   rows={4}
                   value={formData.additionalNotes || ''}
-                  onChange={(e) => setFormData({...formData, additionalNotes: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
                 />
               </div>
 
@@ -620,8 +636,8 @@ export default function PassengerDatabase() {
                     placeholder="e.g., 72°F"
                     value={formData.passengerComfort?.temperature || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      passengerComfort: {...formData.passengerComfort, temperature: e.target.value}
+                      ...formData,
+                      passengerComfort: { ...formData.passengerComfort, temperature: e.target.value }
                     })}
                   />
                 </div>
@@ -631,8 +647,8 @@ export default function PassengerDatabase() {
                     placeholder="e.g., Window seat, aisle seat"
                     value={formData.passengerComfort?.seating || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      passengerComfort: {...formData.passengerComfort, seating: e.target.value}
+                      ...formData,
+                      passengerComfort: { ...formData.passengerComfort, seating: e.target.value }
                     })}
                   />
                 </div>
@@ -642,8 +658,8 @@ export default function PassengerDatabase() {
                     placeholder="e.g., Action movies, Comedy shows, Drama series"
                     value={formData.passengerComfort?.tvPreference || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      passengerComfort: {...formData.passengerComfort, tvPreference: e.target.value}
+                      ...formData,
+                      passengerComfort: { ...formData.passengerComfort, tvPreference: e.target.value }
                     })}
                   />
                 </div>
@@ -653,8 +669,8 @@ export default function PassengerDatabase() {
                     placeholder="e.g., Dimmed, Bright, Natural"
                     value={formData.passengerComfort?.lighting || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      passengerComfort: {...formData.passengerComfort, lighting: e.target.value}
+                      ...formData,
+                      passengerComfort: { ...formData.passengerComfort, lighting: e.target.value }
                     })}
                   />
                 </div>
@@ -667,13 +683,35 @@ export default function PassengerDatabase() {
                   rows={3}
                   value={formData.passengerComfort?.specialRequests || ''}
                   onChange={(e) => setFormData({
-                    ...formData, 
-                    passengerComfort: {...formData.passengerComfort, specialRequests: e.target.value}
+                    ...formData,
+                    passengerComfort: { ...formData.passengerComfort, specialRequests: e.target.value }
                   })}
                 />
               </div>
             </div>
           </TabsContent>
+
+          {userRole === 'inflight' && (
+            <TabsContent value="fa-notes" className="space-y-4">
+              <div>
+                <Label htmlFor="faNotes" className="flex items-center gap-2 text-blue-600 font-semibold">
+                  <FileText className="w-4 h-4" />
+                  Flight Attendant Private Notes
+                </Label>
+                <p className="text-sm text-muted-foreground mb-2">
+                  These notes are ONLY visible to Inflight Crew members. Use this for sensitive service preferences or behavioral notes.
+                </p>
+                <Textarea
+                  id="faNotes"
+                  placeholder="Enter private notes visible only to flight attendants..."
+                  rows={6}
+                  value={formData.flightAttendantNotes || ''}
+                  onChange={(e) => setFormData({ ...formData, flightAttendantNotes: e.target.value })}
+                  className="bg-blue-50 border-blue-200"
+                />
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
 
         <div className="flex gap-2 pt-4 border-t">
@@ -686,7 +724,7 @@ export default function PassengerDatabase() {
             Cancel
           </Button>
         </div>
-      </div>
+      </div >
     );
   };
 
@@ -710,7 +748,7 @@ export default function PassengerDatabase() {
               Add Passenger
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Passenger</DialogTitle>
               <DialogDescription>
@@ -741,9 +779,9 @@ export default function PassengerDatabase() {
             <div className="flex items-center gap-2">
               <Star className="w-4 h-4 text-red-600" />
               <div>
-                <p className="text-sm text-red-700 font-medium">BOD</p>
+                <p className="text-sm text-red-700 font-medium">Executives</p>
                 <p className="text-2xl font-bold text-red-700">
-                  {passengers.filter(p => p.classification.category === 'BOD').length}
+                  {passengers.filter(p => ['CEO', 'CFO', 'President', 'Sector CEO'].includes(p.role || '')).length}
                 </p>
               </div>
             </div>
@@ -755,9 +793,9 @@ export default function PassengerDatabase() {
             <div className="flex items-center gap-2">
               <Star className="w-4 h-4 text-purple-600" />
               <div>
-                <p className="text-sm text-purple-700 font-medium">C-Suite</p>
+                <p className="text-sm text-purple-700 font-medium">Custom Roles</p>
                 <p className="text-2xl font-bold text-purple-700">
-                  {passengers.filter(p => p.classification.category === 'C-Suite').length}
+                  {passengers.filter(p => !['CEO', 'CFO', 'President', 'Sector CEO', 'Standard'].includes(p.role || '')).length}
                 </p>
               </div>
             </div>
@@ -810,29 +848,8 @@ export default function PassengerDatabase() {
           />
         </div>
         <div className="flex gap-2">
-          <Select value={vipFilter} onValueChange={setVipFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="VIP Level" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Levels</SelectItem>
-              <SelectItem value="VVIP">VVIP</SelectItem>
-              <SelectItem value="VIP">VIP</SelectItem>
-              <SelectItem value="Standard">Standard</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={classificationFilter} onValueChange={setClassificationFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Classification" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Classifications</SelectItem>
-              <SelectItem value="BOD">BOD</SelectItem>
-              <SelectItem value="C-Suite">C-Suite</SelectItem>
-              <SelectItem value="Authorized User">Authorized User</SelectItem>
-              <SelectItem value="Standard">Standard</SelectItem>
-            </SelectContent>
-          </Select>
+
+
           <Select value={allergyFilter} onValueChange={setAllergyFilter}>
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Allergies" />
@@ -864,27 +881,21 @@ export default function PassengerDatabase() {
           </Card>
         ) : (
           filteredPassengers.map((passenger) => (
-            <Card 
+            <Card
               key={passenger.id}
-              className={`${
-                hasAllergies(passenger) 
-                  ? 'border-orange-300 border-2 bg-orange-50' 
-                  : ''
-              }`}
+              className={`${hasAllergies(passenger)
+                ? 'border-orange-300 border-2 bg-orange-50'
+                : ''
+                }`}
             >
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-medium text-lg">{passenger.name}</h3>
-                      <Badge className={getVipColor(passenger.info.vipLevel)}>
-                        {passenger.info.vipLevel}
-                      </Badge>
-                      <Badge className={getClassificationColor(passenger.classification.category)}>
-                        {passenger.classification.category}
-                        {passenger.classification.category === 'C-Suite' && passenger.classification.role && 
-                          `: ${passenger.classification.role}`
-                        }
+
+                      <Badge className={getRoleColor(passenger.role)}>
+                        {passenger.role}
                       </Badge>
                       {hasAllergies(passenger) && (
                         <Badge className="bg-orange-100 text-orange-800 border-orange-200 flex items-center gap-1">
@@ -893,7 +904,7 @@ export default function PassengerDatabase() {
                         </Badge>
                       )}
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                       {/* Contact Info */}
                       <div className="space-y-1">
@@ -906,8 +917,8 @@ export default function PassengerDatabase() {
                           <span>{passenger.info.phone || 'No phone'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
-                          <span className="font-medium">Classification:</span>
-                          <span>{passenger.classification.category}</span>
+                          <span className="font-medium">Role:</span>
+                          <span>{passenger.role}</span>
                         </div>
                       </div>
 
@@ -995,11 +1006,11 @@ export default function PassengerDatabase() {
                           <span className="font-medium">Notes</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {passenger.additionalNotes ? 
-                            (passenger.additionalNotes.length > 50 ? 
-                              passenger.additionalNotes.substring(0, 50) + '...' : 
+                          {passenger.additionalNotes ?
+                            (passenger.additionalNotes.length > 50 ?
+                              passenger.additionalNotes.substring(0, 50) + '...' :
                               passenger.additionalNotes
-                            ) : 
+                            ) :
                             'No additional notes'
                           }
                         </div>
@@ -1008,8 +1019,8 @@ export default function PassengerDatabase() {
                   </div>
 
                   <div className="flex gap-2 ml-4">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         setSelectedPassenger(passenger);
@@ -1018,8 +1029,8 @@ export default function PassengerDatabase() {
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         setSelectedPassenger(passenger);
@@ -1052,19 +1063,12 @@ export default function PassengerDatabase() {
                     <div>Email: {selectedPassenger.info.email || 'Not provided'}</div>
                     <div>Phone: {selectedPassenger.info.phone || 'Not provided'}</div>
                     <div>Address: {selectedPassenger.info.address || 'Not provided'}</div>
-                    <div>VIP Level: {selectedPassenger.info.vipLevel}</div>
-                    <div>Classification: {selectedPassenger.classification.category}
-                      {selectedPassenger.classification.category === 'C-Suite' && selectedPassenger.classification.role && 
-                        ` - ${selectedPassenger.classification.role}`
-                      }
-                    </div>
-                    {selectedPassenger.classification.notes && (
-                      <div>Classification Notes: {selectedPassenger.classification.notes}</div>
-                    )}
+
+                    <div>Role: {selectedPassenger.role}</div>
                     <div>Birthday: {selectedPassenger.birthday ? new Date(selectedPassenger.birthday).toLocaleDateString() : 'Not provided'}</div>
                   </div>
                 </div>
-                
+
                 <div>
                   <h4 className="font-medium mb-2">Allergies</h4>
                   {selectedPassenger.allergies.length > 0 ? (
@@ -1149,6 +1153,17 @@ export default function PassengerDatabase() {
               )}
             </div>
           )}
+
+          {userRole === 'inflight' && selectedPassenger && selectedPassenger.flightAttendantNotes && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+              <h4 className="font-medium mb-2 text-blue-800 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Flight Attendant Notes
+                <Badge variant="outline" className="ml-auto border-blue-200 text-blue-700 bg-white">Private</Badge>
+              </h4>
+              <p className="text-sm text-blue-900 whitespace-pre-wrap">{selectedPassenger.flightAttendantNotes}</p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -1162,9 +1177,9 @@ export default function PassengerDatabase() {
             </DialogDescription>
           </DialogHeader>
           {selectedPassenger && (
-            <PassengerForm 
-              passenger={selectedPassenger} 
-              onClose={() => setIsEditingPassenger(false)} 
+            <PassengerForm
+              passenger={selectedPassenger}
+              onClose={() => setIsEditingPassenger(false)}
               isEditing={true}
             />
           )}

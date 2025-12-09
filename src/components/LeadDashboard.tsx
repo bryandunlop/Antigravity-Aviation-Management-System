@@ -58,6 +58,12 @@ import {
 } from 'lucide-react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { MaintenanceTile } from './dashboard/MaintenanceTile';
+import { FuelTile } from './dashboard/FuelTile';
+import { NASTile } from './dashboard/NASTile';
+import { CrewTile } from './dashboard/CrewTile';
+import { PerformanceTile } from './dashboard/PerformanceTile';
+import { AlertsTile } from './dashboard/AlertsTile';
 
 // Draggable Tile Component
 interface DraggableTileProps {
@@ -71,14 +77,18 @@ interface DraggableTileProps {
 const DraggableTile: React.FC<DraggableTileProps> = ({ id, index, children, moveTile, isCustomizeMode }) => {
   const ref = React.useRef<HTMLDivElement>(null);
 
-  const [{ handlerId }, drop] = useDrop({
+  const [{ handlerId }, drop] = useDrop<
+    { index: number; id: string },
+    unknown,
+    { handlerId: string | symbol | null }
+  >({
     accept: 'tile',
     collect(monitor) {
       return {
         handlerId: monitor.getHandlerId(),
       };
     },
-    hover(item: { index: number }, monitor) {
+    hover(item, monitor) {
       if (!ref.current) {
         return;
       }
@@ -92,7 +102,7 @@ const DraggableTile: React.FC<DraggableTileProps> = ({ id, index, children, move
       const hoverBoundingRect = ref.current?.getBoundingClientRect();
       const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
       const clientOffset = monitor.getClientOffset();
-      const hoverClientY = clientOffset!.y - hoverBoundingRect.top;
+      const hoverClientY = (clientOffset as any).y - hoverBoundingRect.top;
 
       if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
         return;
@@ -125,7 +135,7 @@ const DraggableTile: React.FC<DraggableTileProps> = ({ id, index, children, move
     <div
       ref={ref}
       style={{ opacity }}
-      data-handler-id={handlerId}
+      data-handler-id={handlerId as string}
       className={`relative ${isCustomizeMode ? 'cursor-move' : ''}`}
     >
       {isCustomizeMode && (
@@ -748,259 +758,15 @@ export default function LeadDashboard() {
     }
   };
 
-  // Tile render functions
-  const renderMaintenanceTile = () => (
-    <Card className="border-l-4 border-l-orange-500">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Wrench className="w-4 h-4 text-orange-600" />
-          Maintenance Activity
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 gap-2 text-center">
-          <div className="p-2 bg-orange-50 rounded">
-            <p className="text-2xl font-bold text-orange-600">{liveOpsData.maintenance.workOrdersActive}</p>
-            <p className="text-xs text-muted-foreground">Active WOs</p>
-          </div>
-          <div className="p-2 bg-green-50 rounded">
-            <p className="text-2xl font-bold text-green-600">{liveOpsData.maintenance.techsOnDuty}</p>
-            <p className="text-xs text-muted-foreground">Techs On Duty</p>
-          </div>
-        </div>
-        {liveOpsData.maintenance.aogAircraft > 0 && (
-          <Alert className="border-red-500 bg-red-50 py-2">
-            <AlertCircle className="h-3 w-3 text-red-600" />
-            <AlertDescription className="text-xs text-red-800">
-              {liveOpsData.maintenance.aogAircraft} AOG Aircraft
-            </AlertDescription>
-          </Alert>
-        )}
-        <div className="space-y-1">
-          {liveOpsData.maintenance.activeWorkOrders.slice(0, 2).map((wo) => (
-            <div key={wo.id} className="text-xs p-2 bg-muted/50 rounded">
-              <div className="flex justify-between mb-1">
-                <span className="font-medium">{wo.aircraft}</span>
-                <span className="text-muted-foreground">{wo.progress}%</span>
-              </div>
-              <Progress value={wo.progress} className="h-1" />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const renderFuelTile = () => (
-    <Card className="border-l-4 border-l-yellow-500">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Fuel className="w-4 h-4 text-yellow-600" />
-          Fuel Farm Live
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="text-center p-3 bg-yellow-50 rounded-lg">
-          <p className="text-3xl font-bold text-yellow-600">
-            {((liveOpsData.fuelFarm.currentLevel / liveOpsData.fuelFarm.capacity) * 100).toFixed(1)}%
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {liveOpsData.fuelFarm.currentLevel.toLocaleString()} / {liveOpsData.fuelFarm.capacity.toLocaleString()} gal
-          </p>
-        </div>
-        <Progress
-          value={(liveOpsData.fuelFarm.currentLevel / liveOpsData.fuelFarm.capacity) * 100}
-          className="h-2"
-        />
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div>
-            <p className="text-muted-foreground">Consumption Rate</p>
-            <p className="font-medium flex items-center gap-1">
-              <TrendingDown className="w-3 h-3 text-red-500" />
-              {liveOpsData.fuelFarm.consumptionRate} gal/hr
-            </p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Time to 80%</p>
-            <p className="font-medium">{liveOpsData.fuelFarm.timeToReplenish.toFixed(1)} hrs</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const renderNASTile = () => (
-    <Card className="border-l-4 border-l-red-500">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-red-600" />
-          NAS & Weather Alerts
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid grid-cols-3 gap-1 text-center">
-          <div className="p-2 bg-red-50 rounded">
-            <p className="text-xl font-bold text-red-600">{liveOpsData.nasStatus.activeDelays}</p>
-            <p className="text-xs text-muted-foreground">Delays</p>
-          </div>
-          <div className="p-2 bg-orange-50 rounded">
-            <p className="text-xl font-bold text-orange-600">{liveOpsData.nasStatus.weatherAlerts}</p>
-            <p className="text-xs text-muted-foreground">Weather</p>
-          </div>
-          <div className="p-2 bg-yellow-50 rounded">
-            <p className="text-xl font-bold text-yellow-600">{liveOpsData.nasStatus.tfrs}</p>
-            <p className="text-xs text-muted-foreground">TFRs</p>
-          </div>
-        </div>
-        {liveOpsData.nasStatus.affectedFlights > 0 && (
-          <Alert className="border-orange-500 bg-orange-50 py-2">
-            <Info className="h-3 w-3 text-orange-600" />
-            <AlertDescription className="text-xs text-orange-800">
-              {liveOpsData.nasStatus.affectedFlights} flights affected
-            </AlertDescription>
-          </Alert>
-        )}
-        <div className="space-y-1">
-          {liveOpsData.nasStatus.alerts.slice(0, 2).map((alert, idx) => (
-            <div key={idx} className="text-xs p-2 bg-muted/50 rounded">
-              <div className="flex justify-between">
-                <span className="font-medium">{alert.airport}</span>
-                <Badge variant="outline" className="text-xs h-4 px-1">{alert.type}</Badge>
-              </div>
-              <p className="text-muted-foreground mt-1">{alert.impact}</p>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const renderCrewTile = () => (
-    <Card className="border-l-4 border-l-green-500">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Users className="w-4 h-4 text-green-600" />
-          Crew Availability
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 gap-2 text-center">
-          <div className="p-2 bg-green-50 rounded">
-            <p className="text-2xl font-bold text-green-600">{liveOpsData.crew.onDuty}</p>
-            <p className="text-xs text-muted-foreground">On Duty</p>
-          </div>
-          <div className="p-2 bg-blue-50 rounded">
-            <p className="text-2xl font-bold text-blue-600">{liveOpsData.crew.available}</p>
-            <p className="text-xs text-muted-foreground">Available</p>
-          </div>
-        </div>
-        <div className="space-y-2 text-xs">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">On Rest</span>
-            <span className="font-medium">{liveOpsData.crew.onRest}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Off Rest in 4hrs</span>
-            <span className="font-medium">{liveOpsData.crew.comingOffRest}</span>
-          </div>
-        </div>
-        {liveOpsData.crew.dutyTimeWarnings > 0 && (
-          <Alert className="border-yellow-500 bg-yellow-50 py-2">
-            <Clock className="h-3 w-3 text-yellow-600" />
-            <AlertDescription className="text-xs text-yellow-800">
-              {liveOpsData.crew.dutyTimeWarnings} duty time warnings
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  const renderPerformanceTile = () => (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Target className="w-4 h-4 text-primary" />
-          Today's Performance
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-4 gap-3 text-center">
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600">{liveOpsData.todayPerformance.flightsCompleted}</p>
-            <p className="text-xs text-muted-foreground">Completed</p>
-          </div>
-          <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold">{liveOpsData.todayPerformance.flightsScheduled}</p>
-            <p className="text-xs text-muted-foreground">Scheduled</p>
-          </div>
-          <div className="p-3 bg-green-50 rounded-lg">
-            <p className="text-2xl font-bold text-green-600">{liveOpsData.todayPerformance.onTimeRate}%</p>
-            <p className="text-xs text-muted-foreground">On-Time</p>
-          </div>
-          <div className="p-3 bg-purple-50 rounded-lg">
-            <p className="text-2xl font-bold text-purple-600">{liveOpsData.todayPerformance.currentPassengers}</p>
-            <p className="text-xs text-muted-foreground">Passengers</p>
-          </div>
-        </div>
-        <div className="mt-4">
-          <div className="flex justify-between text-sm mb-1">
-            <span>Daily Completion</span>
-            <span className="font-medium">{liveOpsData.todayPerformance.completionRate.toFixed(1)}%</span>
-          </div>
-          <Progress value={liveOpsData.todayPerformance.completionRate} className="h-2" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const renderAlertsTile = () => (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Zap className="w-4 h-4 text-yellow-600" />
-          Recent Alerts
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {liveOpsData.recentAlerts.map((alert) => (
-            <div
-              key={alert.id}
-              className={`p-2 rounded-lg border text-xs ${alert.severity === 'critical' ? 'bg-red-50 border-red-200' :
-                  alert.severity === 'medium' ? 'bg-orange-50 border-orange-200' :
-                    'bg-yellow-50 border-yellow-200'
-                }`}
-            >
-              <div className="flex items-start justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  {alert.type === 'maintenance' && <Wrench className="w-3 h-3" />}
-                  {alert.type === 'weather' && <AlertTriangle className="w-3 h-3" />}
-                  {alert.type === 'fuel' && <Fuel className="w-3 h-3" />}
-                  {alert.type === 'crew' && <Users className="w-3 h-3" />}
-                  <span className="font-medium">{alert.message}</span>
-                </div>
-                <span className="text-muted-foreground whitespace-nowrap ml-2">{alert.time}</span>
-              </div>
-              <Button variant="ghost" size="sm" className="h-6 text-xs">
-                {alert.action}
-              </Button>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
   // Get tile by ID
   const getTileById = (id: string) => {
     switch (id) {
-      case 'maintenance': return renderMaintenanceTile();
-      case 'fuel': return renderFuelTile();
-      case 'nas': return renderNASTile();
-      case 'crew': return renderCrewTile();
-      case 'performance': return renderPerformanceTile();
-      case 'alerts': return renderAlertsTile();
+      case 'maintenance': return <MaintenanceTile data={liveOpsData.maintenance} />;
+      case 'fuel': return <FuelTile data={liveOpsData.fuelFarm} />;
+      case 'nas': return <NASTile data={liveOpsData.nasStatus} />;
+      case 'crew': return <CrewTile data={liveOpsData.crew} />;
+      case 'performance': return <PerformanceTile data={liveOpsData.todayPerformance} />;
+      case 'alerts': return <AlertsTile alerts={liveOpsData.recentAlerts} />;
       default: return null;
     }
   };

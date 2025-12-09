@@ -11,24 +11,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Progress } from './ui/progress';
 import { Separator } from './ui/separator';
-import { 
-  AlertTriangle, 
-  Plus, 
-  Search, 
-  Filter, 
-  User, 
-  Calendar, 
-  Clock,
+import {
+  AlertTriangle,
+  Plus,
+  Search,
+  Filter,
+  User,
+  Calendar,
+  Clock, // Unused but kept for structure from original file
   CheckCircle,
   UserCheck,
   MapPin,
-  FileText,
+  // FileText,
   Target,
   AlertCircle,
-  ArrowRight,
-  CheckCheck,
+  // ArrowRight,
+  // CheckCheck,
   Eye,
-  XCircle,
+  // XCircle,
   Send,
   TrendingUp,
   Bell,
@@ -37,23 +37,25 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Checkbox } from './ui/checkbox';
-
-// Workflow stages
-const WORKFLOW_STAGES = {
-  SUBMITTED: 'Submitted to Safety',
-  SAFETY_REVIEW: 'Safety Review',
-  LINE_MANAGER_REVIEW: 'Line Manager Review',
-  VP_APPROVAL: 'VP Final Approval',
-  SAFETY_FINAL: 'Safety Final Approval',
-  CLOSED: 'Closed'
-};
+import { useHazards, WORKFLOW_STAGES } from '../contexts/HazardContext';
 
 export default function HazardReporting() {
+  const { hazards, submitHazard } = useHazards();
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewHazardDialog, setShowNewHazardDialog] = useState(false);
   const [selectedHazard, setSelectedHazard] = useState<any>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+
+  // New Hazard Form State
+  const [newHazardTitle, setNewHazardTitle] = useState('');
+  const [newHazardDescription, setNewHazardDescription] = useState('');
+  const [newHazardImmediateAction, setNewHazardImmediateAction] = useState('');
+  const [newHazardConsequences, setNewHazardConsequences] = useState('');
+  const [newHazardLocation, setNewHazardLocation] = useState('');
+  // const [newHazardCategory, setNewHazardCategory] = useState(''); // Could add select for category
+  const [selectedRiskFactors, setSelectedRiskFactors] = useState<string[]>([]);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
 
   // Risk Factors state
   const riskFactors = [
@@ -71,9 +73,6 @@ export default function HazardReporting() {
     'Lack of Resources'
   ];
 
-  const [selectedRiskFactors, setSelectedRiskFactors] = useState<string[]>([]);
-  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
-
   // Calculate days until date
   const daysUntil = (dateString: string) => {
     const targetDate = new Date(dateString);
@@ -90,128 +89,13 @@ export default function HazardReporting() {
     return days <= 7 && days >= 0;
   };
 
-  // Mock data - in real app this would come from backend
-  const hazards = [
-    {
-      id: 'HZ-001',
-      title: 'Runway Surface Contamination - LAX Runway 24L',
-      category: 'Airport Infrastructure',
-      severity: 'Critical',
-      workflowStage: WORKFLOW_STAGES.LINE_MANAGER_REVIEW,
-      location: 'LAX - Runway 24L',
-      reportedBy: 'John Smith',
-      submitterLineManager: 'Sarah Johnson',
-      reportedDate: '2024-02-06',
-      description: 'Standing water and oil contamination observed on runway 24L during pre-flight inspection',
-      immediateActions: 'Runway closed to traffic, maintenance notified',
-      potentialConsequences: 'Reduced braking effectiveness, potential aircraft damage or incident',
-      assignedTo: 'Mike Johnson',
-      dueDate: '2024-02-07',
-      effectivenessReviewDate: '2024-02-15',
-      workflowHistory: [
-        { stage: WORKFLOW_STAGES.SUBMITTED, date: '2024-02-06 09:15', user: 'John Smith', action: 'Submitted' },
-        { stage: WORKFLOW_STAGES.SAFETY_REVIEW, date: '2024-02-06 10:30', user: 'Safety Manager', action: 'Reviewed and forwarded' },
-        { stage: WORKFLOW_STAGES.LINE_MANAGER_REVIEW, date: '2024-02-06 14:00', user: 'Sarah Johnson', action: 'Under review' }
-      ],
-      duties: [
-        { id: 1, task: 'Coordinate with airport maintenance for cleanup', assignedTo: 'Operations', status: 'In Progress', dueDate: '2024-02-06' },
-        { id: 2, task: 'Issue NOTAM for runway closure', assignedTo: 'Dispatch', status: 'Complete', dueDate: '2024-02-06' },
-        { id: 3, task: 'Assess alternative runway capacity', assignedTo: 'Operations', status: 'Complete', dueDate: '2024-02-06' }
-      ]
-    },
-    {
-      id: 'HZ-002',
-      title: 'Bird Strike Risk - Approach Path DEN',
-      category: 'Wildlife',
-      severity: 'High',
-      workflowStage: WORKFLOW_STAGES.VP_APPROVAL,
-      location: 'DEN - Approach Path Runway 16R',
-      reportedBy: 'Sarah Wilson',
-      submitterLineManager: 'Tom Anderson',
-      reportedDate: '2024-02-05',
-      description: 'Large flock of birds observed consistently in approach path during morning operations',
-      immediateActions: 'Crew advised to use alternative approach path, wildlife control notified',
-      potentialConsequences: 'Bird strike damage to aircraft, potential engine failure',
-      assignedTo: 'David Brown',
-      dueDate: '2024-02-08',
-      effectivenessReviewDate: '2024-02-12',
-      workflowHistory: [
-        { stage: WORKFLOW_STAGES.SUBMITTED, date: '2024-02-05 08:00', user: 'Sarah Wilson', action: 'Submitted' },
-        { stage: WORKFLOW_STAGES.SAFETY_REVIEW, date: '2024-02-05 09:15', user: 'Safety Manager', action: 'Reviewed and forwarded' },
-        { stage: WORKFLOW_STAGES.LINE_MANAGER_REVIEW, date: '2024-02-05 11:30', user: 'Tom Anderson', action: 'Approved and forwarded' },
-        { stage: WORKFLOW_STAGES.VP_APPROVAL, date: '2024-02-06 08:00', user: 'VP Operations', action: 'Under final review' }
-      ],
-      duties: [
-        { id: 4, task: 'Contact airport wildlife control', assignedTo: 'Operations', status: 'Complete', dueDate: '2024-02-05' },
-        { id: 5, task: 'Monitor bird activity patterns', assignedTo: 'Ground Crew', status: 'In Progress', dueDate: '2024-02-08' },
-        { id: 6, task: 'Coordinate with other operators', assignedTo: 'Dispatch', status: 'Pending', dueDate: '2024-02-07' }
-      ]
-    },
-    {
-      id: 'HZ-003',
-      title: 'Ground Equipment Malfunction - N123AB',
-      category: 'Equipment',
-      severity: 'Medium',
-      workflowStage: WORKFLOW_STAGES.CLOSED,
-      location: 'Main Hangar - Bay 3',
-      reportedBy: 'Emily Davis',
-      submitterLineManager: 'Mike Roberts',
-      reportedDate: '2024-02-04',
-      description: 'Ground power unit malfunctioned during aircraft servicing, caused brief power interruption',
-      immediateActions: 'GPU taken out of service, backup unit deployed',
-      potentialConsequences: 'Avionics damage, flight delays',
-      assignedTo: 'Tom Wilson',
-      dueDate: '2024-02-05',
-      effectivenessReviewDate: '2024-03-04',
-      workflowHistory: [
-        { stage: WORKFLOW_STAGES.SUBMITTED, date: '2024-02-04 07:30', user: 'Emily Davis', action: 'Submitted' },
-        { stage: WORKFLOW_STAGES.SAFETY_REVIEW, date: '2024-02-04 08:45', user: 'Safety Manager', action: 'Reviewed and forwarded' },
-        { stage: WORKFLOW_STAGES.LINE_MANAGER_REVIEW, date: '2024-02-04 10:00', user: 'Mike Roberts', action: 'Approved and forwarded' },
-        { stage: WORKFLOW_STAGES.VP_APPROVAL, date: '2024-02-04 14:30', user: 'VP Operations', action: 'Approved' },
-        { stage: WORKFLOW_STAGES.SAFETY_FINAL, date: '2024-02-05 09:00', user: 'Safety Manager', action: 'Final approval and closed' },
-        { stage: WORKFLOW_STAGES.CLOSED, date: '2024-02-05 09:00', user: 'Safety Manager', action: 'Closed' }
-      ],
-      duties: [
-        { id: 7, task: 'Inspect GPU for electrical faults', assignedTo: 'Maintenance', status: 'Complete', dueDate: '2024-02-04' },
-        { id: 8, task: 'Test aircraft avionics after power interruption', assignedTo: 'Avionics Tech', status: 'Complete', dueDate: '2024-02-04' },
-        { id: 9, task: 'Update equipment maintenance log', assignedTo: 'Maintenance', status: 'Complete', dueDate: '2024-02-05' }
-      ]
-    },
-    {
-      id: 'HZ-004',
-      title: 'Fuel System Leak - Fuel Farm',
-      category: 'Fuel System',
-      severity: 'High',
-      workflowStage: WORKFLOW_STAGES.SAFETY_REVIEW,
-      location: 'Fuel Farm - Tank 2',
-      reportedBy: 'Mark Anderson',
-      submitterLineManager: 'Lisa Martinez',
-      reportedDate: '2024-02-06',
-      description: 'Small fuel leak detected at base of fuel tank 2 during routine inspection',
-      immediateActions: 'Area cordoned off, fuel operations suspended for tank 2',
-      potentialConsequences: 'Environmental contamination, fire hazard, fuel shortage',
-      assignedTo: 'Lisa Chen',
-      dueDate: '2024-02-07',
-      effectivenessReviewDate: '2024-02-20',
-      workflowHistory: [
-        { stage: WORKFLOW_STAGES.SUBMITTED, date: '2024-02-06 11:00', user: 'Mark Anderson', action: 'Submitted' },
-        { stage: WORKFLOW_STAGES.SAFETY_REVIEW, date: '2024-02-06 12:15', user: 'Safety Manager', action: 'Under review' }
-      ],
-      duties: [
-        { id: 10, task: 'Environmental assessment and containment', assignedTo: 'Safety', status: 'Pending', dueDate: '2024-02-06' },
-        { id: 11, task: 'Schedule emergency tank repair', assignedTo: 'Maintenance', status: 'Pending', dueDate: '2024-02-07' },
-        { id: 12, task: 'Assess fuel supply impact', assignedTo: 'Operations', status: 'In Progress', dueDate: '2024-02-06' }
-      ]
-    }
-  ];
-
   const getWorkflowStageColor = (stage: string) => {
     switch (stage) {
       case WORKFLOW_STAGES.SUBMITTED: return 'bg-blue-100 text-blue-800 border-blue-200';
-      case WORKFLOW_STAGES.SAFETY_REVIEW: return 'bg-purple-100 text-purple-800 border-purple-200';
-      case WORKFLOW_STAGES.LINE_MANAGER_REVIEW: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case WORKFLOW_STAGES.VP_APPROVAL: return 'bg-orange-100 text-orange-800 border-orange-200';
-      case WORKFLOW_STAGES.SAFETY_FINAL: return 'bg-green-100 text-green-800 border-green-200';
+      case WORKFLOW_STAGES.SM_INITIAL_REVIEW: return 'bg-purple-100 text-purple-800 border-purple-200';
+      case WORKFLOW_STAGES.LINE_MANAGER_APPROVAL: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case WORKFLOW_STAGES.EXEC_APPROVAL: return 'bg-orange-100 text-orange-800 border-orange-200';
+      case WORKFLOW_STAGES.EFFECTIVENESS_REVIEW: return 'bg-cyan-100 text-cyan-800 border-cyan-200';
       case WORKFLOW_STAGES.CLOSED: return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -227,16 +111,6 @@ export default function HazardReporting() {
     }
   };
 
-  const getDutyStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'complete': return 'bg-green-100 text-green-800 border-green-200';
-      case 'in progress': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'overdue': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
   const getWorkflowProgress = (stage: string) => {
     const stages = Object.values(WORKFLOW_STAGES);
     const currentIndex = stages.indexOf(stage);
@@ -246,27 +120,50 @@ export default function HazardReporting() {
   const filteredHazards = hazards.filter(hazard => {
     const matchesFilter = filter === 'all' || hazard.workflowStage.toLowerCase().replace(/\s/g, '') === filter;
     const matchesSearch = hazard.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hazard.reportedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hazard.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hazard.id.toLowerCase().includes(searchTerm.toLowerCase());
+      hazard.reportedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      hazard.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      hazard.id.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
-
-  const handleAssignHazard = (hazardId: string, assignee: string) => {
-    toast.success(`Hazard ${hazardId} assigned to ${assignee}`);
-  };
-
-  const handleAdvanceWorkflow = (hazardId: string, nextStage: string) => {
-    toast.success(`Hazard ${hazardId} advanced to ${nextStage}`);
-  };
 
   const handleViewDetails = (hazard: any) => {
     setSelectedHazard(hazard);
     setShowDetailsDialog(true);
   };
 
+  const handleSubmit = () => {
+    if (!newHazardTitle || !newHazardDescription) {
+      toast.error('Please fill in required fields');
+      return;
+    }
+
+    submitHazard({
+      title: newHazardTitle,
+      description: newHazardDescription,
+      immediateActions: newHazardImmediateAction,
+      potentialConsequences: newHazardConsequences,
+      location: newHazardLocation || 'Unknown',
+      severity: 'Medium', // Default or add field
+      reportedBy: 'Current User', // Use Auth in real app
+      category: 'Safety', // Default or add field
+      riskFactors: selectedRiskFactors,
+    });
+
+    toast.success('Hazard report submitted to Safety Manager');
+    setShowNewHazardDialog(false);
+
+    // Reset form
+    setNewHazardTitle('');
+    setNewHazardDescription('');
+    setNewHazardImmediateAction('');
+    setNewHazardConsequences('');
+    setNewHazardLocation('');
+    setSelectedRiskFactors([]);
+    setAttachedFiles([]);
+  };
+
   // Get hazards with upcoming effectiveness reviews
-  const upcomingReviews = hazards.filter(h => 
+  const upcomingReviews = hazards.filter(h =>
     h.effectivenessReviewDate && isEffectivenessReviewUpcoming(h.effectivenessReviewDate)
   );
 
@@ -280,7 +177,7 @@ export default function HazardReporting() {
           </h1>
           <p className="text-muted-foreground">Track and manage safety hazards through approval workflow</p>
         </div>
-        
+
         <Dialog open={showNewHazardDialog} onOpenChange={setShowNewHazardDialog}>
           <DialogTrigger asChild>
             <Button>
@@ -300,6 +197,26 @@ export default function HazardReporting() {
               <div>
                 <Label>Date</Label>
                 <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
+              </div>
+
+              {/* Title & Location */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Title / Summary</Label>
+                  <Input
+                    placeholder="Brief title of hazard"
+                    value={newHazardTitle}
+                    onChange={(e) => setNewHazardTitle(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Location</Label>
+                  <Input
+                    placeholder="Where did this occur?"
+                    value={newHazardLocation}
+                    onChange={(e) => setNewHazardLocation(e.target.value)}
+                  />
+                </div>
               </div>
 
               {/* Risk Factors */}
@@ -333,20 +250,36 @@ export default function HazardReporting() {
               {/* Describe the Incident / Hazard */}
               <div>
                 <Label>Describe the Incident / Hazard or potential safety issue you observed</Label>
-                <Textarea 
-                  placeholder="Provide detailed description of what you observed..." 
+                <Textarea
+                  placeholder="Provide detailed description of what you observed..."
                   rows={4}
                   className="mt-1"
+                  value={newHazardDescription}
+                  onChange={(e) => setNewHazardDescription(e.target.value)}
                 />
               </div>
 
-              {/* Suggested Corrective Action */}
+              {/* Suggested Corrective Action / Immediate Action */}
               <div>
-                <Label>Suggested Corrective Action</Label>
-                <Textarea 
-                  placeholder="What actions do you recommend to address this hazard?" 
-                  rows={3}
+                <Label>Immediate Actions Taken (if any)</Label>
+                <Textarea
+                  placeholder="What was done immediately?"
+                  rows={2}
                   className="mt-1"
+                  value={newHazardImmediateAction}
+                  onChange={(e) => setNewHazardImmediateAction(e.target.value)}
+                />
+              </div>
+
+              {/* Potential Consequences */}
+              <div>
+                <Label>Potential Consequences (if ignored)</Label>
+                <Textarea
+                  placeholder="What could happen?"
+                  rows={2}
+                  className="mt-1"
+                  value={newHazardConsequences}
+                  onChange={(e) => setNewHazardConsequences(e.target.value)}
                 />
               </div>
 
@@ -394,12 +327,7 @@ export default function HazardReporting() {
 
               {/* Submit Buttons */}
               <div className="flex gap-2 pt-4">
-                <Button onClick={() => {
-                  toast.success('Hazard report submitted to Safety Manager');
-                  setShowNewHazardDialog(false);
-                  setSelectedRiskFactors([]);
-                  setAttachedFiles([]);
-                }}>
+                <Button onClick={handleSubmit}>
                   <Send className="w-4 h-4 mr-2" />
                   Submit Report
                 </Button>
@@ -452,9 +380,9 @@ export default function HazardReporting() {
             <div className="flex items-center gap-2">
               <Send className="w-4 h-4 text-blue-600" />
               <div>
-                <p className="text-sm text-muted-foreground">In Safety Review</p>
+                <p className="text-sm text-muted-foreground">In Review</p>
                 <p className="text-2xl">
-                  {hazards.filter(h => h.workflowStage === WORKFLOW_STAGES.SAFETY_REVIEW).length}
+                  {hazards.filter(h => h.workflowStage === WORKFLOW_STAGES.SM_INITIAL_REVIEW).length}
                 </p>
               </div>
             </div>
@@ -468,7 +396,7 @@ export default function HazardReporting() {
               <div>
                 <p className="text-sm text-muted-foreground">Line Manager</p>
                 <p className="text-2xl">
-                  {hazards.filter(h => h.workflowStage === WORKFLOW_STAGES.LINE_MANAGER_REVIEW).length}
+                  {hazards.filter(h => h.workflowStage === WORKFLOW_STAGES.LINE_MANAGER_APPROVAL).length}
                 </p>
               </div>
             </div>
@@ -480,9 +408,9 @@ export default function HazardReporting() {
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-orange-600" />
               <div>
-                <p className="text-sm text-muted-foreground">VP Approval</p>
+                <p className="text-sm text-muted-foreground">Exec Approval</p>
                 <p className="text-2xl">
-                  {hazards.filter(h => h.workflowStage === WORKFLOW_STAGES.VP_APPROVAL).length}
+                  {hazards.filter(h => h.workflowStage === WORKFLOW_STAGES.EXEC_APPROVAL).length}
                 </p>
               </div>
             </div>
@@ -533,7 +461,7 @@ export default function HazardReporting() {
                 />
               </div>
             </div>
-            
+
             <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger className="w-56">
                 <Filter className="w-4 h-4 mr-2" />
@@ -541,12 +469,11 @@ export default function HazardReporting() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Stages</SelectItem>
-                <SelectItem value="submittedtosafety">Submitted to Safety</SelectItem>
-                <SelectItem value="safetyreview">Safety Review</SelectItem>
-                <SelectItem value="linemanagerreview">Line Manager Review</SelectItem>
-                <SelectItem value="vpfinalapproval">VP Final Approval</SelectItem>
-                <SelectItem value="safetyfinalapproval">Safety Final Approval</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
+                <SelectItem value={WORKFLOW_STAGES.SUBMITTED.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.SUBMITTED}</SelectItem>
+                <SelectItem value={WORKFLOW_STAGES.SM_INITIAL_REVIEW.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.SM_INITIAL_REVIEW}</SelectItem>
+                <SelectItem value={WORKFLOW_STAGES.LINE_MANAGER_APPROVAL.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.LINE_MANAGER_APPROVAL}</SelectItem>
+                <SelectItem value={WORKFLOW_STAGES.EXEC_APPROVAL.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.EXEC_APPROVAL}</SelectItem>
+                <SelectItem value={WORKFLOW_STAGES.CLOSED.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.CLOSED}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -576,9 +503,9 @@ export default function HazardReporting() {
               </TableHeader>
               <TableBody>
                 {filteredHazards.map((hazard) => {
-                  const reviewUpcoming = hazard.effectivenessReviewDate && 
+                  const reviewUpcoming = hazard.effectivenessReviewDate &&
                     isEffectivenessReviewUpcoming(hazard.effectivenessReviewDate);
-                  const daysToReview = hazard.effectivenessReviewDate ? 
+                  const daysToReview = hazard.effectivenessReviewDate ?
                     daysUntil(hazard.effectivenessReviewDate) : null;
 
                   return (
@@ -608,8 +535,8 @@ export default function HazardReporting() {
                           <Badge className={getWorkflowStageColor(hazard.workflowStage)}>
                             {hazard.workflowStage}
                           </Badge>
-                          <Progress 
-                            value={getWorkflowProgress(hazard.workflowStage)} 
+                          <Progress
+                            value={getWorkflowProgress(hazard.workflowStage)}
                             className="h-1 w-32"
                           />
                         </div>
@@ -618,14 +545,13 @@ export default function HazardReporting() {
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-muted-foreground" />
                           <span className="text-sm">
-                            {hazard.workflowStage === WORKFLOW_STAGES.LINE_MANAGER_REVIEW 
+                            {hazard.workflowStage === WORKFLOW_STAGES.LINE_MANAGER_APPROVAL
                               ? hazard.submitterLineManager
-                              : hazard.workflowStage === WORKFLOW_STAGES.VP_APPROVAL 
-                              ? 'VP Operations'
-                              : hazard.workflowStage === WORKFLOW_STAGES.SAFETY_REVIEW ||
-                                hazard.workflowStage === WORKFLOW_STAGES.SAFETY_FINAL
-                              ? 'Safety Manager'
-                              : 'N/A'}
+                              : hazard.workflowStage === WORKFLOW_STAGES.EXEC_APPROVAL
+                                ? 'VP Operations'
+                                : hazard.workflowStage === WORKFLOW_STAGES.SM_INITIAL_REVIEW
+                                  ? 'Safety Manager'
+                                  : 'N/A'}
                           </span>
                         </div>
                       </TableCell>
@@ -653,8 +579,8 @@ export default function HazardReporting() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleViewDetails(hazard)}
                         >
@@ -687,10 +613,9 @@ export default function HazardReporting() {
               </DialogHeader>
 
               <Tabs defaultValue="details" className="mt-4">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="details">Details</TabsTrigger>
-                  <TabsTrigger value="workflow">Workflow Status</TabsTrigger>
-                  <TabsTrigger value="duties">Action Items</TabsTrigger>
+                  <TabsTrigger value="workflow">Action Status</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="details" className="space-y-4 mt-4">
@@ -737,218 +662,14 @@ export default function HazardReporting() {
                       {selectedHazard.potentialConsequences}
                     </p>
                   </div>
-
-                  <Separator />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Assigned To</Label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <span>{selectedHazard.assignedTo}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Due Date</Label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span>{new Date(selectedHazard.dueDate).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {selectedHazard.effectivenessReviewDate && (
-                    <div className={`p-4 rounded border ${
-                      isEffectivenessReviewUpcoming(selectedHazard.effectivenessReviewDate)
-                        ? 'bg-orange-50 border-orange-200'
-                        : 'bg-blue-50 border-blue-200'
-                    }`}>
-                      <div className="flex items-start gap-3">
-                        <TrendingUp className={`w-5 h-5 mt-0.5 ${
-                          isEffectivenessReviewUpcoming(selectedHazard.effectivenessReviewDate)
-                            ? 'text-orange-600'
-                            : 'text-blue-600'
-                        }`} />
-                        <div>
-                          <h4 className={`font-medium ${
-                            isEffectivenessReviewUpcoming(selectedHazard.effectivenessReviewDate)
-                              ? 'text-orange-900'
-                              : 'text-blue-900'
-                          }`}>
-                            Effectiveness Review Scheduled
-                          </h4>
-                          <p className={`text-sm mt-1 ${
-                            isEffectivenessReviewUpcoming(selectedHazard.effectivenessReviewDate)
-                              ? 'text-orange-800'
-                              : 'text-blue-800'
-                          }`}>
-                            Review date: {new Date(selectedHazard.effectivenessReviewDate).toLocaleDateString()}
-                            {isEffectivenessReviewUpcoming(selectedHazard.effectivenessReviewDate) && (
-                              <span className="font-medium ml-2">
-                                ({daysUntil(selectedHazard.effectivenessReviewDate)} days remaining)
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </TabsContent>
 
                 <TabsContent value="workflow" className="space-y-4 mt-4">
-                  <div className="space-y-1 mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <Label>Current Stage</Label>
-                      <Badge className={getWorkflowStageColor(selectedHazard.workflowStage)}>
-                        {selectedHazard.workflowStage}
-                      </Badge>
-                    </div>
-                    <Progress 
-                      value={getWorkflowProgress(selectedHazard.workflowStage)} 
-                      className="h-2"
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      {Math.round(getWorkflowProgress(selectedHazard.workflowStage))}% complete
-                    </p>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <h4 className="font-medium mb-3">Workflow Path</h4>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3 p-3 border rounded bg-blue-50">
-                        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm">
-                          1
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">Submitted to Safety Manager</p>
-                          <p className="text-sm text-muted-foreground">Initial review by safety team</p>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-center">
-                        <ArrowRight className="w-5 h-5 text-muted-foreground" />
-                      </div>
-
-                      <div className="flex items-center gap-3 p-3 border rounded bg-yellow-50">
-                        <div className="w-8 h-8 rounded-full bg-yellow-600 text-white flex items-center justify-center text-sm">
-                          2
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">Line Manager Review</p>
-                          <p className="text-sm text-muted-foreground">
-                            Submitter's line manager: {selectedHazard.submitterLineManager}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-center">
-                        <ArrowRight className="w-5 h-5 text-muted-foreground" />
-                      </div>
-
-                      <div className="flex items-center gap-3 p-3 border rounded bg-orange-50">
-                        <div className="w-8 h-8 rounded-full bg-orange-600 text-white flex items-center justify-center text-sm">
-                          3
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">VP Final Approval</p>
-                          <p className="text-sm text-muted-foreground">VP Operations approval required</p>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-center">
-                        <ArrowRight className="w-5 h-5 text-muted-foreground" />
-                      </div>
-
-                      <div className="flex items-center gap-3 p-3 border rounded bg-green-50">
-                        <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm">
-                          4
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">Safety Final Approval & Record Keeping</p>
-                          <p className="text-sm text-muted-foreground">
-                            Final review by safety manager and close out
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <h4 className="font-medium mb-3">Workflow History</h4>
-                    <div className="space-y-3">
-                      {selectedHazard.workflowHistory.map((entry: any, index: number) => (
-                        <div key={index} className="flex items-start gap-3 p-3 border rounded">
-                          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <p className="font-medium">{entry.stage}</p>
-                              <span className="text-xs text-muted-foreground">{entry.date}</span>
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {entry.action} by {entry.user}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-4">
-                    {selectedHazard.workflowStage !== WORKFLOW_STAGES.CLOSED && (
-                      <Button onClick={() => {
-                        const stages = Object.values(WORKFLOW_STAGES);
-                        const currentIndex = stages.indexOf(selectedHazard.workflowStage);
-                        const nextStage = stages[currentIndex + 1];
-                        handleAdvanceWorkflow(selectedHazard.id, nextStage);
-                      }}>
-                        <Send className="w-4 h-4 mr-2" />
-                        Approve & Forward
-                      </Button>
-                    )}
-                    <Button variant="outline">
-                      <FileText className="w-4 h-4 mr-2" />
-                      Add Comment
-                    </Button>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="duties" className="mt-4">
-                  <div className="space-y-3">
-                    {selectedHazard.duties.map((duty: any) => (
-                      <div key={duty.id} className="border rounded p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <h4 className="font-medium">{duty.task}</h4>
-                            <div className="flex items-center gap-4 mt-2">
-                              <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-sm">{duty.assignedTo}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-sm">
-                                  {new Date(duty.dueDate).toLocaleDateString()}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <Badge className={getDutyStatusColor(duty.status)}>
-                            {duty.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2 pt-4">
-                    <Button variant="outline">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Action Item
-                    </Button>
+                  <div className="p-4 bg-slate-50 rounded text-center">
+                    <p className="mb-2">This hazard is currently in stage:</p>
+                    <Badge className={getWorkflowStageColor(selectedHazard.workflowStage) + " text-lg py-1 px-3"}>
+                      {selectedHazard.workflowStage}
+                    </Badge>
                   </div>
                 </TabsContent>
               </Tabs>

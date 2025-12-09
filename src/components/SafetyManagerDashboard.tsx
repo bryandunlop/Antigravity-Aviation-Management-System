@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { 
+import {
   Shield,
   AlertTriangle,
   Search,
@@ -13,149 +13,41 @@ import {
   Eye,
   Clock,
   CheckCircle,
-  XCircle,
-  Users,
-  FileText,
-  Send,
   PlayCircle,
   PauseCircle,
-  Archive
+  Archive,
+  Users,
+  FileText,
+  Send
 } from 'lucide-react';
-
-// Workflow stages matching the process
-const WORKFLOW_STAGES = {
-  SUBMITTED: 'Submitted',
-  SM_INITIAL_REVIEW: 'Safety Manager Initial Review',
-  ASSIGNED_CORRECTIVE_ACTION: 'Assigned for Corrective Action',
-  SM_CA_REVIEW: 'SM Review of Corrective Action',
-  LINE_MANAGER_APPROVAL: 'Line Manager Approval',
-  EXEC_APPROVAL: 'Accountable Executive Approval',
-  IMPLEMENTATION_ASSIGNMENT: 'Implementation Assignment',
-  IMPLEMENTATION_IN_PROGRESS: 'Implementation in Progress',
-  PUBLISHED: 'Published',
-  EFFECTIVENESS_REVIEW: 'Review for Effectiveness',
-  CLOSED: 'Closed'
-};
+import { useHazards, WORKFLOW_STAGES, Hazard } from '../contexts/HazardContext';
 
 export default function SafetyManagerDashboard() {
+  const { hazards } = useHazards();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all');
 
-  // Mock data - in real app this would come from backend
-  const hazardReports = [
-    {
-      id: 'HZ-001',
-      title: 'Runway Surface Contamination - LAX Runway 24L',
-      submittedBy: 'John Smith',
-      submitDate: '2024-02-06',
-      stage: WORKFLOW_STAGES.SM_INITIAL_REVIEW,
-      severity: 'Critical',
-      location: 'LAX - Runway 24L',
-      daysInStage: 1,
-      priority: 'High',
-      assignedTo: null
-    },
-    {
-      id: 'HZ-002',
-      title: 'Bird Strike Risk - Approach Path DEN',
-      submittedBy: 'Sarah Wilson',
-      submitDate: '2024-02-05',
-      stage: WORKFLOW_STAGES.ASSIGNED_CORRECTIVE_ACTION,
-      severity: 'High',
-      location: 'DEN - Approach Path',
-      daysInStage: 2,
-      priority: 'High',
-      assignedTo: 'Mike Johnson'
-    },
-    {
-      id: 'HZ-003',
-      title: 'Ground Equipment Malfunction',
-      submittedBy: 'Emily Davis',
-      submitDate: '2024-02-04',
-      stage: WORKFLOW_STAGES.LINE_MANAGER_APPROVAL,
-      severity: 'Medium',
-      location: 'Main Hangar - Bay 3',
-      daysInStage: 1,
-      priority: 'Medium',
-      assignedTo: 'Tom Wilson'
-    },
-    {
-      id: 'HZ-004',
-      title: 'Fuel System Leak - Fuel Farm',
-      submittedBy: 'Mark Anderson',
-      submitDate: '2024-02-03',
-      stage: WORKFLOW_STAGES.IMPLEMENTATION_IN_PROGRESS,
-      severity: 'High',
-      location: 'Fuel Farm - Tank 2',
-      daysInStage: 3,
-      priority: 'High',
-      assignedTo: 'Lisa Chen'
-    },
-    {
-      id: 'HZ-005',
-      title: 'Inadequate Ramp Lighting',
-      submittedBy: 'Chris Brown',
-      submitDate: '2024-01-15',
-      stage: WORKFLOW_STAGES.EFFECTIVENESS_REVIEW,
-      severity: 'Low',
-      location: 'Regional Airport - FBO Ramp',
-      daysInStage: 22,
-      priority: 'Low',
-      assignedTo: null,
-      effectivenessReviewDate: '2024-07-15',
-      daysUntilReview: 160
-    },
-    {
-      id: 'HZ-006',
-      title: 'De-icing Procedure Non-Compliance',
-      submittedBy: 'Anonymous',
-      submitDate: '2024-02-07',
-      stage: WORKFLOW_STAGES.SUBMITTED,
-      severity: 'High',
-      location: 'KJFK - Ramp B',
-      daysInStage: 0,
-      priority: 'High',
-      assignedTo: null
-    },
-    {
-      id: 'HZ-007',
-      title: 'Maintenance Documentation Error',
-      submittedBy: 'Robert Martinez',
-      submitDate: '2024-02-01',
-      stage: WORKFLOW_STAGES.SM_CA_REVIEW,
-      severity: 'Medium',
-      location: 'Maintenance Records',
-      daysInStage: 6,
-      priority: 'Medium',
-      assignedTo: 'David Brown'
-    },
-    {
-      id: 'HZ-008',
-      title: 'Near Miss - Ground Operations',
-      submittedBy: 'Jessica Lee',
-      submitDate: '2024-01-28',
-      stage: WORKFLOW_STAGES.PUBLISHED,
-      severity: 'High',
-      location: 'KLAX - Taxiway A',
-      daysInStage: 10,
-      priority: 'High',
-      assignedTo: null,
-      publishDate: '2024-02-05'
-    }
-  ];
+  // Calculate days difference
+  const getDaysDifference = (dateString: string) => {
+    if (!dateString) return 0;
+    const date = new Date(dateString);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - date.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const getDaysUntil = (dateString?: string) => {
+    if (!dateString) return 0;
+    const date = new Date(dateString);
+    const today = new Date();
+    const diffTime = date.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
 
   // Group hazards by stage
   const hazardsByStage = Object.values(WORKFLOW_STAGES).reduce((acc, stage) => {
-    acc[stage] = hazardReports.filter(h => h.stage === stage);
+    acc[stage] = hazards.filter(h => h.workflowStage === stage);
     return acc;
-  }, {} as Record<string, typeof hazardReports>);
-
-  // Filter hazards based on search
-  const filteredHazards = hazardReports.filter(hazard => 
-    hazard.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    hazard.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    hazard.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  }, {} as Record<string, Hazard[]>);
 
   const getStageIcon = (stage: string) => {
     switch (stage) {
@@ -211,7 +103,7 @@ export default function SafetyManagerDashboard() {
   };
 
   const getSeverityColor = (severity: string) => {
-    switch (severity.toLowerCase()) {
+    switch (severity?.toLowerCase()) {
       case 'critical':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'high':
@@ -225,26 +117,26 @@ export default function SafetyManagerDashboard() {
     }
   };
 
-  const needsAttention = (hazard: typeof hazardReports[0]) => {
+  const needsAttention = (hazard: Hazard) => {
     // Highlight items that need immediate attention
-    if (hazard.stage === WORKFLOW_STAGES.SUBMITTED) return true;
-    if (hazard.stage === WORKFLOW_STAGES.SM_INITIAL_REVIEW && hazard.daysInStage > 1) return true;
-    if (hazard.stage === WORKFLOW_STAGES.SM_CA_REVIEW) return true;
+    if (hazard.workflowStage === WORKFLOW_STAGES.SUBMITTED) return true;
+    if (hazard.workflowStage === WORKFLOW_STAGES.SM_INITIAL_REVIEW && (hazard.daysInStage || 0) > 1) return true;
+    if (hazard.workflowStage === WORKFLOW_STAGES.SM_CA_REVIEW) return true;
     if (hazard.severity === 'Critical') return true;
     return false;
   };
 
   // Stats for overview
   const stats = {
-    total: hazardReports.length,
-    needsReview: hazardsByStage[WORKFLOW_STAGES.SUBMITTED]?.length + 
-                 hazardsByStage[WORKFLOW_STAGES.SM_INITIAL_REVIEW]?.length + 
-                 hazardsByStage[WORKFLOW_STAGES.SM_CA_REVIEW]?.length,
-    inProgress: hazardsByStage[WORKFLOW_STAGES.IMPLEMENTATION_IN_PROGRESS]?.length,
-    awaitingApproval: hazardsByStage[WORKFLOW_STAGES.LINE_MANAGER_APPROVAL]?.length + 
-                      hazardsByStage[WORKFLOW_STAGES.EXEC_APPROVAL]?.length,
-    effectivenessReview: hazardsByStage[WORKFLOW_STAGES.EFFECTIVENESS_REVIEW]?.length,
-    closedThisMonth: hazardsByStage[WORKFLOW_STAGES.CLOSED]?.length || 0
+    total: hazards.length,
+    needsReview: (hazardsByStage[WORKFLOW_STAGES.SUBMITTED]?.length || 0) +
+      (hazardsByStage[WORKFLOW_STAGES.SM_INITIAL_REVIEW]?.length || 0) +
+      (hazardsByStage[WORKFLOW_STAGES.SM_CA_REVIEW]?.length || 0),
+    inProgress: (hazardsByStage[WORKFLOW_STAGES.IMPLEMENTATION_IN_PROGRESS]?.length || 0),
+    awaitingApproval: (hazardsByStage[WORKFLOW_STAGES.LINE_MANAGER_APPROVAL]?.length || 0) +
+      (hazardsByStage[WORKFLOW_STAGES.EXEC_APPROVAL]?.length || 0),
+    effectivenessReview: (hazardsByStage[WORKFLOW_STAGES.EFFECTIVENESS_REVIEW]?.length || 0),
+    closedThisMonth: (hazardsByStage[WORKFLOW_STAGES.CLOSED]?.length || 0) // Placeholder logic for "This Month"
   };
 
   return (
@@ -386,26 +278,28 @@ export default function SafetyManagerDashboard() {
 
         {/* All Reports Tab */}
         <TabsContent value="all" className="space-y-4">
-          {Object.entries(hazardsByStage).map(([stage, hazards]) => {
-            if (hazards.length === 0) return null;
-            
+          {Object.entries(hazardsByStage).map(([stage, stageHazards]) => {
+            if (!stageHazards || stageHazards.length === 0) return null;
+
             return (
               <Card key={stage}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     {getStageIcon(stage)}
                     {stage}
-                    <Badge className="ml-2">{hazards.length}</Badge>
+                    <Badge className="ml-2">{stageHazards.length}</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {hazards.map(hazard => (
-                      <div 
+                    {stageHazards.filter(h =>
+                      h.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      h.id.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).map(hazard => (
+                      <div
                         key={hazard.id}
-                        className={`p-4 border-2 rounded-lg hover:shadow-md transition-shadow ${
-                          needsAttention(hazard) ? 'border-red-300 bg-red-50/50' : 'border-gray-200'
-                        }`}
+                        className={`p-4 border-2 rounded-lg hover:shadow-md transition-shadow ${needsAttention(hazard) ? 'border-red-300 bg-red-50/50' : 'border-gray-200'
+                          }`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -416,8 +310,8 @@ export default function SafetyManagerDashboard() {
                               <Badge className={getSeverityColor(hazard.severity)} variant="outline">
                                 {hazard.severity}
                               </Badge>
-                              <Badge className={getStageColor(hazard.stage)} variant="outline">
-                                {hazard.stage}
+                              <Badge className={getStageColor(hazard.workflowStage)} variant="outline">
+                                {hazard.workflowStage}
                               </Badge>
                               {needsAttention(hazard) && (
                                 <Badge className="bg-red-600 text-white">
@@ -433,12 +327,12 @@ export default function SafetyManagerDashboard() {
                                 <span className="ml-2">{hazard.location}</span>
                               </div>
                               <div>
-                                <span className="text-muted-foreground">Submitted:</span>
-                                <span className="ml-2">{hazard.submitDate}</span>
+                                <span className="text-muted-foreground">Reported:</span>
+                                <span className="ml-2">{hazard.reportedDate}</span>
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Days in Stage:</span>
-                                <span className="ml-2 font-medium">{hazard.daysInStage}</span>
+                                <span className="ml-2 font-medium">{hazard.daysInStage || 0}</span>
                               </div>
                               {hazard.assignedTo && (
                                 <div>
@@ -447,10 +341,10 @@ export default function SafetyManagerDashboard() {
                                 </div>
                               )}
                             </div>
-                            {hazard.stage === WORKFLOW_STAGES.EFFECTIVENESS_REVIEW && hazard.daysUntilReview && (
+                            {hazard.workflowStage === WORKFLOW_STAGES.EFFECTIVENESS_REVIEW && hazard.effectivenessReviewDate && (
                               <div className="mt-2 p-2 bg-cyan-50 border border-cyan-200 rounded text-sm">
                                 <Clock className="w-4 h-4 inline mr-1" />
-                                Effectiveness review due in {hazard.daysUntilReview} days ({hazard.effectivenessReviewDate})
+                                Effectiveness review due in {getDaysUntil(hazard.effectivenessReviewDate)} days ({hazard.effectivenessReviewDate})
                               </div>
                             )}
                           </div>
@@ -473,9 +367,9 @@ export default function SafetyManagerDashboard() {
         {/* Needs Review Tab */}
         <TabsContent value="needs-review" className="space-y-3">
           {[
-            ...hazardsByStage[WORKFLOW_STAGES.SUBMITTED] || [],
-            ...hazardsByStage[WORKFLOW_STAGES.SM_INITIAL_REVIEW] || [],
-            ...hazardsByStage[WORKFLOW_STAGES.SM_CA_REVIEW] || []
+            ...(hazardsByStage[WORKFLOW_STAGES.SUBMITTED] || []),
+            ...(hazardsByStage[WORKFLOW_STAGES.SM_INITIAL_REVIEW] || []),
+            ...(hazardsByStage[WORKFLOW_STAGES.SM_CA_REVIEW] || [])
           ].map(hazard => (
             <Card key={hazard.id} className="border-2 border-red-300 bg-red-50/50">
               <CardContent className="p-4">
@@ -486,15 +380,15 @@ export default function SafetyManagerDashboard() {
                       <Badge className={getSeverityColor(hazard.severity)} variant="outline">
                         {hazard.severity}
                       </Badge>
-                      <Badge className={getStageColor(hazard.stage)} variant="outline">
-                        {hazard.stage}
+                      <Badge className={getStageColor(hazard.workflowStage)} variant="outline">
+                        {hazard.workflowStage}
                       </Badge>
                     </div>
                     <p className="font-medium mb-2">{hazard.title}</p>
                     <p className="text-sm text-muted-foreground">{hazard.location}</p>
                   </div>
                   <Link to={`/safety/hazard-workflow/${hazard.id}`}>
-                    <Button className="bg-red-600 hover:bg-red-700">
+                    <Button className="bg-red-600 hover:bg-red-700 text-white">
                       <Eye className="w-4 h-4 mr-2" />
                       Review Now
                     </Button>
@@ -508,9 +402,9 @@ export default function SafetyManagerDashboard() {
         {/* In Progress Tab */}
         <TabsContent value="in-progress" className="space-y-3">
           {[
-            ...hazardsByStage[WORKFLOW_STAGES.ASSIGNED_CORRECTIVE_ACTION] || [],
-            ...hazardsByStage[WORKFLOW_STAGES.IMPLEMENTATION_ASSIGNMENT] || [],
-            ...hazardsByStage[WORKFLOW_STAGES.IMPLEMENTATION_IN_PROGRESS] || []
+            ...(hazardsByStage[WORKFLOW_STAGES.ASSIGNED_CORRECTIVE_ACTION] || []),
+            ...(hazardsByStage[WORKFLOW_STAGES.IMPLEMENTATION_ASSIGNMENT] || []),
+            ...(hazardsByStage[WORKFLOW_STAGES.IMPLEMENTATION_IN_PROGRESS] || [])
           ].map(hazard => (
             <Card key={hazard.id}>
               <CardContent className="p-4">
@@ -521,12 +415,12 @@ export default function SafetyManagerDashboard() {
                       <Badge className={getSeverityColor(hazard.severity)} variant="outline">
                         {hazard.severity}
                       </Badge>
-                      <Badge className={getStageColor(hazard.stage)} variant="outline">
-                        {hazard.stage}
+                      <Badge className={getStageColor(hazard.workflowStage)} variant="outline">
+                        {hazard.workflowStage}
                       </Badge>
                     </div>
                     <p className="font-medium mb-2">{hazard.title}</p>
-                    <p className="text-sm text-muted-foreground">Assigned to: {hazard.assignedTo}</p>
+                    <p className="text-sm text-muted-foreground">Assigned to: {hazard.assignedTo || 'Unassigned'}</p>
                   </div>
                   <Link to={`/safety/hazard-workflow/${hazard.id}`}>
                     <Button variant="outline">
@@ -543,8 +437,8 @@ export default function SafetyManagerDashboard() {
         {/* Approvals Tab */}
         <TabsContent value="approvals" className="space-y-3">
           {[
-            ...hazardsByStage[WORKFLOW_STAGES.LINE_MANAGER_APPROVAL] || [],
-            ...hazardsByStage[WORKFLOW_STAGES.EXEC_APPROVAL] || []
+            ...(hazardsByStage[WORKFLOW_STAGES.LINE_MANAGER_APPROVAL] || []),
+            ...(hazardsByStage[WORKFLOW_STAGES.EXEC_APPROVAL] || [])
           ].map(hazard => (
             <Card key={hazard.id}>
               <CardContent className="p-4">
@@ -555,12 +449,12 @@ export default function SafetyManagerDashboard() {
                       <Badge className={getSeverityColor(hazard.severity)} variant="outline">
                         {hazard.severity}
                       </Badge>
-                      <Badge className={getStageColor(hazard.stage)} variant="outline">
-                        {hazard.stage}
+                      <Badge className={getStageColor(hazard.workflowStage)} variant="outline">
+                        {hazard.workflowStage}
                       </Badge>
                     </div>
                     <p className="font-medium mb-2">{hazard.title}</p>
-                    <p className="text-sm text-muted-foreground">Assigned to: {hazard.assignedTo}</p>
+                    <p className="text-sm text-muted-foreground">Assigned to: {hazard.assignedTo || 'Unassigned'}</p>
                   </div>
                   <Link to={`/safety/hazard-workflow/${hazard.id}`}>
                     <Button variant="outline">
@@ -593,7 +487,7 @@ export default function SafetyManagerDashboard() {
                     <p className="font-medium mb-2">{hazard.title}</p>
                     <div className="text-sm">
                       <Clock className="w-4 h-4 inline mr-1" />
-                      Review due: {hazard.effectivenessReviewDate} ({hazard.daysUntilReview} days)
+                      Review due: {hazard.effectivenessReviewDate || 'N/A'} ({getDaysUntil(hazard.effectivenessReviewDate)} days)
                     </div>
                   </div>
                   <Link to={`/safety/hazard-workflow/${hazard.id}`}>
@@ -610,13 +504,39 @@ export default function SafetyManagerDashboard() {
 
         {/* Closed Tab */}
         <TabsContent value="closed" className="space-y-3">
-          <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              <Archive className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No closed hazard reports this month</p>
-              <Button variant="link" className="mt-2">View Archive</Button>
-            </CardContent>
-          </Card>
+          {(hazardsByStage[WORKFLOW_STAGES.CLOSED] || []).length > 0 ? (
+            hazardsByStage[WORKFLOW_STAGES.CLOSED].map(hazard => (
+              <Card key={hazard.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className="font-mono">{hazard.id}</Badge>
+                        <Badge className="bg-green-100 text-green-800 border-green-200" variant="outline">
+                          Closed
+                        </Badge>
+                      </div>
+                      <p className="font-medium mb-2">{hazard.title}</p>
+                      <p className="text-sm text-muted-foreground">{hazard.location}</p>
+                    </div>
+                    <Link to={`/safety/hazard-workflow/${hazard.id}`}>
+                      <Button variant="outline">
+                        <Eye className="w-4 h-4 mr-2" />
+                        Review Archive
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <Archive className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No closed hazard reports found.</p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

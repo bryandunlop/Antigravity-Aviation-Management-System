@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import React, { useState, useEffect, useCallback } from 'react';
+import { CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { LiquidCard } from './LiquidCard';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Link } from 'react-router-dom';
@@ -8,12 +9,12 @@ import InflightUpcomingFlights from './InflightUpcomingFlights';
 import FleetStatusWidget from './FleetStatusWidget';
 import ScheduleCalendar from './ScheduleCalendar';
 import NASImpactWidget from './NASImpactWidget';
+import OnShiftWidget from './OnShiftWidget';
 import { useFlightNASImpact } from './hooks/useFlightNASImpact';
 import { useSatcomDirect } from './hooks/useSatcomDirect';
 import {
   Plane,
   Users,
-  Clock,
   AlertTriangle,
   CheckCircle,
   Calendar,
@@ -21,26 +22,26 @@ import {
   Wrench,
   BarChart3,
   Shield,
-  Target,
   UserCheck,
   Utensils,
   Package,
-  ClipboardCheck,
-  Fuel,
   Plus,
   Activity,
   BookOpen,
   Send,
-  ChefHat,
-  Radio,
   Wifi,
-  Zap,
-  MapPin,
-  Bell,
   CloudRain,
-  TrendingUp,
-  Eye
+  MapPin,
+  Settings,
+  RotateCcw,
+  Save,
+  Layout
 } from 'lucide-react';
+import { ForeFlightLogo } from './ui/ForeFlightLogo';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { DraggableWidget } from './dashboard/DraggableWidget';
+import { toast } from 'sonner';
 
 interface DashboardProps {
   userRole: string;
@@ -57,112 +58,269 @@ interface QuickAction {
 
 export default function Dashboard({ userRole }: DashboardProps) {
   const { impactData } = useFlightNASImpact();
-  const { fleetSummary, getActiveFlights } = useSatcomDirect();
+  const { fleetSummary } = useSatcomDirect();
+  const [isCustomizeMode, setIsCustomizeMode] = useState(false);
 
-  // Role-based quick actions - simplified to 4 most important
+  // Role-based quick actions
   const getQuickActions = (): QuickAction[] => {
     switch (userRole) {
       case 'pilot':
         return [
-          { title: 'ForeFlight Dispatch', description: 'Flight planning & weather', icon: MapPin, href: 'https://dispatch.foreflight.com', color: 'bg-blue-500', external: true },
-          { title: 'Create FRAT', description: 'Flight Risk Assessment', icon: FileText, href: '/frat', color: 'bg-green-500' },
-          { title: 'Safety Center', description: 'Report hazards & incidents', icon: Shield, href: '/safety', color: 'bg-red-500' },
-          { title: 'Aircraft Status', description: 'Monitor fleet status', icon: Plane, href: '/aircraft', color: 'bg-purple-500' }
+          { title: 'ForeFlight Dispatch', description: 'ForeFlight Dispatch', icon: ForeFlightLogo, href: 'https://dispatch.foreflight.com', color: 'text-blue-400 bg-blue-400/10', external: true },
+          { title: 'Create FRAT', description: 'Flight Risk Assessment', icon: FileText, href: '/frat', color: 'text-emerald-400 bg-emerald-400/10' },
+          { title: 'Safety Center', description: 'Report hazards & incidents', icon: Shield, href: '/safety', color: 'text-amber-400 bg-amber-400/10' },
+          { title: 'Aircraft Status', description: 'Monitor fleet status', icon: Plane, href: '/aircraft', color: 'text-purple-400 bg-purple-400/10' }
         ];
       case 'inflight':
         return [
-          { title: 'Safety Center', description: 'Report hazards & incidents', icon: Shield, href: '/safety', color: 'bg-red-500' },
-          { title: 'Passenger Database', description: 'Safety & preferences', icon: Users, href: '/passenger-database', color: 'bg-green-500' },
-          { title: 'Catering Orders', description: 'Flight catering management', icon: Utensils, href: '/catering-orders', color: 'bg-purple-500' },
-          { title: 'Calendar View', description: 'Full flight calendar', icon: Calendar, href: '/upcoming-flights', color: 'bg-blue-500' }
+          { title: 'Safety Center', description: 'Report hazards & incidents', icon: Shield, href: '/safety', color: 'text-amber-400 bg-amber-400/10' },
+          { title: 'Passenger Database', description: 'Safety & preferences', icon: Users, href: '/passenger-database', color: 'text-emerald-400 bg-emerald-400/10' },
+          { title: 'Catering Orders', description: 'Flight catering management', icon: Utensils, href: '/catering-orders', color: 'text-purple-400 bg-purple-400/10' },
+          { title: 'Calendar View', description: 'Full flight calendar', icon: Calendar, href: '/upcoming-flights', color: 'text-blue-400 bg-blue-400/10' }
         ];
       case 'maintenance':
         return [
-          { title: 'Maintenance Board', description: 'Scheduled work', icon: Wrench, href: '/maintenance', color: 'bg-blue-500' },
-          { title: 'Safety Center', description: 'Report hazards & incidents', icon: Shield, href: '/safety', color: 'bg-red-500' },
-          { title: 'Tech Log', description: 'Aircraft discrepancies', icon: FileText, href: '/tech-log', color: 'bg-green-500' },
-          { title: 'Parts Inventory', description: 'Stock levels', icon: Package, href: '/aircraft-inventory', color: 'bg-purple-500' }
+          { title: 'Maintenance Board', description: 'Scheduled work', icon: Wrench, href: '/maintenance', color: 'text-blue-400 bg-blue-400/10' },
+          { title: 'Safety Center', description: 'Report hazards & incidents', icon: Shield, href: '/safety', color: 'text-amber-400 bg-amber-400/10' },
+          { title: 'Tech Log', description: 'Aircraft discrepancies', icon: FileText, href: '/tech-log', color: 'text-emerald-400 bg-emerald-400/10' },
+          { title: 'Parts Inventory', description: 'Stock levels', icon: Package, href: '/aircraft-inventory', color: 'text-purple-400 bg-purple-400/10' }
         ];
       case 'safety':
         return [
-          { title: 'Safety Center', description: 'All safety tools', icon: Shield, href: '/safety', color: 'bg-blue-500' },
-          { title: 'FRAT Review', description: 'Pending approvals', icon: FileText, href: '/frat/review', color: 'bg-green-500' },
-          { title: 'Hazard Reports', description: 'Safety incidents', icon: AlertTriangle, href: '/safety/hazards', color: 'bg-orange-500' },
-          { title: 'Compliance Review', description: 'Document tracking', icon: UserCheck, href: '/safety/compliance', color: 'bg-purple-500' }
+          { title: 'Safety Center', description: 'All safety tools', icon: Shield, href: '/safety', color: 'text-blue-400 bg-blue-400/10' },
+          { title: 'FRAT Review', description: 'Pending approvals', icon: FileText, href: '/frat/review', color: 'text-emerald-400 bg-emerald-400/10' },
+          { title: 'Hazard Reports', description: 'Safety incidents', icon: AlertTriangle, href: '/safety/hazards', color: 'text-amber-400 bg-amber-400/10' },
+          { title: 'Compliance Review', description: 'Document tracking', icon: UserCheck, href: '/safety/compliance', color: 'text-purple-400 bg-purple-400/10' }
         ];
       case 'scheduling':
         return [
-          { title: 'ForeFlight Dispatch', description: 'Flight planning & weather', icon: MapPin, href: 'https://dispatch.foreflight.com', color: 'bg-blue-500', external: true },
-          { title: 'Scheduling Dashboard', description: 'Flight operations', icon: Calendar, href: '/scheduling-dashboard', color: 'bg-green-500' },
-          { title: 'Crew Currency', description: 'Pilot qualifications', icon: UserCheck, href: '/crew-management', color: 'bg-purple-500' },
-          { title: 'Aircraft Status', description: 'Fleet availability', icon: Plane, href: '/aircraft', color: 'bg-orange-500' }
+          { title: 'ForeFlight Dispatch', description: 'ForeFlight Dispatch', icon: ForeFlightLogo, href: 'https://dispatch.foreflight.com', color: 'text-blue-400 bg-blue-400/10', external: true },
+          { title: 'Scheduling Dashboard', description: 'Flight operations', icon: Calendar, href: '/scheduling-dashboard', color: 'text-emerald-400 bg-emerald-400/10' },
+          { title: 'Crew Currency', description: 'Pilot qualifications', icon: UserCheck, href: '/crew-management', color: 'text-purple-400 bg-purple-400/10' },
+          { title: 'Aircraft Status', description: 'Fleet availability', icon: Plane, href: '/aircraft', color: 'text-amber-400 bg-amber-400/10' }
         ];
       case 'document-manager':
         return [
-          { title: 'Document Management', description: 'Publish & distribute', icon: Plus, href: '/document-management', color: 'bg-blue-500' },
-          { title: 'Review Queue', description: 'Pending requests', icon: FileText, href: '/document-management/queue', color: 'bg-green-500' },
-          { title: 'Compliance Tracking', description: 'Monitor acknowledgments', icon: CheckCircle, href: '/document-management', color: 'bg-orange-500' },
-          { title: 'Document Analytics', description: 'Engagement metrics', icon: BarChart3, href: '/document-management', color: 'bg-purple-500' }
+          { title: 'Document Management', description: 'Publish & distribute', icon: Plus, href: '/document-management', color: 'text-blue-400 bg-blue-400/10' },
+          { title: 'Review Queue', description: 'Pending requests', icon: FileText, href: '/document-management/queue', color: 'text-emerald-400 bg-emerald-400/10' },
+          { title: 'Compliance Tracking', description: 'Monitor acknowledgments', icon: CheckCircle, href: '/document-management', color: 'text-amber-400 bg-amber-400/10' },
+          { title: 'Document Analytics', description: 'Engagement metrics', icon: BarChart3, href: '/document-management', color: 'text-purple-400 bg-purple-400/10' }
         ];
       case 'admin-assistant':
         return [
-          { title: 'Trip Management', description: 'Client trips & itineraries', icon: BookOpen, href: '/booking-profile', color: 'bg-blue-500' },
-          { title: 'Passenger Database', description: 'Client profiles', icon: Users, href: '/passenger-database', color: 'bg-green-500' },
-          { title: 'Schedule View', description: 'Flight operations', icon: Calendar, href: '/schedule', color: 'bg-purple-500' },
-          { title: 'Documents', description: 'Forms & procedures', icon: FileText, href: '/documents', color: 'bg-orange-500' }
+          { title: 'Trip Management', description: 'Client trips & itineraries', icon: BookOpen, href: '/booking-profile', color: 'text-blue-400 bg-blue-400/10' },
+          { title: 'Passenger Database', description: 'Client profiles', icon: Users, href: '/passenger-database', color: 'text-emerald-400 bg-emerald-400/10' },
+          { title: 'Schedule View', description: 'Flight operations', icon: Calendar, href: '/schedule', color: 'text-purple-400 bg-purple-400/10' },
+          { title: 'Documents', description: 'Forms & procedures', icon: FileText, href: '/documents', color: 'text-amber-400 bg-amber-400/10' }
         ];
       case 'admin':
       case 'lead':
         return [
-          { title: 'Lead Dashboard', description: 'KPIs and analytics', icon: BarChart3, href: '/lead-dashboard', color: 'bg-blue-500' },
-          { title: 'Trip Management', description: 'Trip coordination', icon: BookOpen, href: '/booking-profile', color: 'bg-green-500' },
-          { title: 'Fleet Status', description: 'Aircraft overview', icon: Plane, href: '/aircraft', color: 'bg-purple-500' },
-          { title: 'Safety Center', description: 'All safety tools', icon: Shield, href: '/safety', color: 'bg-orange-500' }
+          { title: 'Lead Dashboard', description: 'KPIs and analytics', icon: BarChart3, href: '/lead-dashboard', color: 'text-blue-400 bg-blue-400/10' },
+          { title: 'Trip Management', description: 'Trip coordination', icon: BookOpen, href: '/booking-profile', color: 'text-emerald-400 bg-emerald-400/10' },
+          { title: 'Fleet Status', description: 'Aircraft overview', icon: Plane, href: '/aircraft', color: 'text-purple-400 bg-purple-400/10' },
+          { title: 'Safety Center', description: 'All safety tools', icon: Shield, href: '/safety', color: 'text-amber-400 bg-amber-400/10' }
         ];
       default:
         return [
-          { title: 'Document Request', description: 'Request document changes', icon: Send, href: '/document-management', color: 'bg-blue-500' },
-          { title: 'Safety Center', description: 'Report safety concerns', icon: Shield, href: '/safety', color: 'bg-orange-500' },
-          { title: 'Schedule View', description: 'Flight operations', icon: Calendar, href: '/schedule', color: 'bg-green-500' },
-          { title: 'Documents', description: 'Manuals & procedures', icon: FileText, href: '/documents', color: 'bg-purple-500' }
+          { title: 'Document Request', description: 'Request document changes', icon: Send, href: '/document-management', color: 'text-blue-400 bg-blue-400/10' },
+          { title: 'Safety Center', description: 'Report safety concerns', icon: Shield, href: '/safety', color: 'text-amber-400 bg-amber-400/10' },
+          { title: 'Schedule View', description: 'Flight operations', icon: Calendar, href: '/schedule', color: 'text-emerald-400 bg-emerald-400/10' },
+          { title: 'Documents', description: 'Manuals & procedures', icon: FileText, href: '/documents', color: 'text-purple-400 bg-purple-400/10' }
         ];
     }
   };
 
   const quickActions = getQuickActions();
 
-  // Simplified flight data - only current critical flights
-  const getCriticalFlights = () => {
-    const now = new Date();
-    const currentHour = now.getHours();
+  // Widget Registry
+  const renderWidget = (id: string) => {
+    switch (id) {
+      case 'stats_grid':
+        return (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <LiquidCard delay={100}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400 font-medium tracking-wide uppercase">Active Flights</p>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <p className="text-4xl font-mono text-white">{fleetSummary?.activeFlights || 0}</p>
+                      <span className="text-xs text-emerald-400">Live</span>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-[var(--color-pg-blue)]/20 rounded-xl border border-[var(--color-pg-blue)]/30">
+                    <Plane className="w-6 h-6 text-[var(--color-pg-cyan)]" />
+                  </div>
+                </div>
+              </CardContent>
+            </LiquidCard>
 
-    // Show only flights that are happening now or soon
-    return [
-      { id: 'FO001', departure: '08:00', arrival: '11:30', route: 'LAX → JFK', status: 'On Time', aircraft: 'N123AB' },
-      { id: 'FO002', departure: '14:15', arrival: '17:45', route: 'JFK → MIA', status: 'Delayed', aircraft: 'N456CD' },
-      { id: 'FO003', departure: '19:30', arrival: '22:00', route: 'MIA → LAX', status: 'Boarding', aircraft: 'N789EF' }
-    ].filter(flight => {
-      const flightHour = parseInt(flight.departure.split(':')[0]);
-      return Math.abs(flightHour - currentHour) <= 4; // Show flights within 4 hours
-    });
-  };
+            <LiquidCard delay={200}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400 font-medium tracking-wide uppercase">Fleet Online</p>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <p className="text-4xl font-mono text-white">{fleetSummary?.onlineAircraft || 0}</p>
+                      <span className="text-sm text-slate-500">/ {fleetSummary?.totalAircraft || 0}</span>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                    <Wifi className="w-6 h-6 text-emerald-400" />
+                  </div>
+                </div>
+              </CardContent>
+            </LiquidCard>
 
-  const criticalFlights = getCriticalFlights();
+            <LiquidCard delay={300}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400 font-medium tracking-wide uppercase">System Health</p>
+                    <p className={`text-2xl font-bold mt-2 ${fleetSummary?.systemAlerts === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {fleetSummary?.systemAlerts === 0 ? 'Normal' : `${fleetSummary?.systemAlerts || 0} Alerts`}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-xl border ${fleetSummary?.systemAlerts === 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
+                    {fleetSummary?.systemAlerts === 0 ?
+                      <CheckCircle className="w-6 h-6 text-emerald-400" /> :
+                      <AlertTriangle className="w-6 h-6 text-amber-400" />
+                    }
+                  </div>
+                </div>
+              </CardContent>
+            </LiquidCard>
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'on time': return 'bg-green-100 text-green-800';
-      case 'delayed': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'boarding': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+            <LiquidCard delay={400}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400 font-medium tracking-wide uppercase">Weather Impact</p>
+                    <p className={`text-2xl font-bold mt-2 ${impactData.totalImpacted === 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {impactData.totalImpacted === 0 ? 'Clear' : `${impactData.totalImpacted} Flights`}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-xl border ${impactData.totalImpacted === 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20'}`}>
+                    {impactData.totalImpacted === 0 ?
+                      <CheckCircle className="w-6 h-6 text-emerald-400" /> :
+                      <CloudRain className="w-6 h-6 text-rose-400" />
+                    }
+                  </div>
+                </div>
+              </CardContent>
+            </LiquidCard>
+          </div>
+        );
+      case 'fleet_status':
+        return <FleetStatusWidget compact={false} showDetailsLink={true} />;
+      case 'on_shift':
+        return <OnShiftWidget />;
+      case 'quick_actions':
+        return (
+          <LiquidCard delay={500}>
+            <CardHeader className="border-b border-white/5 pb-4">
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Activity className="w-5 h-5 text-[var(--color-pg-cyan)]" />
+                Quick Actions
+              </CardTitle>
+              <CardDescription className="text-slate-400">Essential tools for your role</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {quickActions.map((action, index) => {
+                  const Icon = action.icon;
+                  const content = (
+                    <div className="group p-4 border border-white/5 bg-white/5 rounded-xl hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] transition-all cursor-pointer h-full">
+                      <div className="flex items-start gap-4">
+                        <div className={`p-2.5 rounded-lg ${action.color} group-hover:scale-110 transition-transform shadow-lg shadow-black/20`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-white truncate group-hover:text-[var(--color-pg-cyan)] transition-colors">{action.title}</p>
+                          <p className="text-xs text-slate-400 truncate mt-1">{action.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+
+                  if (action.external) {
+                    return (
+                      <a key={index} href={action.href} target="_blank" rel="noopener noreferrer" className="block h-full">
+                        {content}
+                      </a>
+                    );
+                  }
+                  return (
+                    <Link key={index} to={action.href} className="block h-full">
+                      {content}
+                    </Link>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </LiquidCard>
+        );
+      case 'inflight_upcoming':
+        return userRole === 'inflight' ? <InflightUpcomingFlights compact={true} /> : null;
+      case 'nas_impact':
+        return userRole === 'pilot' ? <NASImpactWidget pilotName="Current Pilot" compact={false} maxFlights={3} /> : null;
+      case 'live_map':
+        return <LiveFleetMap />;
+      case 'schedule_calendar':
+        return <ScheduleCalendar />;
+      default:
+        return null;
     }
   };
 
-  // Get active flights from Satcom Direct
-  const activeFlights = getActiveFlights();
+  // Initial order logic
+  const getDefaultOrder = useCallback(() => {
+    const baseOrder = [
+      'stats_grid',
+      'fleet_status',
+      'on_shift',
+      'quick_actions',
+      'live_map',
+      'schedule_calendar'
+    ];
+    if (userRole === 'inflight') baseOrder.splice(4, 0, 'inflight_upcoming');
+    if (userRole === 'pilot') baseOrder.splice(4, 0, 'nas_impact');
+    return baseOrder;
+  }, [userRole]);
 
-  // Get current time and greeting
+  // Load/Save Order
+  const [widgetOrder, setWidgetOrder] = useState<string[]>([]);
+
+  useEffect(() => {
+    const savedOrder = localStorage.getItem(`dashboard_order_${userRole}`);
+    if (savedOrder) {
+      setWidgetOrder(JSON.parse(savedOrder));
+    } else {
+      setWidgetOrder(getDefaultOrder());
+    }
+  }, [userRole, getDefaultOrder]);
+
+  const moveWidget = (dragIndex: number, hoverIndex: number) => {
+    const newOrder = [...widgetOrder];
+    const [removed] = newOrder.splice(dragIndex, 1);
+    newOrder.splice(hoverIndex, 0, removed);
+    setWidgetOrder(newOrder);
+  };
+
+  const handleSaveLayout = () => {
+    localStorage.setItem(`dashboard_order_${userRole}`, JSON.stringify(widgetOrder));
+    setIsCustomizeMode(false);
+    toast.success('Dashboard layout saved');
+  };
+
+  const handleResetLayout = () => {
+    const defaultOrder = getDefaultOrder();
+    setWidgetOrder(defaultOrder);
+    localStorage.removeItem(`dashboard_order_${userRole}`);
+    toast.success('Layout reset to default');
+  };
+
   const getCurrentGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -171,165 +329,59 @@ export default function Dashboard({ userRole }: DashboardProps) {
   };
 
   return (
-    <div className="p-4 space-y-6 max-w-7xl mx-auto">
-      {/* Clean Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{getCurrentGreeting()}</h1>
-          <p className="text-muted-foreground">
-            {userRole.charAt(0).toUpperCase() + userRole.slice(1)} Dashboard • {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
-            Last updated: {new Date().toLocaleTimeString()}
-          </Badge>
-        </div>
-      </div>
-
-      {/* Essential Metrics - Clean and Simple */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="aviation-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active Flights</p>
-                <p className="text-2xl font-bold text-blue-600">{fleetSummary?.activeFlights || 0}</p>
-              </div>
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Plane className="w-5 h-5 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="aviation-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Fleet Online</p>
-                <p className="text-2xl font-bold text-green-600">{fleetSummary?.onlineAircraft || 0}/{fleetSummary?.totalAircraft || 0}</p>
-              </div>
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Wifi className="w-5 h-5 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="aviation-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">System Health</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {fleetSummary?.systemAlerts === 0 ? 'Normal' : `${fleetSummary?.systemAlerts || 0} Alerts`}
-                </p>
-              </div>
-              <div className={`p-2 rounded-lg ${fleetSummary?.systemAlerts === 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                {fleetSummary?.systemAlerts === 0 ?
-                  <CheckCircle className="w-5 h-5 text-green-600" /> :
-                  <AlertTriangle className="w-5 h-5 text-red-600" />
-                }
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="aviation-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Weather Impact</p>
-                <p className="text-2xl font-bold text-orange-600">{impactData.totalImpacted}</p>
-              </div>
-              <div className={`p-2 rounded-lg ${impactData.totalImpacted === 0 ? 'bg-green-100' : 'bg-orange-100'}`}>
-                {impactData.totalImpacted === 0 ?
-                  <CheckCircle className="w-5 h-5 text-green-600" /> :
-                  <CloudRain className="w-5 h-5 text-orange-600" />
-                }
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Fleet Status Widget - Now visible to all users */}
-      <FleetStatusWidget compact={false} showDetailsLink={true} />
-
-      {/* Quick Actions - Streamlined */}
-      <Card className="aviation-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-accent" />
-            Quick Actions
-          </CardTitle>
-          <CardDescription>Essential tools for your role</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {quickActions.map((action, index) => {
-              const Icon = action.icon;
-
-              if (action.external) {
-                return (
-                  <a
-                    key={index}
-                    href={action.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block"
-                  >
-                    <div className="group p-4 border rounded-lg hover:bg-accent/5 hover:border-accent/20 transition-all cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 ${action.color} text-white rounded-md group-hover:scale-105 transition-transform`}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{action.title}</p>
-                          <p className="text-xs text-muted-foreground truncate">{action.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </a>
-                );
-              }
-
-              return (
-                <Link key={index} to={action.href}>
-                  <div className="group p-4 border rounded-lg hover:bg-accent/5 hover:border-accent/20 transition-all cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 ${action.color} text-white rounded-md group-hover:scale-105 transition-transform`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{action.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{action.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+    <DndProvider backend={HTML5Backend}>
+      <div className="p-4 space-y-6 max-w-7xl mx-auto">
+        {/* Clean Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white tracking-tight">{getCurrentGreeting()}</h1>
+            <p className="text-slate-400">
+              {userRole.charAt(0).toUpperCase() + userRole.slice(1)} Dashboard • {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs border-white/10 text-slate-400 bg-white/5 mr-2">
+              Last updated: {new Date().toLocaleTimeString()}
+            </Badge>
 
-      {/* Upcoming Flights for Inflight Users */}
-      {userRole === 'inflight' && (
-        <InflightUpcomingFlights compact={true} />
-      )}
+            {isCustomizeMode ? (
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={handleResetLayout} className="gap-2 text-slate-200 hover:text-white hover:bg-white/10">
+                  <RotateCcw className="w-4 h-4" /> Reset
+                </Button>
+                <Button variant="default" size="sm" onClick={handleSaveLayout} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-900/20 border border-emerald-500/50">
+                  <Save className="w-4 h-4" /> Save Layout
+                </Button>
+              </div>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => setIsCustomizeMode(true)} className="gap-2 border-white/10 hover:bg-white/5">
+                <Settings className="w-4 h-4" /> Customize
+              </Button>
+            )}
+          </div>
+        </div>
 
-      {/* NAS Impact Alerts for Pilots */}
-      {userRole === 'pilot' && (
-        <NASImpactWidget pilotName="Current Pilot" compact={false} maxFlights={3} />
-      )}
-
-      {/* Fleet Map - Enhanced with Real Map */}
-      <LiveFleetMap />
-
-      {/* Full Schedule Calendar */}
-      <ScheduleCalendar />
-    </div>
+        {/* Dashboard Grid */}
+        <div className="space-y-6">
+          {widgetOrder.map((widgetId, index) => {
+            const content = renderWidget(widgetId);
+            if (!content) return null;
+            return (
+              <DraggableWidget
+                key={widgetId}
+                id={widgetId}
+                index={index}
+                moveWidget={moveWidget}
+                isCustomizeMode={isCustomizeMode}
+                className={isCustomizeMode ? "mb-6" : ""}
+                totalCount={widgetOrder.length}
+              >
+                {content}
+              </DraggableWidget>
+            );
+          })}
+        </div>
+      </div>
+    </DndProvider>
   );
 }
