@@ -53,6 +53,7 @@ export default function HazardReporting() {
   const [newHazardImmediateAction, setNewHazardImmediateAction] = useState('');
   const [newHazardConsequences, setNewHazardConsequences] = useState('');
   const [newHazardLocation, setNewHazardLocation] = useState('');
+  const [newHazardSeverity, setNewHazardSeverity] = useState('Medium');
   // const [newHazardCategory, setNewHazardCategory] = useState(''); // Could add select for category
   const [selectedRiskFactors, setSelectedRiskFactors] = useState<string[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
@@ -143,7 +144,7 @@ export default function HazardReporting() {
       immediateActions: newHazardImmediateAction,
       potentialConsequences: newHazardConsequences,
       location: newHazardLocation || 'Unknown',
-      severity: 'Medium', // Default or add field
+      severity: newHazardSeverity,
       reportedBy: 'Current User', // Use Auth in real app
       category: 'Safety', // Default or add field
       riskFactors: selectedRiskFactors,
@@ -158,6 +159,7 @@ export default function HazardReporting() {
     setNewHazardImmediateAction('');
     setNewHazardConsequences('');
     setNewHazardLocation('');
+    setNewHazardSeverity('Medium');
     setSelectedRiskFactors([]);
     setAttachedFiles([]);
   };
@@ -219,6 +221,22 @@ export default function HazardReporting() {
                 </div>
               </div>
 
+              {/* Severity Selection */}
+              <div>
+                <Label>Initial Severity Assessment</Label>
+                <Select value={newHazardSeverity} onValueChange={setNewHazardSeverity}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select severity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low - Minor issue, low priority</SelectItem>
+                    <SelectItem value="medium">Medium - Standard safety concern</SelectItem>
+                    <SelectItem value="high">High - Significant risk, urgent attention</SelectItem>
+                    <SelectItem value="critical">Critical - Immediate danger, stop operations</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Risk Factors */}
               <div>
                 <Label>Risk Factors</Label>
@@ -228,7 +246,7 @@ export default function HazardReporting() {
                       <Checkbox
                         id={factor}
                         checked={selectedRiskFactors.includes(factor)}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={(checked: boolean) => {
                           if (checked) {
                             setSelectedRiskFactors([...selectedRiskFactors, factor]);
                           } else {

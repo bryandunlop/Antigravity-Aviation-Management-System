@@ -26,6 +26,7 @@ import {
   PauseCircle,
   Plus,
   Trash2,
+  Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useHazards, WORKFLOW_STAGES } from '../contexts/HazardContext';
@@ -88,7 +89,15 @@ export default function HazardWorkflow() {
       }
       if (hazard.whyAnalysis && hazard.whyAnalysis.length > 0) setWhyAnalysis(hazard.whyAnalysis);
       if (hazard.investigationNotes) setInvestigationNotes(hazard.investigationNotes);
-      if (hazard.paceAssignments) setPaceAssignments(hazard.paceAssignments);
+      // Safely hydrate PACE assignments with defaults for missing arrays
+      if (hazard.paceAssignments) {
+        setPaceAssignments({
+          processOwner: hazard.paceAssignments.processOwner || { type: 'user', value: '', customName: '', customEmail: '' },
+          approver: hazard.paceAssignments.approver || { type: 'user', value: '', customName: '', customEmail: '' },
+          contributors: hazard.paceAssignments.contributors || [],
+          executers: hazard.paceAssignments.executers || []
+        });
+      }
       if (hazard.correctiveActionComponents) setCorrectiveActionComponents(hazard.correctiveActionComponents);
       if (hazard.correctiveActionDetails) setCorrectiveActionDetails(hazard.correctiveActionDetails);
 
@@ -367,7 +376,7 @@ export default function HazardWorkflow() {
               {/* Severity Selection */}
               <div>
                 <Label>Severity</Label>
-                <Select value={riskSeverity.toString()} onValueChange={(v) => setRiskSeverity(parseInt(v))}>
+                <Select value={riskSeverity.toString()} onValueChange={(v: string) => setRiskSeverity(parseInt(v))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -384,7 +393,7 @@ export default function HazardWorkflow() {
               {/* Likelihood Selection */}
               <div>
                 <Label>Likelihood</Label>
-                <Select value={riskLikelihood.toString()} onValueChange={(v) => setRiskLikelihood(parseInt(v))}>
+                <Select value={riskLikelihood.toString()} onValueChange={(v: string) => setRiskLikelihood(parseInt(v))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -543,7 +552,7 @@ export default function HazardWorkflow() {
               <div className="space-y-3">
                 <Select
                   value={paceAssignments.processOwner.value}
-                  onValueChange={(v) => setPaceAssignments({
+                  onValueChange={(v: string) => setPaceAssignments({
                     ...paceAssignments,
                     processOwner: { ...paceAssignments.processOwner, value: v }
                   })}
@@ -596,7 +605,7 @@ export default function HazardWorkflow() {
               <div className="space-y-3">
                 <Select
                   value={paceAssignments.approver.value}
-                  onValueChange={(v) => setPaceAssignments({
+                  onValueChange={(v: string) => setPaceAssignments({
                     ...paceAssignments,
                     approver: { ...paceAssignments.approver, value: v }
                   })}
@@ -660,7 +669,7 @@ export default function HazardWorkflow() {
                     <div className="flex-1 space-y-2">
                       <Select
                         value={contributor.value}
-                        onValueChange={(v) => {
+                        onValueChange={(v: string) => {
                           const newContributors = [...paceAssignments.contributors];
                           newContributors[index] = { ...contributor, value: v };
                           setPaceAssignments({ ...paceAssignments, contributors: newContributors });
@@ -737,7 +746,7 @@ export default function HazardWorkflow() {
                     <div className="flex-1 space-y-2">
                       <Select
                         value={executer.value}
-                        onValueChange={(v) => {
+                        onValueChange={(v: string) => {
                           const newExecuters = [...paceAssignments.executers];
                           newExecuters[index] = { ...executer, value: v };
                           setPaceAssignments({ ...paceAssignments, executers: newExecuters });
@@ -820,7 +829,7 @@ export default function HazardWorkflow() {
                   <Checkbox
                     id="communications"
                     checked={correctiveActionComponents.communications}
-                    onCheckedChange={(checked) => setCorrectiveActionComponents({
+                    onCheckedChange={(checked: boolean) => setCorrectiveActionComponents({
                       ...correctiveActionComponents,
                       communications: checked as boolean
                     })}
@@ -833,7 +842,7 @@ export default function HazardWorkflow() {
                   <Checkbox
                     id="training"
                     checked={correctiveActionComponents.training}
-                    onCheckedChange={(checked) => setCorrectiveActionComponents({
+                    onCheckedChange={(checked: boolean) => setCorrectiveActionComponents({
                       ...correctiveActionComponents,
                       training: checked as boolean
                     })}
@@ -846,7 +855,7 @@ export default function HazardWorkflow() {
                   <Checkbox
                     id="policy"
                     checked={correctiveActionComponents.policy}
-                    onCheckedChange={(checked) => setCorrectiveActionComponents({
+                    onCheckedChange={(checked: boolean) => setCorrectiveActionComponents({
                       ...correctiveActionComponents,
                       policy: checked as boolean
                     })}
@@ -859,7 +868,7 @@ export default function HazardWorkflow() {
                   <Checkbox
                     id="equipment"
                     checked={correctiveActionComponents.equipment}
-                    onCheckedChange={(checked) => setCorrectiveActionComponents({
+                    onCheckedChange={(checked: boolean) => setCorrectiveActionComponents({
                       ...correctiveActionComponents,
                       equipment: checked as boolean
                     })}

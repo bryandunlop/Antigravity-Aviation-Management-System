@@ -190,7 +190,13 @@ export const HazardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     const submitHazard = (newHazardData: Omit<Hazard, 'id' | 'workflowStage' | 'reportedDate'>) => {
-        const newId = `HZ-${String(hazards.length + 1).padStart(3, '0')}`;
+        // Safe ID generation: Find max ID number and increment
+        const maxId = hazards.reduce((max, h) => {
+            const num = parseInt(h.id.split('-')[1] || '0');
+            return num > max ? num : max;
+        }, 0);
+        const newId = `HZ-${String(maxId + 1).padStart(3, '0')}`;
+
         const today = new Date().toISOString().split('T')[0];
 
         const newHazard: Hazard = {
