@@ -7,6 +7,7 @@ import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
 import FleetStatusWidget from './FleetStatusWidget';
 import NASImpactWidget from './NASImpactWidget';
+import FlightImpactAlerts from './FlightImpactAlerts';
 
 import {
   Calendar,

@@ -9,7 +9,6 @@ graph TB
 
     subgraph Hosting ["Hosting & Infrastructure"]
         Vercel["Frontend Hosting<br>(Vercel / Local:3000)"]
-        Supabase["Supabase Platform<br>(Auth & Database)"]
         AzureServices["Azure Services"]
         
         subgraph AzureDetails ["Azure Components"]
@@ -29,7 +28,6 @@ graph TB
 
     %% Connections
     Browser -- "HTTPS / 443" --> Vercel
-    Browser -- "HTTPS / 443" --> Supabase
     
     %% Backend Integrations (via Edge Functions or Client Proxies)
     Vercel -.-> AzureAPIM
@@ -44,7 +42,6 @@ graph TB
     Browser -- "HTTPS / 443" --> ADIP
     
     %% Azure Storage Integration
-    Supabase -.-> AzureStorage
     Browser -.-> AzureStorage
 
     %% Data Flow
@@ -59,7 +56,7 @@ graph TB
     classDef external fill:#fff3e0,stroke:#e65100,stroke-width:2px;
 
     class Browser client;
-    class Vercel,Supabase housing;
+    class Vercel housing;
     class AzureStorage,AzureAPIM azure;
     class CAMP,MyAirOps,ForeFlight,SatComDirect,FAA_ASWS,ADIP external;
 ```
@@ -72,7 +69,6 @@ graph TB
 
 ### 2. Hosting & Infrastructure
 - **Frontend**: Hosted on Vercel (or similar static hose).
-- **Backend/Database**: Supabase (PostgreSQL, Authentication, Realtime).
 - **Azure Integration**:
   - **Azure Blob Storage**: Used for scalable file and document storage (Port 443).
   - **Azure API Management (APIM)**: Secure gateway for SatCom Direct integration (Port 443).

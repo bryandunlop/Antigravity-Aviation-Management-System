@@ -1,8 +1,8 @@
 // ==================== REAL FOREFLIGHT API CLIENT ====================
 // This client makes actual API calls to ForeFlight
 
-import { 
-  ForeFlightAPIResponse, 
+import {
+  ForeFlightAPIResponse,
   ForeFlightListResponse,
   ForeFlightFlightPlan,
   ForeFlightLogbookEntry,
@@ -12,6 +12,7 @@ import {
   ForeFlightWeightBalance,
   ForeFlightAirport
 } from './types';
+import { logger } from '../logger';
 
 // ForeFlight API base URL - verify this matches your API documentation
 const FOREFLIGHT_API_BASE = 'https://api.foreflight.com/v1';
@@ -32,8 +33,8 @@ export class RealForeFlightAPIClient {
     options: RequestInit = {}
   ): Promise<ForeFlightAPIResponse<T>> {
     try {
-      console.log(`[ForeFlight API] Calling: ${endpoint}`);
-      
+      logger.log(`[ForeFlight API] Calling: ${endpoint}`);
+
       const url = `${FOREFLIGHT_API_BASE}${endpoint}`;
       const response = await fetch(url, {
         ...options,
@@ -45,7 +46,7 @@ export class RealForeFlightAPIClient {
         },
       });
 
-      console.log(`[ForeFlight API] Status: ${response.status}`);
+      logger.log(`[ForeFlight API] Status: ${response.status}`);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -54,7 +55,7 @@ export class RealForeFlightAPIClient {
       }
 
       const data = await response.json();
-      console.log(`[ForeFlight API] Success:`, data);
+      logger.log(`[ForeFlight API] Success:`, data);
 
       return {
         success: true,
@@ -99,14 +100,14 @@ export class RealForeFlightAPIClient {
     const queryParams = new URLSearchParams({
       accountUuid: this.accountUuid
     });
-    
+
     if (params?.startDate) queryParams.append('startDate', params.startDate);
     if (params?.endDate) queryParams.append('endDate', params.endDate);
     if (params?.tailNumber) queryParams.append('tailNumber', params.tailNumber);
     if (params?.limit) queryParams.append('limit', params.limit.toString());
 
     const response = await this.request<any>(`/flights?${queryParams.toString()}`);
-    
+
     // Transform response to match our expected format
     if (response.success && response.data) {
       return {
@@ -120,7 +121,7 @@ export class RealForeFlightAPIClient {
         }
       };
     }
-    
+
     return response as any;
   }
 
@@ -140,7 +141,7 @@ export class RealForeFlightAPIClient {
     const queryParams = new URLSearchParams({
       accountUuid: this.accountUuid
     });
-    
+
     if (params?.startDate) queryParams.append('startDate', params.startDate);
     if (params?.endDate) queryParams.append('endDate', params.endDate);
     if (params?.tailNumber) queryParams.append('tailNumber', params.tailNumber);
@@ -148,7 +149,7 @@ export class RealForeFlightAPIClient {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
 
     const response = await this.request<any>(`/logbook/entries?${queryParams.toString()}`);
-    
+
     if (response.success && response.data) {
       return {
         ...response,
@@ -161,7 +162,7 @@ export class RealForeFlightAPIClient {
         }
       };
     }
-    
+
     return response as any;
   }
 
@@ -189,13 +190,13 @@ export class RealForeFlightAPIClient {
     const queryParams = new URLSearchParams({
       accountUuid: this.accountUuid
     });
-    
+
     if (params?.flightObjectId) queryParams.append('flightObjectId', params.flightObjectId);
     if (params?.category) queryParams.append('category', params.category);
     if (params?.limit) queryParams.append('limit', params.limit.toString());
 
     const response = await this.request<any>(`/files?${queryParams.toString()}`);
-    
+
     if (response.success && response.data) {
       return {
         ...response,
@@ -208,7 +209,7 @@ export class RealForeFlightAPIClient {
         }
       };
     }
-    
+
     return response as any;
   }
 
@@ -221,12 +222,12 @@ export class RealForeFlightAPIClient {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('accountUuid', this.accountUuid);
-      
+
       if (metadata.flightObjectId) formData.append('flightObjectId', metadata.flightObjectId);
       if (metadata.category) formData.append('category', metadata.category);
       if (metadata.displayName) formData.append('displayName', metadata.displayName);
 
-      console.log(`[ForeFlight API] Uploading file: ${file.name}`);
+      logger.log(`[ForeFlight API] Uploading file: ${file.name}`);
 
       const response = await fetch(`${FOREFLIGHT_API_BASE}/files`, {
         method: 'POST',
@@ -244,7 +245,7 @@ export class RealForeFlightAPIClient {
       }
 
       const data = await response.json();
-      console.log(`[ForeFlight API] Upload success:`, data);
+      logger.log(`[ForeFlight API] Upload success:`, data);
 
       return {
         success: true,

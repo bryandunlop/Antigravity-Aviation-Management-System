@@ -7,7 +7,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from './ui/dialog';
+import {
   Shield,
   AlertTriangle,
   FileCheck,
@@ -34,6 +42,7 @@ import {
   Clock,
   Star
 } from 'lucide-react';
+import { useHazards, WORKFLOW_STAGES } from '../contexts/HazardContext';
 
 interface SafetyDashboardProps {
   userRole?: string;
@@ -42,7 +51,9 @@ interface SafetyDashboardProps {
 export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [selectedHazard, setSelectedHazard] = useState<any>(null);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+
   // Mock data - in real app this would come from backend
   const safetyStats = {
     pendingWaivers: 3,
@@ -191,64 +202,17 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
     }
   ];
 
-  // Hazard Reports - Only finalized, deidentified reports visible to all
-  const hazardReports = [
-    {
-      id: 1,
-      reportNumber: 'HR-2024-023',
-      title: 'Runway Surface Contamination',
-      location: 'Major Airport - Runway 24L',
-      publishedDate: '2024-02-06',
-      severity: 'High',
-      status: 'Finalized',
-      correctiveActions: 'FBO notified, alternative runway procedures implemented',
-      lessonsLearned: 'Enhanced pre-flight briefing to include runway condition assessment'
-    },
-    {
-      id: 2,
-      reportNumber: 'HR-2024-021',
-      title: 'Ground Equipment Proximity Issue',
-      location: 'Northeast Airport - Ramp Area',
-      publishedDate: '2024-02-04',
-      severity: 'Medium',
-      status: 'Finalized',
-      correctiveActions: 'Ground crew training conducted, new marshalling procedures',
-      lessonsLearned: 'Improved coordination with FBO ground operations'
-    },
-    {
-      id: 3,
-      reportNumber: 'HR-2024-018',
-      title: 'Inadequate Ramp Lighting',
-      location: 'Regional Airport - FBO Ramp',
-      publishedDate: '2024-02-01',
-      severity: 'Low',
-      status: 'Finalized',
-      correctiveActions: 'Lighting improvements requested from FBO management',
-      lessonsLearned: 'Night operations checklist updated to include lighting assessment'
-    }
-  ];
+  const { hazards, updateHazard } = useHazards();
 
-  // Pending hazard submissions (Safety Manager only)
-  const pendingHazardSubmissions = [
-    {
-      id: 1,
-      submittedBy: 'Anonymous',
-      submitDate: '2024-02-07',
-      location: 'KLAX Runway 24L',
-      description: 'Observed ice contamination on runway surface during taxi',
-      severity: 'High',
-      needsReview: true
-    },
-    {
-      id: 2,
-      submittedBy: 'John Smith',
-      submitDate: '2024-02-06',
-      location: 'KJFK Ramp A',
-      description: 'Ground equipment positioned too close to aircraft during pushback',
-      severity: 'Medium',
-      needsReview: true
-    }
-  ];
+  const publishedHazards = hazards.filter(h => h.workflowStage === WORKFLOW_STAGES.PUBLISHED);
+  const pendingHazards = isAdmin
+    ? hazards.filter(h => h.workflowStage !== WORKFLOW_STAGES.PUBLISHED && h.workflowStage !== WORKFLOW_STAGES.CLOSED)
+    : hazards.filter(h => h.workflowStage !== WORKFLOW_STAGES.PUBLISHED && h.workflowStage !== WORKFLOW_STAGES.CLOSED && h.reportedBy === 'Current User'); // In real app, check user ID
+
+  const handlePublish = (id: string) => {
+    updateHazard(id, { workflowStage: WORKFLOW_STAGES.PUBLISHED });
+  };
+
 
   // ASAP Reports
   const asapReports = [
@@ -306,7 +270,7 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
           </h1>
           <p className="text-muted-foreground">Comprehensive safety management system</p>
         </div>
-        
+
         <div className="flex gap-2 mt-4 lg:mt-0">
           {isAdmin && (
             <>
@@ -528,6 +492,86 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
             </Card>
           )}
 
+          {/* Review & Deidentify Dialog */}
+          <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Review & Deidentify Hazard</DialogTitle>
+                <DialogDescription>
+                  Edit hazard details before publishing to remove any personally identifiable information (PII).
+                </DialogDescription>
+              </DialogHeader>
+              {selectedHazard && (
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="id">ID</Label>
+                      <Input id="id" value={selectedHazard.id} disabled />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="reporter">Reported By (Public)</Label>
+                      <Input
+                        id="reporter"
+                        value={selectedHazard.reportedBy}
+                        disabled
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      value={selectedHazard.title}
+                      onChange={(e) => updateHazard(selectedHazard.id, { title: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      rows={4}
+                      value={selectedHazard.description}
+                      onChange={(e) => updateHazard(selectedHazard.id, { description: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={selectedHazard.location}
+                      onChange={(e) => updateHazard(selectedHazard.id, { location: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="correctiveAction">Corrective Actions / Details</Label>
+                    <Textarea
+                      id="correctiveAction"
+                      rows={2}
+                      placeholder="Add details about resolution or corrective actions..."
+                      value={selectedHazard.correctiveActionDetails || ''}
+                      onChange={(e) => updateHazard(selectedHazard.id, { correctiveActionDetails: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowReviewDialog(false)}>Cancel</Button>
+                <Button onClick={() => {
+                  handlePublish(selectedHazard.id);
+                  setShowReviewDialog(false);
+                }}>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Publish Now
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+
           {/* Safety Newsletter */}
           <Card>
             <CardHeader>
@@ -558,12 +602,12 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
                       <p className="text-sm text-muted-foreground mt-1">Published: February 1, 2024</p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <h4 className="font-medium mb-2">🎯 This Month's Focus: Winter Operations</h4>
                       <p className="text-sm text-muted-foreground">
-                        As we continue through winter operations, we're highlighting best practices for cold weather operations, 
+                        As we continue through winter operations, we're highlighting best practices for cold weather operations,
                         de-icing procedures, and winter weather decision-making.
                       </p>
                     </div>
@@ -699,13 +743,13 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {hazardReports.map((report) => (
+                  {publishedHazards.map((report) => (
                     <div key={report.id} className="p-4 border rounded-lg hover:bg-accent/50">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <Badge variant="outline" className="text-xs">
-                              {report.reportNumber}
+                              {report.id}
                             </Badge>
                             <Badge className={getPriorityColor(report.severity)} variant="outline">
                               {report.severity}
@@ -716,7 +760,7 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
                           </div>
                           <p className="font-medium">{report.title}</p>
                           <p className="text-sm text-muted-foreground mt-1">{report.location}</p>
-                          <p className="text-xs text-muted-foreground mt-2">Published: {report.publishedDate}</p>
+                          <p className="text-xs text-muted-foreground mt-2">Published: {report.workflowHistory?.find(h => h.stage === WORKFLOW_STAGES.PUBLISHED)?.date || 'N/A'}</p>
                         </div>
                         <Button variant="ghost" size="sm">
                           <Eye className="w-4 h-4" />
@@ -724,9 +768,7 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
                       </div>
                       <div className="mt-3 p-3 bg-accent/30 rounded border">
                         <p className="text-xs font-medium text-muted-foreground mb-1">Corrective Actions:</p>
-                        <p className="text-sm">{report.correctiveActions}</p>
-                        <p className="text-xs font-medium text-muted-foreground mt-2 mb-1">Lessons Learned:</p>
-                        <p className="text-sm">{report.lessonsLearned}</p>
+                        <p className="text-sm">{report.correctiveActionDetails || 'Pending details...'}</p>
                       </div>
                     </div>
                   ))}
@@ -747,13 +789,13 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {pendingHazardSubmissions.map((submission) => (
+                  {pendingHazards.map((submission) => (
                     <div key={submission.id} className="p-4 border-2 border-orange-200 rounded-lg bg-white">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
-                              Pending Review
+                              {submission.workflowStage}
                             </Badge>
                             <Badge className={getPriorityColor(submission.severity)} variant="outline">
                               {submission.severity} Severity
@@ -762,11 +804,13 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <span className="text-muted-foreground">Submitted by:</span>
-                              <span className="ml-2 font-medium">{submission.submittedBy}</span>
+                              <span className="ml-2 font-medium">
+                                {submission.reportedBy}
+                              </span>
                             </div>
                             <div>
                               <span className="text-muted-foreground">Date:</span>
-                              <span className="ml-2">{submission.submitDate}</span>
+                              <span className="ml-2">{submission.reportedDate}</span>
                             </div>
                             <div className="col-span-2">
                               <span className="text-muted-foreground">Location:</span>
@@ -780,11 +824,22 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
                         <p className="text-sm">{submission.description}</p>
                       </div>
                       <div className="flex gap-2 mt-4">
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedHazard(submission);
+                            setShowReviewDialog(true);
+                          }}
+                        >
                           <Edit className="w-4 h-4 mr-2" />
                           Review & Deidentify
                         </Button>
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => handlePublish(submission.id)}
+                        >
                           <CheckCircle className="w-4 h-4 mr-2" />
                           Publish
                         </Button>
@@ -844,7 +899,7 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
                             <span>•</span>
                             <span>{report.flightPhase}</span>
                           </div>
-                          <Badge className={getStatusColor(report.status)} variant="outline" className="mt-2">
+                          <Badge className={`${getStatusColor(report.status)} mt-2`} variant="outline">
                             {report.status}
                           </Badge>
                         </div>
@@ -902,7 +957,7 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
                             <span>•</span>
                             <span>{cws.date}</span>
                           </div>
-                          <Badge className={getStatusColor(cws.status)} variant="outline" className="mt-2">
+                          <Badge className={`${getStatusColor(cws.status)} mt-2`} variant="outline">
                             {cws.status}
                           </Badge>
                         </div>
@@ -1043,7 +1098,7 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
                             <span className="ml-2">{audit.findings}</span>
                           </div>
                         </div>
-                        <Badge className={getStatusColor(audit.status)} variant="outline" className="mt-3">
+                        <Badge className={`${getStatusColor(audit.status)} mt-3`} variant="outline">
                           {audit.status}
                         </Badge>
                       </div>
@@ -1118,6 +1173,6 @@ export default function SafetyDashboard({ userRole = 'pilot' }: SafetyDashboardP
           </TabsContent>
         )}
       </Tabs>
-    </div>
+    </div >
   );
 }

@@ -33,6 +33,7 @@ export interface Hazard {
     effectivenessReviewDate?: string;
     priority?: string;
     daysInStage?: number;
+    isAnonymous?: boolean;
 
     // Workflow specifics
     riskFactors?: string[];
@@ -56,15 +57,37 @@ export interface Hazard {
     };
     correctiveActionDetails?: string;
 
+    // Approvals
+    approvals?: {
+        lineManager?: {
+            approved: boolean;
+            approvedBy?: string;
+            approvedDate?: string;
+            comments?: string;
+        };
+        executive?: {
+            approved: boolean;
+            approvedBy?: string;
+            approvedDate?: string;
+            comments?: string;
+        };
+    };
+
+    // Implementation tracking
+    implementationNotes?: string;
+    publicationContent?: string;
+    effectivenessReviewNotes?: string;
+
     // Audit trail
     workflowHistory?: Array<{ stage: string; date: string; user: string; action: string }>;
+    notificationsSent?: Array<{ recipient: string; type: string; date: string }>;
     duties?: Array<any>;
 }
 
 interface HazardContextType {
     hazards: Hazard[];
     getHazardById: (id: string) => Hazard | undefined;
-    submitHazard: (hazard: Omit<Hazard, 'id' | 'workflowStage' | 'reportedDate'>) => void;
+    submitHazard: (hazard: Omit<Hazard, 'id' | 'workflowStage' | 'reportedDate'> & { isAnonymous?: boolean }) => void;
     updateHazard: (id: string, updates: Partial<Hazard>) => void;
     deleteHazard: (id: string) => void;
 }
@@ -189,7 +212,7 @@ export const HazardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return hazards.find(h => h.id === id);
     };
 
-    const submitHazard = (newHazardData: Omit<Hazard, 'id' | 'workflowStage' | 'reportedDate'>) => {
+    const submitHazard = (newHazardData: Omit<Hazard, 'id' | 'workflowStage' | 'reportedDate'> & { isAnonymous?: boolean }) => {
         // Safe ID generation: Find max ID number and increment
         const maxId = hazards.reduce((max, h) => {
             const num = parseInt(h.id.split('-')[1] || '0');
@@ -205,7 +228,8 @@ export const HazardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             workflowStage: WORKFLOW_STAGES.SUBMITTED,
             reportedDate: today,
             daysInStage: 0,
-            priority: newHazardData.severity // Simple default mapping
+            priority: newHazardData.severity, // Simple default mapping
+            isAnonymous: newHazardData.isAnonymous || false
         };
 
         setHazards(prev => [newHazard, ...prev]);

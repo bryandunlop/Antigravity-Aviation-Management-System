@@ -19,7 +19,7 @@ export default function DocumentCenter({ userRole = 'pilot' }: DocumentCenterPro
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
-  
+
   // New state for enhanced features
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
   const [selectedDocumentForSignature, setSelectedDocumentForSignature] = useState<Document | null>(null);
@@ -28,8 +28,8 @@ export default function DocumentCenter({ userRole = 'pilot' }: DocumentCenterPro
   const stats = getDocumentStats(mockDocuments);
 
   const handleSelectDoc = (docId: string) => {
-    setSelectedDocs(prev => 
-      prev.includes(docId) 
+    setSelectedDocs(prev =>
+      prev.includes(docId)
         ? prev.filter(id => id !== docId)
         : [...prev, docId]
     );
@@ -52,7 +52,9 @@ export default function DocumentCenter({ userRole = 'pilot' }: DocumentCenterPro
   };
 
   const handleDigitalSignature = (signatureData: any) => {
-    console.log('Document digitally signed:', signatureData);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEV] Document digitally signed:', signatureData);
+    }
     // Update document acknowledgment status in real app
   };
 
@@ -75,9 +77,9 @@ export default function DocumentCenter({ userRole = 'pilot' }: DocumentCenterPro
           <h1>Document Center</h1>
           <p className="text-muted-foreground">Access manuals, procedures, and compliance documents</p>
         </div>
-        
+
         <div className="flex gap-2">
-          <Button 
+          <Button
             variant="outline"
             onClick={handleGeneralProposalSubmission}
           >
@@ -111,7 +113,7 @@ export default function DocumentCenter({ userRole = 'pilot' }: DocumentCenterPro
           </div>
         </div>
       </div>
-      
+
       <DocumentFilters
         searchTerm={searchTerm}
         typeFilter={typeFilter}

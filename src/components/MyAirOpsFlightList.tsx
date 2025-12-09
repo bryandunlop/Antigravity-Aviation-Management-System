@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Plane, 
-  MapPin, 
-  Clock, 
-  Users, 
+import {
+  Plane,
+  MapPin,
+  Clock,
+  Users,
   Calendar,
   CheckCircle,
   AlertCircle,
@@ -12,10 +12,15 @@ import {
   Edit,
   FileText,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Cloud,
+  CloudOff
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
+import { PublicClientApplication } from '@azure/msal-browser';
+import { msalConfig, loginRequest } from '../authConfig';
+import { graphService } from '../services/microsoftGraph';
 
 interface CrewMember {
   id: string;
@@ -65,6 +70,13 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
   const [syncing, setSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
 
+  // Outlook Calendar sync state
+  const [outlookConnected, setOutlookConnected] = useState(false);
+  const [outlookSyncing, setOutlookSyncing] = useState(false);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  const [msalInstance] = useState(() => new PublicClientApplication(msalConfig));
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
   // Fetch flights from MyAirOps API
   const fetchFlights = async () => {
     setSyncing(true);
@@ -77,7 +89,7 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
       //   }
       // });
       // const data = await response.json();
-      
+
       // Mock data for demonstration
       const mockFlights: Flight[] = [
         {
@@ -168,10 +180,10 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
 
       setFlights(mockFlights);
       setLastSync(new Date());
-      
+
       // Load FRAT statuses from localStorage
       loadFRATStatuses(mockFlights);
-      
+
       toast.success('Flights synchronized successfully');
     } catch (error) {
       console.error('Error fetching flights:', error);
@@ -182,10 +194,181 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
     }
   };
 
+  // Outlook Calendar Integration Functions
+  const connectOutlook = async () => {
+    try {
+      const loginResponse = await msalInstance.loginPopup(loginRequest);
+      const account = loginResponse.account;
+
+      if (account) {
+        // Get access token
+        const tokenResponse = await msalInstance.acquireTokenSilent({
+          ...loginRequest,
+          account,
+        });
+
+        setAccessToken(tokenResponse.accessToken);
+        graphService.initializeClient(tokenResponse.accessToken);
+        setOutlookConnected(true);
+
+        // Save connection state
+        localStorage.setItem('outlook-connected', 'true');
+
+        toast.success('Connected to Outlook Calendar');
+
+        // Trigger initial sync if auto-sync is enabled
+        if (autoSyncEnabled) {
+          await syncWithOutlook();
+        }
+      }
+    } catch (error) {
+      console.error('Error connecting to Outlook:', error);
+      toast.error('Failed to connect to Outlook');
+    }
+  };
+
+  const disconnectOutlook = () => {
+    setOutlookConnected(false);
+    setAccessToken(null);
+    setAutoSyncEnabled(false);
+    localStorage.removeItem('outlook-connected');
+    localStorage.removeItem('outlook-auto-sync');
+    toast.success('Disconnected from Outlook');
+  };
+
+  const syncWithOutlook = async () => {
+    if (!outlookConnected || !accessToken) {
+      toast.error('Please connect to Outlook first');
+      return;
+    }
+
+    setOutlookSyncing(true);
+    try {
+      // Get date range for sync (next 30 days)
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 30);
+
+      // Fetch existing calendar events
+      const existingEvents = await graphService.getCalendarEvents(startDate, endDate);
+
+      // Track synced flight IDs
+      const syncedFlightIds = new Set<string>();
+      let addedCount = 0;
+      let updatedCount = 0;
+      let removedCount = 0;
+
+      // Add or update flights in calendar
+      for (const flight of flights) {
+        const flightDate = new Date(flight.departureTime);
+
+        // Only sync future flights
+        if (flightDate < startDate) continue;
+
+        syncedFlightIds.add(flight.id);
+
+        // Check if event already exists
+        const existingEvent = existingEvents.find((event) =>
+          event.subject?.includes(flight.flightNumber) &&
+          event.subject?.includes(flight.tailNumber)
+        );
+
+        if (existingEvent) {
+          // Update existing event
+          await graphService.updateCalendarEvent(existingEvent.id, flight);
+          updatedCount++;
+        } else {
+          // Create new event
+          await graphService.createCalendarEvent(flight);
+          addedCount++;
+        }
+      }
+
+      // Remove events for flights that no longer exist (optional)
+      if (autoSyncEnabled) {
+        for (const event of existingEvents) {
+          // Only remove events with MyAirOps category
+          if (event.categories?.includes('MyAirOps')) {
+            const stillExists = flights.some(
+              (flight) =>
+                event.subject?.includes(flight.flightNumber) &&
+                event.subject?.includes(flight.tailNumber)
+            );
+
+            if (!stillExists) {
+              await graphService.deleteCalendarEvent(event.id);
+              removedCount++;
+            }
+          }
+        }
+      }
+
+      toast.success(
+        `Outlook sync complete: ${addedCount} added, ${updatedCount} updated${autoSyncEnabled ? `, ${removedCount} removed` : ''}`
+      );
+    } catch (error) {
+      console.error('Error syncing with Outlook:', error);
+      toast.error('Failed to sync with Outlook Calendar');
+    } finally {
+      setOutlookSyncing(false);
+    }
+  };
+
+  const toggleAutoSync = () => {
+    const newValue = !autoSyncEnabled;
+    setAutoSyncEnabled(newValue);
+    localStorage.setItem('outlook-auto-sync', newValue.toString());
+
+    if (newValue && outlookConnected) {
+      toast.success('Auto-sync enabled - flights will sync automatically');
+      syncWithOutlook();
+    } else if (!newValue) {
+      toast.success('Auto-sync disabled');
+    }
+  };
+
+  // Check for saved Outlook connection on mount
+  useEffect(() => {
+    const savedConnection = localStorage.getItem('outlook-connected');
+    const savedAutoSync = localStorage.getItem('outlook-auto-sync');
+
+    if (savedConnection === 'true') {
+      // Attempt to restore connection
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        msalInstance
+          .acquireTokenSilent({
+            ...loginRequest,
+            account: accounts[0],
+          })
+          .then((response) => {
+            setAccessToken(response.accessToken);
+            graphService.initializeClient(response.accessToken);
+            setOutlookConnected(true);
+
+            if (savedAutoSync === 'true') {
+              setAutoSyncEnabled(true);
+            }
+          })
+          .catch(() => {
+            // Token expired, user needs to reconnect
+            localStorage.removeItem('outlook-connected');
+          });
+      }
+    }
+  }, [msalInstance]);
+
+  // Auto-sync when flights change and auto-sync is enabled
+  useEffect(() => {
+    if (autoSyncEnabled && outlookConnected && flights.length > 0) {
+      syncWithOutlook();
+    }
+  }, [flights, autoSyncEnabled, outlookConnected]);
+
   // Load FRAT statuses from localStorage
   const loadFRATStatuses = (flightList: Flight[]) => {
     const statuses = new Map<string, FRATStatus>();
-    
+
     flightList.forEach(flight => {
       const savedStatus = localStorage.getItem(`frat-status-${flight.id}`);
       if (savedStatus) {
@@ -199,7 +382,7 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
         });
       }
     });
-    
+
     setFratStatuses(statuses);
   };
 
@@ -211,7 +394,7 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
 
   useEffect(() => {
     fetchFlights();
-    
+
     // Auto-sync every 5 minutes
     const interval = setInterval(fetchFlights, 5 * 60 * 1000);
     return () => clearInterval(interval);
@@ -232,7 +415,7 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
     const now = new Date();
     const departure = new Date(departureTime);
     const hoursUntil = (departure.getTime() - now.getTime()) / (1000 * 60 * 60);
-    
+
     if (hoursUntil < 0) return 'Departed';
     if (hoursUntil < 1) return `${Math.round(hoursUntil * 60)} min`;
     if (hoursUntil < 24) return `${Math.round(hoursUntil)} hrs`;
@@ -274,25 +457,25 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
 
   const handleFlightSelect = (flight: Flight) => {
     const status = fratStatuses.get(flight.id);
-    
+
     if (status?.status === 'locked') {
       toast.error('This FRAT is locked - flight has already departed');
       return;
     }
 
     // Navigate to FRAT form with flight data
-    navigate('/frat/enhanced', { 
-      state: { 
+    navigate('/frat/enhanced', {
+      state: {
         flight,
         fratStatus: status,
         mode: status?.status === 'submitted' ? 'edit' : 'create'
-      } 
+      }
     });
   };
 
   const getUrgencyColor = (departureTime: string, fratStatus: FRATStatus) => {
     const hoursUntil = (new Date(departureTime).getTime() - Date.now()) / (1000 * 60 * 60);
-    
+
     if (fratStatus.status === 'locked') return 'border-gray-300 bg-gray-50';
     if (fratStatus.status === 'submitted') return 'border-green-300 bg-green-50';
     if (hoursUntil < 0) return 'border-red-300 bg-red-50';
@@ -338,6 +521,73 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
         </div>
       </div>
 
+      {/* Outlook Calendar Integration */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white rounded-lg shadow-sm">
+              {outlookConnected ? (
+                <Cloud className="w-5 h-5 text-blue-600" />
+              ) : (
+                <CloudOff className="w-5 h-5 text-gray-400" />
+              )}
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-900">
+                Outlook Calendar Sync
+              </h3>
+              <p className="text-xs text-gray-600">
+                {outlookConnected
+                  ? 'Connected - Flights can be synced to your calendar'
+                  : 'Connect to automatically sync flights to Outlook'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {outlookConnected && (
+              <>
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoSyncEnabled}
+                    onChange={toggleAutoSync}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  Auto-sync
+                </label>
+                <Button
+                  onClick={syncWithOutlook}
+                  disabled={outlookSyncing}
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${outlookSyncing ? 'animate-spin' : ''}`} />
+                  Sync Now
+                </Button>
+                <Button
+                  onClick={disconnectOutlook}
+                  size="sm"
+                  variant="ghost"
+                >
+                  Disconnect
+                </Button>
+              </>
+            )}
+            {!outlookConnected && (
+              <Button
+                onClick={connectOutlook}
+                size="sm"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <Calendar className="w-4 h-4" />
+                Connect Outlook
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Flight Cards */}
       <div className="grid gap-4">
         {flights.length === 0 ? (
@@ -351,7 +601,7 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
               flightId: flight.id,
               status: 'not_started' as const
             };
-            
+
             return (
               <div
                 key={flight.id}
@@ -427,7 +677,7 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={(e) => {
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                         e.stopPropagation();
                         handleFlightSelect(flight);
                       }}
@@ -441,7 +691,7 @@ export default function MyAirOpsFlightList({ userRole, pilotId }: MyAirOpsFlight
                   {status.status === 'not_started' && (
                     <Button
                       size="sm"
-                      onClick={(e) => {
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                         e.stopPropagation();
                         handleFlightSelect(flight);
                       }}

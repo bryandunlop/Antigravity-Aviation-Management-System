@@ -11,13 +11,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Checkbox } from './ui/checkbox';
 import { toast } from 'sonner';
-import { 
-  FileText, 
+import {
+  FileText,
   MessageSquare,
-  Send, 
-  CheckCircle, 
-  AlertTriangle, 
-  Clock, 
+  Send,
+  CheckCircle,
+  AlertTriangle,
+  Clock,
   Eye,
   Search,
   Plus,
@@ -126,7 +126,7 @@ export default function DocumentRequest({ userRole }: DocumentRequestProps) {
   const [selectedRequest, setSelectedRequest] = useState<DocumentRequest | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-  const filteredRequests = requests.filter(req => 
+  const filteredRequests = requests.filter(req =>
     req.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     req.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     req.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -160,9 +160,11 @@ export default function DocumentRequest({ userRole }: DocumentRequestProps) {
       return;
     }
 
-    console.log('Document request submitted:', requestForm);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEV] Document request submitted:', requestForm);
+    }
     toast.success('Document request submitted successfully! The document management team will review your request.');
-    
+
     setIsRequestDialogOpen(false);
     setRequestForm({
       type: 'change',
@@ -269,10 +271,10 @@ export default function DocumentRequest({ userRole }: DocumentRequestProps) {
               Submit requests for document modifications and updates to keep our aviation documentation current and compliant
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Document Change Request */}
-            <div 
+            <div
               className="group relative cursor-pointer transform transition-all duration-300 hover:scale-[1.02]"
               onClick={() => {
                 setSelectedRequestType('change');
@@ -294,7 +296,7 @@ export default function DocumentRequest({ userRole }: DocumentRequestProps) {
                       Request modifications, revisions, or corrections to existing documents and procedures. Perfect for content updates, policy changes, and procedural improvements.
                     </p>
                   </div>
-                  
+
                   <div className="mt-auto">
                     <div className="bg-gradient-to-r from-secondary to-secondary/90 text-white px-6 py-4 rounded-xl font-medium group-hover:shadow-lg transition-all duration-300 request-button-glow text-center">
                       <Edit3 className="w-5 h-5 mr-2 inline" />
@@ -306,7 +308,7 @@ export default function DocumentRequest({ userRole }: DocumentRequestProps) {
             </div>
 
             {/* Document Update Request */}
-            <div 
+            <div
               className="group relative cursor-pointer transform transition-all duration-300 hover:scale-[1.02]"
               onClick={() => {
                 setSelectedRequestType('update');
@@ -328,7 +330,7 @@ export default function DocumentRequest({ userRole }: DocumentRequestProps) {
                       Request version updates to bring current documents up to date with latest regulations, standards, and best practices in aviation operations.
                     </p>
                   </div>
-                  
+
                   <div className="mt-auto">
                     <div className="bg-gradient-to-r from-primary to-primary/90 text-white px-6 py-4 rounded-xl font-medium group-hover:shadow-lg transition-all duration-300 request-button-glow text-center">
                       <History className="w-5 h-5 mr-2 inline" />
@@ -339,7 +341,7 @@ export default function DocumentRequest({ userRole }: DocumentRequestProps) {
               </Card>
             </div>
           </div>
-          
+
           <div className="mt-10 text-center">
             <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/80 rounded-2xl border border-border/30 aviation-shadow">
               <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
@@ -432,16 +434,16 @@ export default function DocumentRequest({ userRole }: DocumentRequestProps) {
                       )}
                     </div>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleViewRequest(request)}
                     className="hover:bg-accent/10"
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
                 </div>
-                
+
                 {request.affectedPersonnel && request.affectedPersonnel.length > 0 && (
                   <div className="flex items-center gap-1 mt-2">
                     <span className="text-xs text-muted-foreground">Affects:</span>
@@ -454,7 +456,7 @@ export default function DocumentRequest({ userRole }: DocumentRequestProps) {
                 )}
               </div>
             ))}
-            
+
             {filteredRequests.length === 0 && (
               <div className="text-center text-muted-foreground py-8">
                 {searchTerm ? `No requests found matching "${searchTerm}"` : 'No document requests submitted yet'}
@@ -475,7 +477,7 @@ export default function DocumentRequest({ userRole }: DocumentRequestProps) {
               Provide detailed information about your document request. All fields marked with * are required.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Request Type */}
             <div className="space-y-3">
@@ -652,7 +654,7 @@ export default function DocumentRequest({ userRole }: DocumentRequestProps) {
               View complete information for this document request
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedRequest && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">

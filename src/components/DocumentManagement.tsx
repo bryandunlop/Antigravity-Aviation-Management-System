@@ -10,14 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { mockDocuments, type Document } from './data/documentData';
-import { 
-  FileText, 
-  Upload, 
-  Edit, 
-  Send, 
-  CheckCircle, 
-  AlertTriangle, 
-  Clock, 
+import {
+  FileText,
+  Upload,
+  Edit,
+  Send,
+  CheckCircle,
+  AlertTriangle,
+  Clock,
   Eye,
   Search,
   Plus,
@@ -47,7 +47,7 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
     file: null as File | null
   });
 
-  const filteredDocuments = documents.filter(doc => 
+  const filteredDocuments = documents.filter(doc =>
     doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     doc.description.toLowerCase().includes(searchTerm.toLowerCase())
   ).slice(0, 5); // Show only first 5 for cleaner interface
@@ -73,7 +73,9 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
   };
 
   const handleUploadDocument = () => {
-    console.log('Document uploaded:', documentForm);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEV] Document uploaded:', documentForm);
+    }
     setIsUploadDialogOpen(false);
     setDocumentForm({
       title: '', type: '', category: '', description: '', compliance: 'Optional', file: null
@@ -132,8 +134,8 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
       {/* Main Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Review Queue */}
-        <Card className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-yellow-200" 
-              onClick={() => navigate('/document-management/queue')}>
+        <Card className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-yellow-200"
+          onClick={() => navigate('/document-management/queue')}>
           <CardContent className="p-6 text-center">
             <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Clock className="w-8 h-8 text-yellow-600" />
@@ -150,8 +152,8 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
         </Card>
 
         {/* Active Collaborations */}
-        <Card className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-purple-200" 
-              onClick={() => navigate('/document-management/collaborations')}>
+        <Card className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-purple-200"
+          onClick={() => navigate('/document-management/collaborations')}>
           <CardContent className="p-6 text-center">
             <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users className="w-8 h-8 text-purple-600" />
@@ -168,8 +170,8 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
         </Card>
 
         {/* Upload Document */}
-        <Card className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-200" 
-              onClick={() => setIsUploadDialogOpen(true)}>
+        <Card className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-200"
+          onClick={() => setIsUploadDialogOpen(true)}>
           <CardContent className="p-6 text-center">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Upload className="w-8 h-8 text-blue-600" />
@@ -252,7 +254,7 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
                 <div className="text-sm text-muted-foreground">Weather minimums updated • 2 hours ago</div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <MessageSquare className="w-4 h-4 text-blue-600" />
@@ -262,7 +264,7 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
                 <div className="text-sm text-muted-foreground">7 contributors joined • 4 hours ago</div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
                 <Clock className="w-4 h-4 text-yellow-600" />
@@ -289,13 +291,13 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
               <Input
                 id="title"
                 value={documentForm.title}
-                onChange={(e) => setDocumentForm({...documentForm, title: e.target.value})}
+                onChange={(e) => setDocumentForm({ ...documentForm, title: e.target.value })}
                 placeholder="Enter document title"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="type">Document Type</Label>
-              <Select value={documentForm.type} onValueChange={(value) => setDocumentForm({...documentForm, type: value})}>
+              <Select value={documentForm.type} onValueChange={(value) => setDocumentForm({ ...documentForm, type: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -310,7 +312,7 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
             </div>
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select value={documentForm.category} onValueChange={(value) => setDocumentForm({...documentForm, category: value})}>
+              <Select value={documentForm.category} onValueChange={(value) => setDocumentForm({ ...documentForm, category: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -324,7 +326,7 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
             </div>
             <div className="space-y-2">
               <Label htmlFor="compliance">Compliance Level</Label>
-              <Select value={documentForm.compliance} onValueChange={(value) => setDocumentForm({...documentForm, compliance: value})}>
+              <Select value={documentForm.compliance} onValueChange={(value) => setDocumentForm({ ...documentForm, compliance: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select compliance level" />
                 </SelectTrigger>
@@ -341,7 +343,7 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
               <Textarea
                 id="description"
                 value={documentForm.description}
-                onChange={(e) => setDocumentForm({...documentForm, description: e.target.value})}
+                onChange={(e) => setDocumentForm({ ...documentForm, description: e.target.value })}
                 placeholder="Enter document description"
                 rows={3}
               />
@@ -351,7 +353,7 @@ export default function DocumentManagement({ userRole }: DocumentManagementProps
               <Input
                 id="file"
                 type="file"
-                onChange={(e) => setDocumentForm({...documentForm, file: e.target.files?.[0] || null})}
+                onChange={(e) => setDocumentForm({ ...documentForm, file: e.target.files?.[0] || null })}
                 accept=".pdf,.doc,.docx,.txt"
               />
             </div>

@@ -1,7 +1,7 @@
 // ==================== FOREFLIGHT API CLIENT ====================
 
-import { 
-  ForeFlightAPIResponse, 
+import {
+  ForeFlightAPIResponse,
   ForeFlightListResponse,
   ForeFlightFlightPlan,
   ForeFlightLogbookEntry,
@@ -418,10 +418,10 @@ export class MockForeFlightClient extends ForeFlightAPIClient {
 
 export function createForeFlightClient(apiKey?: string, accountUuid?: string): ForeFlightAPIClient | RealForeFlightAPIClient {
   if (!apiKey || !accountUuid || apiKey === 'DEMO_MODE') {
-    console.log('[ForeFlight] Using Mock Client for development');
+    logger.log('[ForeFlight] Using Mock Client for development');
     return new MockForeFlightClient();
   }
-  
-  console.log('[ForeFlight] Using Real API Client with credentials');
+
+  logger.log('[ForeFlight] Using Real API Client with credentials');
   return new RealForeFlightAPIClient(apiKey, accountUuid);
 }

@@ -11,7 +11,6 @@ import {
   Loader2,
   CheckCircle
 } from 'lucide-react';
-import { projectId, publicAnonKey } from '../utils/supabase/info';
 
 interface Airport {
   id: string;
@@ -47,40 +46,28 @@ export default function SubmitCorrection({ onBack, preSelectedAirport }: SubmitC
 
     setFetchingAirportData(true);
     setAirportDataPreview(null);
-    
-    try {
-      // For NEW airport requests, always skip cache and fetch fresh from FAA
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-d89dc2de/airport/${icao}?skipCache=true`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
 
-      if (response.ok) {
-        const result = await response.json();
-        setAirportDataPreview({ ...result.data, source: result.source });
-        console.log('Airport data fetched:', result.data, 'Source:', result.source);
-      } else {
-        const errorText = await response.text();
-        console.error('Failed to fetch airport data:', response.status, errorText);
-        // Show message but still allow submission
-        setAirportDataPreview({
+    try {
+      // Mock FAA Data - Supabase removed
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const mockResult = {
+        data: {
           icao: icao,
-          name: `Airport ${icao} - No FAA data available`,
-          elevation: 0,
-          latitude: 0,
-          longitude: 0,
-          timezone: 'UTC',
-          tower: false,
-          attendedHours: 'Unknown',
-          source: 'none'
-        });
-      }
+          name: `Mock Airport (${icao})`,
+          elevation: 123,
+          latitude: 40.0,
+          longitude: -74.0,
+          timezone: 'America/New_York',
+          tower: true,
+          attendedHours: '0600-2200',
+          towerFrequency: '118.5',
+          runways: [{ designation: '01/19', length: 5000, width: 100, surface: 'Asphalt' }]
+        },
+        source: 'faa'
+      };
+
+      setAirportDataPreview({ ...mockResult.data, source: mockResult.source });
     } catch (error) {
       console.error('Error fetching airport data:', error);
       // Show message but still allow submission
@@ -106,7 +93,7 @@ export default function SubmitCorrection({ onBack, preSelectedAirport }: SubmitC
     { id: 'apt-002', icao: 'KTEB', name: 'Teterboro', elevation: 9 },
     { id: 'apt-003', icao: 'KASE', name: 'Aspen-Pitkin County', elevation: 7820 },
     { id: 'apt-004', icao: 'KVNY', name: 'Van Nuys', elevation: 802 },
-  ].filter(apt => 
+  ].filter(apt =>
     apt.icao.toLowerCase().includes(searchTerm.toLowerCase()) ||
     apt.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -148,41 +135,16 @@ export default function SubmitCorrection({ onBack, preSelectedAirport }: SubmitC
 
     setLoading(true);
     try {
-      const submissionData = {
-        airportId: changeType === 'new-airport' ? newAirportCode : selectedAirport?.id,
-        icao: changeType === 'new-airport' ? newAirportCode : selectedAirport?.icao,
-        type: changeType,
-        changes: changeType === 'new-airport' ? { icao: newAirportCode, faaData: airportDataPreview } : changes,
-        reason: reason,
-        submittedBy: 'Current User', // TODO: Replace with actual user from auth
-        submittedDate: new Date().toISOString(),
-        status: 'pending'
-      };
+      // Mock Submission - Supabase removed
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-d89dc2de/airport-submissions`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(submissionData)
-        }
-      );
+      setSuccess(true);
+      const dataMsg = airportDataPreview && airportDataPreview.source === 'faa'
+        ? '\n\nPre-filled FAA Data: Name, Elevation, Coordinates'
+        : '';
+      alert(`Change Request Submitted!${dataMsg}\n\nAirport: ${changeType === 'new-airport' ? newAirportCode : selectedAirport.icao}\nType: ${changeType}\n\nThis will be sent to the Airport Evaluation Officer for review.`);
+      onBack();
 
-      if (response.ok) {
-        setSuccess(true);
-        const dataMsg = airportDataPreview && airportDataPreview.source === 'faa' 
-          ? '\n\nPre-filled FAA Data: Name, Elevation, Coordinates'
-          : '';
-        alert(`Change Request Submitted!${dataMsg}\n\nAirport: ${changeType === 'new-airport' ? newAirportCode : selectedAirport.icao}\nType: ${changeType}\n\nThis will be sent to the Airport Evaluation Officer for review.`);
-        onBack();
-      } else {
-        const errorText = await response.text();
-        console.error('Failed to submit change request:', response.status, errorText);
-        alert('Failed to submit change request. Please try again.');
-      }
     } catch (error) {
       console.error('Error submitting change request:', error);
       alert('Failed to submit change request. Please try again.');
@@ -207,7 +169,7 @@ export default function SubmitCorrection({ onBack, preSelectedAirport }: SubmitC
       {/* Airport Selection */}
       <Card className="p-6">
         <h2 className="text-lg font-semibold mb-4">Select Airport</h2>
-        
+
         {!selectedAirport ? (
           <>
             <div className="relative mb-4">
@@ -279,11 +241,10 @@ export default function SubmitCorrection({ onBack, preSelectedAirport }: SubmitC
             <div className="grid md:grid-cols-3 gap-4">
               <button
                 onClick={() => setChangeType('correction')}
-                className={`p-4 border-2 rounded-lg text-left transition-all ${
-                  changeType === 'correction'
+                className={`p-4 border-2 rounded-lg text-left transition-all ${changeType === 'correction'
                     ? 'border-primary bg-primary/5'
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <p className="font-semibold mb-1">Correction</p>
                 <p className="text-sm text-muted-foreground">
@@ -293,11 +254,10 @@ export default function SubmitCorrection({ onBack, preSelectedAirport }: SubmitC
 
               <button
                 onClick={() => setChangeType('update')}
-                className={`p-4 border-2 rounded-lg text-left transition-all ${
-                  changeType === 'update'
+                className={`p-4 border-2 rounded-lg text-left transition-all ${changeType === 'update'
                     ? 'border-primary bg-primary/5'
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <p className="font-semibold mb-1">Update</p>
                 <p className="text-sm text-muted-foreground">
@@ -307,11 +267,10 @@ export default function SubmitCorrection({ onBack, preSelectedAirport }: SubmitC
 
               <button
                 onClick={() => setChangeType('new-airport')}
-                className={`p-4 border-2 rounded-lg text-left transition-all ${
-                  changeType === 'new-airport'
+                className={`p-4 border-2 rounded-lg text-left transition-all ${changeType === 'new-airport'
                     ? 'border-primary bg-primary/5'
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <p className="font-semibold mb-1">New Airport</p>
                 <p className="text-sm text-muted-foreground">
@@ -365,11 +324,10 @@ export default function SubmitCorrection({ onBack, preSelectedAirport }: SubmitC
 
                 {/* Airport Data Preview */}
                 {airportDataPreview && (
-                  <div className={`${
-                    airportDataPreview.source === 'faa'
+                  <div className={`${airportDataPreview.source === 'faa'
                       ? 'bg-green-50 border-green-200'
                       : 'bg-yellow-50 border-yellow-200'
-                  } border rounded-lg p-4`}>
+                    } border rounded-lg p-4`}>
                     <div className="flex items-start gap-2 mb-3">
                       {airportDataPreview.source === 'faa' ? (
                         <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
@@ -377,20 +335,18 @@ export default function SubmitCorrection({ onBack, preSelectedAirport }: SubmitC
                         <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
                       )}
                       <div>
-                        <p className={`font-semibold ${
-                          airportDataPreview.source === 'faa'
+                        <p className={`font-semibold ${airportDataPreview.source === 'faa'
                             ? 'text-green-900'
                             : 'text-yellow-900'
-                        }`}>
+                          }`}>
                           {airportDataPreview.source === 'faa'
                             ? `✓ Comprehensive FAA Data Retrieved for ${newAirportCode}`
                             : `Airport ${newAirportCode} - Limited Data Available`}
                         </p>
-                        <p className={`text-sm ${
-                          airportDataPreview.source === 'faa'
+                        <p className={`text-sm ${airportDataPreview.source === 'faa'
                             ? 'text-green-800'
                             : 'text-yellow-800'
-                        }`}>
+                          }`}>
                           {airportDataPreview.source === 'faa'
                             ? 'Comprehensive airport data has been fetched including runways, elevations, approaches, and tower information. This will be sent to the Airport Evaluation Officer who will verify and enhance with FBO services and operational details.'
                             : 'Limited automated data available for this airport. The Airport Evaluation Officer will manually research and create a comprehensive evaluation including all operational details.'}
@@ -528,7 +484,7 @@ export default function SubmitCorrection({ onBack, preSelectedAirport }: SubmitC
           {changeType !== 'new-airport' && (
             <Card className="p-6">
               <h2 className="text-lg font-semibold mb-4">Specify Changes</h2>
-              
+
               {/* Existing Changes */}
               {Object.keys(changes).length > 0 && (
                 <div className="space-y-3 mb-4">

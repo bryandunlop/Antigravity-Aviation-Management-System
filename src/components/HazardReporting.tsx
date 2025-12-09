@@ -57,6 +57,7 @@ export default function HazardReporting() {
   // const [newHazardCategory, setNewHazardCategory] = useState(''); // Could add select for category
   const [selectedRiskFactors, setSelectedRiskFactors] = useState<string[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   // Risk Factors state
   const riskFactors = [
@@ -145,9 +146,10 @@ export default function HazardReporting() {
       potentialConsequences: newHazardConsequences,
       location: newHazardLocation || 'Unknown',
       severity: newHazardSeverity,
-      reportedBy: 'Current User', // Use Auth in real app
+      reportedBy: isAnonymous ? 'Anonymous' : 'Current User', // Never store name if anonymous
       category: 'Safety', // Default or add field
       riskFactors: selectedRiskFactors,
+      isAnonymous
     });
 
     toast.success('Hazard report submitted to Safety Manager');
@@ -162,6 +164,7 @@ export default function HazardReporting() {
     setNewHazardSeverity('Medium');
     setSelectedRiskFactors([]);
     setAttachedFiles([]);
+    setIsAnonymous(false);
   };
 
   // Get hazards with upcoming effectiveness reviews
@@ -341,6 +344,16 @@ export default function HazardReporting() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Anonymous Checkbox */}
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox
+                  id="anonymous-submission"
+                  checked={isAnonymous}
+                  onCheckedChange={(checked: boolean) => setIsAnonymous(checked === true)}
+                />
+                <Label htmlFor="anonymous-submission" className="cursor-pointer">Submit Anonymously</Label>
               </div>
 
               {/* Submit Buttons */}

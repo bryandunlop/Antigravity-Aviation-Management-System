@@ -19,10 +19,63 @@ import {
   Users,
   ArrowRight,
   Circle,
-  CheckCircle2
+  CheckCircle2,
+  Fuel,
+  X
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import EnhancedFRATForm from './EnhancedFRATForm';
+import { useFuelRequests } from './contexts/FuelRequestContext';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
+import { toast } from 'sonner';
+
+interface RunwayData {
+  runway: string;
+  tora: number;
+  toda: number;
+  lda: number;
+  width: number;
+  slope: number;
+  pcn: string;
+}
+
+interface InstrumentApproach {
+  runway: string;
+  type: string;
+  glidepath: number;
+}
+
+interface AirportEval {
+  id: string;
+  icao: string;
+  name: string;
+  tower: boolean;
+  attendedHours: string;
+  elevation: number;
+  runways: RunwayData[];
+  approaches: InstrumentApproach[];
+  runwayLighting: string;
+  mountainous: boolean;
+  obstructions: string;
+  firefighting: string;
+  fboName: string;
+  fboPhone: string;
+  fboHours: string;
+  fboLocation: string;
+  restArea: boolean;
+  jetAAvailable: boolean;
+  deicingCapability: string;
+  hangarSpace: string;
+  opsNotes: string;
+  limitations: string;
+  status: 'active' | 'pending-changes' | 'denied';
+  lastReviewed: string;
+  reviewedBy: string;
+  aircraft: string;
+}
 
 interface Leg {
   id: string;
@@ -52,6 +105,7 @@ interface Trip {
   endDate: string;
   status: 'upcoming' | 'in-progress' | 'completed';
   preflightStatus: 'not-started' | 'in-progress' | 'completed';
+  fuelRequestId?: string; // Optional reference to trip-level fuel request
 }
 
 export default function PreflightWorkflow() {
@@ -59,6 +113,196 @@ export default function PreflightWorkflow() {
   const [expandedTrips, setExpandedTrips] = useState<Set<string>>(new Set());
   const [selectedLeg, setSelectedLeg] = useState<{ tripId: string; legId: string } | null>(null);
   const [currentView, setCurrentView] = useState<'trips' | 'frat' | 'airport-evals'>('trips');
+  const [fuelRequestModalOpen, setFuelRequestModalOpen] = useState(false);
+  const [selectedTripForFuel, setSelectedTripForFuel] = useState<Trip | null>(null);
+  const [fuelAmount, setFuelAmount] = useState('');
+  const [fuelPriority, setFuelPriority] = useState<'normal' | 'urgent' | 'critical'>('normal');
+  const [fuelNotes, setFuelNotes] = useState('');
+
+  const { createFuelRequest, getFuelRequestsForTrip, fuelRequests } = useFuelRequests();
+
+  // Airport evaluation data (from AirportEvaluations component)
+  const airportEvaluations: AirportEval[] = [
+    {
+      id: 'apt-001',
+      icao: 'KMMU',
+      name: 'Morristown Municipal',
+      tower: true,
+      attendedHours: '0645-2230 L',
+      elevation: 187,
+      runways: [
+        { runway: 'RWY05', tora: 5998, toda: 5998, lda: 5998, width: 150, slope: 0, pcn: '25/F/C/X/T DW80' },
+        { runway: 'RWY23', tora: 5998, toda: 5998, lda: 5998, width: 150, slope: 0, pcn: '25/F/C/X/T DW80' }
+      ],
+      approaches: [
+        { runway: 'RWY05', type: 'RNAV(GPS)', glidepath: 3.77 },
+        { runway: 'RWY23', type: 'ILS', glidepath: 3 },
+        { runway: 'RWY23', type: 'RNAV(GPS)', glidepath: 3 }
+      ],
+      runwayLighting: 'HIRL / MALSR 23 / REIL 05',
+      mountainous: false,
+      obstructions: 'Higher terrain to the SW thru NE quadrants',
+      firefighting: 'ARFF Services available 24 hrs daily and when ATCT closed call 973.455.1953',
+      fboName: 'Signature Flight Support',
+      fboPhone: '973.292.1300',
+      fboHours: '24 hrs',
+      fboLocation: 'Ramp N off J Taxiway',
+      restArea: true,
+      jetAAvailable: true,
+      deicingCapability: 'Y (Type I & IV)',
+      hangarSpace: 'Available',
+      opsNotes: 'Excellent general aviation facility with professional FBO service. Signature provides reliable fuel and ground services. Airport well-maintained with good access to NYC metro area. Recommend avoiding peak business jet hours 0800-1000L and 1600-1800L due to ramp congestion.',
+      limitations: '',
+      status: 'active',
+      lastReviewed: '2024-10-08',
+      reviewedBy: 'CL350',
+      aircraft: 'CL350'
+    },
+    {
+      id: 'apt-002',
+      icao: 'KTEB',
+      name: 'Teterboro',
+      tower: true,
+      attendedHours: '24 hrs',
+      elevation: 9,
+      runways: [
+        { runway: 'RWY06', tora: 7000, toda: 7000, lda: 7000, width: 150, slope: 0.1, pcn: '40/F/C/X/T DW110' },
+        { runway: 'RWY24', tora: 7000, toda: 7000, lda: 7000, width: 150, slope: 0.1, pcn: '40/F/C/X/T DW110' },
+        { runway: 'RWY19', tora: 6013, toda: 6013, lda: 6013, width: 150, slope: 0, pcn: '40/F/C/X/T DW110' },
+        { runway: 'RWY01', tora: 6013, toda: 6013, lda: 6013, width: 150, slope: 0, pcn: '40/F/C/X/T DW110' }
+      ],
+      approaches: [
+        { runway: 'RWY06', type: 'ILS', glidepath: 3 },
+        { runway: 'RWY06', type: 'RNAV(GPS)', glidepath: 3 },
+        { runway: 'RWY24', type: 'RNAV(GPS)', glidepath: 3 },
+        { runway: 'RWY19', type: 'RNAV(GPS)', glidepath: 3 }
+      ],
+      runwayLighting: 'HIRL all runways / MALSR 06 / REIL 24, 19, 01',
+      mountainous: false,
+      obstructions: 'NYC Class B airspace overhead',
+      firefighting: 'ARFF Index C - 24 hr coverage',
+      fboName: 'Multiple FBOs - Meridian, Signature, Atlantic',
+      fboPhone: '201.288.1775',
+      fboHours: '24 hrs',
+      fboLocation: 'Various ramps',
+      restArea: true,
+      jetAAvailable: true,
+      deicingCapability: 'Y (Type I, II, IV)',
+      hangarSpace: 'Limited - advance notice required',
+      opsNotes: 'RWK, JMS',
+      limitations: 'Noise sensitive - mandatory curfew 2300-0600L. Special procedures required.',
+      status: 'pending-changes',
+      lastReviewed: '2024-11-20',
+      reviewedBy: 'G650',
+      aircraft: 'G650'
+    },
+    {
+      id: 'apt-003',
+      icao: 'KASE',
+      name: 'Aspen-Pitkin County',
+      tower: true,
+      attendedHours: '0600-0100L',
+      elevation: 7820,
+      runways: [
+        { runway: 'RWY15', tora: 8006, toda: 8006, lda: 7006, width: 100, slope: 0.7, pcn: '50/R/B/W/T' },
+        { runway: 'RWY33', tora: 8006, toda: 8006, lda: 8006, width: 100, slope: 0.7, pcn: '50/R/B/W/T' }
+      ],
+      approaches: [
+        { runway: 'RWY15', type: 'VOR/DME', glidepath: 3.77 },
+        { runway: 'RWY33', type: 'RNAV(GPS)', glidepath: 6.5 }
+      ],
+      runwayLighting: 'MIRL / REIL 15, 33',
+      mountainous: true,
+      obstructions: 'Mountainous terrain all quadrants. High density altitude.',
+      firefighting: 'ARFF Index B during tower hours',
+      fboName: 'Signature Flight Support',
+      fboPhone: '970.920.9000',
+      fboHours: 'Tower hours',
+      fboLocation: 'Main ramp',
+      restArea: true,
+      jetAAvailable: true,
+      deicingCapability: 'Y (Type I, IV)',
+      hangarSpace: 'Very limited',
+      opsNotes: 'MPW, TRH',
+      limitations: 'Special qualification required. Steep approaches. RWY 33 VDP mandatory. High altitude operations.',
+      status: 'active',
+      lastReviewed: '2024-12-02',
+      reviewedBy: 'G650',
+      aircraft: 'G650'
+    },
+    {
+      id: 'apt-004',
+      icao: 'KTMB',
+      name: 'Miami Executive',
+      tower: true,
+      attendedHours: '0700-2200L',
+      elevation: 8,
+      runways: [
+        { runway: 'RWY09', tora: 5001, toda: 5001, lda: 5001, width: 100, slope: 0, pcn: '30/F/C/X/T' },
+        { runway: 'RWY27', tora: 5001, toda: 5001, lda: 5001, width: 100, slope: 0, pcn: '30/F/C/X/T' }
+      ],
+      approaches: [
+        { runway: 'RWY09', type: 'RNAV(GPS)', glidepath: 3 },
+        { runway: 'RWY27', type: 'RNAV(GPS)', glidepath: 3 }
+      ],
+      runwayLighting: 'MIRL',
+      mountainous: false,
+      obstructions: 'None significant',
+      firefighting: 'ARFF Index A during tower hours',
+      fboName: 'Banyan Air Service',
+      fboPhone: '954.491.3170',
+      fboHours: '24 hrs',
+      fboLocation: 'Main ramp',
+      restArea: true,
+      jetAAvailable: true,
+      deicingCapability: 'N',
+      hangarSpace: 'Available',
+      opsNotes: 'Excellent South Florida facility. Banyan provides top-tier service.',
+      limitations: '',
+      status: 'active',
+      lastReviewed: '2024-11-15',
+      reviewedBy: 'G650',
+      aircraft: 'G650'
+    },
+    {
+      id: 'apt-005',
+      icao: 'KSJC',
+      name: 'San Jose International',
+      tower: true,
+      attendedHours: '24 hrs',
+      elevation: 62,
+      runways: [
+        { runway: 'RWY30L', tora: 11000, toda: 11000, lda: 11000, width: 150, slope: 0, pcn: '75/F/A/W/T' },
+        { runway: 'RWY30R', tora: 10000, toda: 10000, lda: 10000, width: 150, slope: 0, pcn: '75/F/A/W/T' }
+      ],
+      approaches: [
+        { runway: 'RWY30L', type: 'ILS', glidepath: 3 },
+        { runway: 'RWY30R', type: 'ILS', glidepath: 3 }
+      ],
+      runwayLighting: 'HIRL',
+      mountainous: false,
+      obstructions: 'Class C airspace',
+      firefighting: 'ARFF Index E - 24 hr',
+      fboName: 'Signature Flight Support',
+      fboPhone: '408.467.1900',
+      fboHours: '24 hrs',
+      fboLocation: 'North side',
+      restArea: true,
+      jetAAvailable: true,
+      deicingCapability: 'Y (Type I, IV)',
+      hangarSpace: 'Available',
+      opsNotes: 'Major commercial airport with excellent FBO services.',
+      limitations: '',
+      status: 'active',
+      lastReviewed: '2024-11-28',
+      reviewedBy: 'G650',
+      aircraft: 'G650'
+    }
+  ];
+
+  const getAirportEval = (icao: string): AirportEval | undefined => {
+    return airportEvaluations.find(apt => apt.icao === icao);
+  };
 
   // Load trips from MyAirOps (mock data for now)
   useEffect(() => {
@@ -574,7 +818,7 @@ export default function PreflightWorkflow() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
+    const statusConfig: Record<string, { color: string; icon: React.ComponentType<any> }> = {
       'not-started': { color: 'bg-gray-100 text-gray-700', icon: Circle },
       'in-progress': { color: 'bg-blue-100 text-blue-700', icon: Clock },
       'completed': { color: 'bg-green-100 text-green-700', icon: CheckCircle2 }
@@ -607,9 +851,38 @@ export default function PreflightWorkflow() {
   };
 
   const exportToPDF = (trip: Trip) => {
-    // This would generate a PDF with FRAT data and airport evaluations
-    console.log('Exporting trip to PDF:', trip.tripNumber);
-    alert(`PDF export for ${trip.tripNumber} would be generated here. This will include:\n• Trip summary\n• All FRAT forms\n• Airport evaluations\n• Crew and passenger information`);
+    // Generate comprehensive PDF content summary
+    const completedLegs = trip.legs.filter(leg => leg.fratStatus === 'completed');
+    const uniqueAirports = new Set<string>();
+    trip.legs.forEach(leg => {
+      uniqueAirports.add(leg.departureICAO);
+      uniqueAirports.add(leg.arrivalICAO);
+    });
+
+    const airportList = Array.from(uniqueAirports).map(icao => {
+      const airport = getAirportEval(icao);
+      return airport ? `${icao} - ${airport.name}` : icao;
+    }).join('\n    • ');
+
+    const fuelRequest = getTripFuelRequest(trip.id);
+    const fuelInfo = fuelRequest
+      ? `\n\n📋 FUEL REQUEST:\n  • Amount: ${fuelRequest.fuelRequestedPounds} lbs (~${Math.round(fuelRequest.fuelRequestedPounds / 6.7)} gal)\n  • Priority: ${fuelRequest.priority.toUpperCase()}\n  • Status: ${fuelRequest.status}${fuelRequest.pilotNotes ? `\n  • Notes: ${fuelRequest.pilotNotes}` : ''}`
+      : '';
+
+    const fratSummary = completedLegs.length > 0
+      ? `\n\n📊 FRAT SCORES:\n${completedLegs.map(leg => `  • Leg ${leg.legNumber} (${leg.departureICAO}-${leg.arrivalICAO}): ${leg.fratScore} ${leg.fratScore! <= 10 ? '✅ Low Risk' : leg.fratScore! <= 15 ? '⚠️ Medium Risk' : '🔴 High Risk'}`).join('\n')}`
+      : '\n\n⚠️ No FRAT forms completed yet';
+
+    alert(`📄 PDF EXPORT FOR ${trip.tripNumber}\n\nThis will generate a comprehensive preflight package including:\n\n✈️ TRIP SUMMARY:\n  • Aircraft: ${trip.tailNumber}\n  • Dates: ${format(parseISO(trip.startDate), 'MMM d')} - ${format(parseISO(trip.endDate), 'MMM d, yyyy')}\n  • Crew: ${trip.crewMembers.join(', ')}\n  • Passengers: ${trip.passengers.length}\n  • Legs: ${trip.legs.length}${fratSummary}\n\n🏢 AIRPORT EVALUATIONS (${uniqueAirports.size} airports):\n    • ${airportList}${fuelInfo}\n\n📱 The PDF will be generated and ready to share from your iOS device.\n\n⚠️ Note: Actual PDF generation will be implemented with a PDF library (e.g., jsPDF or react-pdf).`);
+
+    // TODO: Implement actual PDF generation using jsPDF or similar library
+    // This would create a professional PDF with:
+    // - Cover page with trip details
+    // - FRAT summary table
+    // - Detailed FRAT forms for each leg
+    // - Airport evaluation pages for each unique airport
+    // - Fuel request details (if exists)
+    console.log('PDF export requested for:', trip.tripNumber);
   };
 
   const pushToForeFlight = (trip: Trip) => {
@@ -627,6 +900,72 @@ export default function PreflightWorkflow() {
     if (days === 0) return 'Today';
     if (days === 1) return 'Tomorrow';
     return `${days} days`;
+  };
+
+  const openFuelRequestModal = (trip: Trip) => {
+    setSelectedTripForFuel(trip);
+    setFuelRequestModalOpen(true);
+    setFuelAmount('');
+    setFuelPriority('normal');
+    setFuelNotes('');
+  };
+
+  const handleFuelRequestSubmit = () => {
+    if (!selectedTripForFuel) return;
+
+    const fuelPounds = parseFloat(fuelAmount);
+    if (isNaN(fuelPounds) || fuelPounds <= 0) {
+      toast.error('Please enter a valid fuel amount');
+      return;
+    }
+
+    const firstLeg = selectedTripForFuel.legs[0];
+    if (!firstLeg) {
+      toast.error('Trip has no legs');
+      return;
+    }
+
+    createFuelRequest({
+      tripId: selectedTripForFuel.id,
+      legId: firstLeg.id, // Use first leg for scheduling
+      flightNumber: selectedTripForFuel.tripNumber,
+      tailNumber: selectedTripForFuel.tailNumber,
+      departure: firstLeg.departure,
+      departureICAO: firstLeg.departureICAO,
+      arrival: firstLeg.arrival,
+      arrivalICAO: firstLeg.arrivalICAO,
+      departureTime: firstLeg.departureTime,
+      fuelRequestedPounds: fuelPounds,
+      priority: fuelPriority,
+      pilotNotes: fuelNotes,
+      requestedBy: 'Current Pilot' // In production, get from auth context
+    });
+
+    setFuelRequestModalOpen(false);
+    setSelectedTripForFuel(null);
+  };
+
+  const getTripFuelRequest = (tripId: string) => {
+    const requests = getFuelRequestsForTrip(tripId);
+    return requests.length > 0 ? requests[0] : null;
+  };
+
+  const getFuelRequestStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { color: string; label: string }> = {
+      'pending': { color: 'bg-yellow-100 text-yellow-700', label: 'Fuel Pending' },
+      'acknowledged': { color: 'bg-blue-100 text-blue-700', label: 'Fuel Ack' },
+      'sent-to-fuel-farm': { color: 'bg-purple-100 text-purple-700', label: 'At Fuel Farm' },
+      'fueling': { color: 'bg-orange-100 text-orange-700', label: 'Fueling' },
+      'completed': { color: 'bg-green-100 text-green-700', label: 'Fueled' },
+      'cancelled': { color: 'bg-gray-100 text-gray-700', label: 'Cancelled' }
+    };
+    const config = statusConfig[status] || statusConfig['pending'];
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${config.color}`}>
+        <Fuel className="w-3 h-3" />
+        {config.label}
+      </span>
+    );
   };
 
   if (currentView === 'frat' && selectedLeg) {
@@ -677,6 +1016,146 @@ export default function PreflightWorkflow() {
   if (currentView === 'airport-evals' && selectedLeg) {
     const trip = trips.find(t => t.id === selectedLeg.tripId);
     const leg = trip?.legs.find(l => l.id === selectedLeg.legId);
+    const departureAirport = leg ? getAirportEval(leg.departureICAO) : null;
+    const arrivalAirport = leg ? getAirportEval(leg.arrivalICAO) : null;
+
+    const renderAirportCard = (airport: AirportEval | null, icao: string, name: string) => {
+      if (!airport) {
+        return (
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <MapPin className="w-5 h-5 text-primary" />
+              <div>
+                <h3 className="font-semibold">{name}</h3>
+                <p className="text-sm text-muted-foreground">{icao}</p>
+              </div>
+            </div>
+            <div className="text-center py-8 text-muted-foreground">
+              <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>Airport evaluation not available</p>
+              <p className="text-sm mt-1">Contact operations for airport information</p>
+            </div>
+          </Card>
+        );
+      }
+
+      return (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <MapPin className="w-5 h-5 text-primary" />
+              <div>
+                <h3 className="font-semibold">{airport.name}</h3>
+                <p className="text-sm text-muted-foreground">{airport.icao}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {airport.mountainous && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-700">
+                  <AlertCircle className="w-3 h-3" />
+                  Mountainous
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Basic Info */}
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Elevation</p>
+                <p className="font-medium">{airport.elevation} ft</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Tower</p>
+                <p className="font-medium">{airport.tower ? `Yes (${airport.attendedHours})` : 'No'}</p>
+              </div>
+            </div>
+
+            {/* Runways */}
+            <div>
+              <h4 className="text-sm font-semibold mb-2">Runways</h4>
+              <div className="space-y-2">
+                {airport.runways.map((rwy, idx) => (
+                  <div key={idx} className="text-xs bg-accent/30 p-2 rounded">
+                    <div className="font-semibold mb-1">{rwy.runway}</div>
+                    <div className="grid grid-cols-3 gap-2 text-muted-foreground">
+                      <div>TORA: {rwy.tora}'</div>
+                      <div>LDA: {rwy.lda}'</div>
+                      <div>Width: {rwy.width}'</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">{airport.runwayLighting}</p>
+            </div>
+
+            {/* Approaches */}
+            <div>
+              <h4 className="text-sm font-semibold mb-2">Instrument Approaches</h4>
+              <div className="flex flex-wrap gap-2">
+                {airport.approaches.map((appr, idx) => (
+                  <span key={idx} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                    {appr.runway} {appr.type}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* FBO Information */}
+            <div className="bg-accent/20 p-3 rounded-lg">
+              <h4 className="text-sm font-semibold mb-2">FBO Information</h4>
+              <div className="text-sm space-y-1">
+                <p><span className="text-muted-foreground">Name:</span> {airport.fboName}</p>
+                <p><span className="text-muted-foreground">Phone:</span> {airport.fboPhone}</p>
+                <p><span className="text-muted-foreground">Hours:</span> {airport.fboHours}</p>
+                <p><span className="text-muted-foreground">Location:</span> {airport.fboLocation}</p>
+              </div>
+            </div>
+
+            {/* Services */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-1">
+                <CheckCircle className={`w-3 h-3 ${airport.jetAAvailable ? 'text-green-600' : 'text-gray-400'}`} />
+                <span>Jet A Available</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <CheckCircle className={`w-3 h-3 ${airport.deicingCapability !== 'N' ? 'text-green-600' : 'text-gray-400'}`} />
+                <span>Deicing: {airport.deicingCapability}</span>
+              </div>
+            </div>
+
+            {/* Operational Notes */}
+            {airport.opsNotes && (
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-900 mb-1">Operational Notes</h4>
+                <p className="text-sm text-blue-800">{airport.opsNotes}</p>
+              </div>
+            )}
+
+            {/* Limitations */}
+            {airport.limitations && (
+              <div className="bg-orange-50 border border-orange-200 p-3 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-orange-600 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-orange-900 mb-1">Limitations</h4>
+                    <p className="text-sm text-orange-800">{airport.limitations}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Obstructions */}
+            {airport.obstructions && (
+              <div className="text-xs text-muted-foreground">
+                <span className="font-semibold">Obstructions:</span> {airport.obstructions}
+              </div>
+            )}
+          </div>
+        </Card>
+      );
+    };
 
     return (
       <div className="space-y-6">
@@ -684,11 +1163,11 @@ export default function PreflightWorkflow() {
           <div>
             <Button
               variant="ghost"
-              onClick={() => setCurrentView('frat')}
+              onClick={() => setCurrentView('trips')}
               className="mb-2"
             >
               <ChevronRight className="w-4 h-4 rotate-180 mr-2" />
-              Back to FRAT
+              Back to Trips
             </Button>
             <h1 className="text-2xl">Airport Evaluations - Leg {leg?.legNumber}</h1>
             <p className="text-muted-foreground">
@@ -698,37 +1177,37 @@ export default function PreflightWorkflow() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <MapPin className="w-5 h-5 text-primary" />
-              <div>
-                <h3 className="font-semibold">{leg?.departure}</h3>
-                <p className="text-sm text-muted-foreground">{leg?.departureICAO}</p>
-              </div>
-            </div>
-            <div className="text-center py-8 text-muted-foreground">
-              Airport evaluation data would be displayed here
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <MapPin className="w-5 h-5 text-primary" />
-              <div>
-                <h3 className="font-semibold">{leg?.arrival}</h3>
-                <p className="text-sm text-muted-foreground">{leg?.arrivalICAO}</p>
-              </div>
-            </div>
-            <div className="text-center py-8 text-muted-foreground">
-              Airport evaluation data would be displayed here
-            </div>
-          </Card>
+          {renderAirportCard(departureAirport || null, leg?.departureICAO || '', leg?.departure || '')}
+          {renderAirportCard(arrivalAirport || null, leg?.arrivalICAO || '', leg?.arrival || '')}
         </div>
 
-        <div className="flex justify-end">
-          <Button onClick={() => setCurrentView('trips')}>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => window.open('/airport-evaluations', '_blank')}>
+            <Eye className="w-4 h-4 mr-2" />
+            View Full Airport Database
+          </Button>
+          <Button onClick={() => {
+            // Mark airport evals as viewed
+            const updatedTrips = trips.map(t => {
+              if (t.id === selectedLeg.tripId) {
+                return {
+                  ...t,
+                  legs: t.legs.map(l => {
+                    if (l.id === selectedLeg.legId) {
+                      return { ...l, airportEvalsViewed: true };
+                    }
+                    return l;
+                  })
+                };
+              }
+              return t;
+            });
+            setTrips(updatedTrips);
+            setCurrentView('trips');
+            toast.success('Airport evaluations marked as reviewed');
+          }}>
             <CheckCircle className="w-4 h-4 mr-2" />
-            Complete & Return to Trips
+            Mark as Reviewed & Return
           </Button>
         </div>
       </div>
@@ -846,6 +1325,7 @@ export default function PreflightWorkflow() {
                         )}
                         <h3 className="text-lg font-semibold">{trip.tripNumber}</h3>
                         {getStatusBadge(trip.preflightStatus)}
+                        {getTripFuelRequest(trip.id) && getFuelRequestStatusBadge(getTripFuelRequest(trip.id)!.status)}
                         <span className="text-sm text-muted-foreground">
                           {getDaysUntilTrip(trip.startDate)}
                         </span>
@@ -887,6 +1367,16 @@ export default function PreflightWorkflow() {
                     </div>
 
                     <div className="flex gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
+                      {!getTripFuelRequest(trip.id) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openFuelRequestModal(trip)}
+                        >
+                          <Fuel className="w-4 h-4 mr-2" />
+                          Request Fuel
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -978,21 +1468,39 @@ export default function PreflightWorkflow() {
 
                             <div className="flex gap-2 ml-4">
                               {leg.fratStatus === 'not-started' && (
-                                <Button
-                                  onClick={() => startFratForLeg(trip.id, leg.id)}
-                                >
-                                  <FileText className="w-4 h-4 mr-2" />
-                                  Start FRAT
-                                </Button>
+                                <>
+                                  <Button
+                                    onClick={() => startFratForLeg(trip.id, leg.id)}
+                                  >
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    Start FRAT
+                                  </Button>
+                                  <Button
+                                    onClick={() => viewAirportEvals(trip.id, leg.id)}
+                                    variant="outline"
+                                  >
+                                    <MapPin className="w-4 h-4 mr-2" />
+                                    Airport Evals
+                                  </Button>
+                                </>
                               )}
                               {leg.fratStatus === 'in-progress' && (
-                                <Button
-                                  onClick={() => startFratForLeg(trip.id, leg.id)}
-                                  variant="outline"
-                                >
-                                  <Edit className="w-4 h-4 mr-2" />
-                                  Continue FRAT
-                                </Button>
+                                <>
+                                  <Button
+                                    onClick={() => startFratForLeg(trip.id, leg.id)}
+                                    variant="outline"
+                                  >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Continue FRAT
+                                  </Button>
+                                  <Button
+                                    onClick={() => viewAirportEvals(trip.id, leg.id)}
+                                    variant="outline"
+                                  >
+                                    <MapPin className="w-4 h-4 mr-2" />
+                                    Airport Evals
+                                  </Button>
+                                </>
                               )}
                               {leg.fratStatus === 'completed' && (
                                 <>
@@ -1010,7 +1518,7 @@ export default function PreflightWorkflow() {
                                     size="sm"
                                   >
                                     <MapPin className="w-4 h-4 mr-2" />
-                                    Airport Evals
+                                    {leg.airportEvalsViewed ? 'Review' : 'View'} Airport Evals
                                   </Button>
                                 </>
                               )}
@@ -1026,6 +1534,77 @@ export default function PreflightWorkflow() {
           })
         )}
       </div>
+
+      {/* Fuel Request Modal */}
+      <Dialog open={fuelRequestModalOpen} onOpenChange={setFuelRequestModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request Fuel Load</DialogTitle>
+            <DialogDescription>
+              Submit a fuel load request for trip {selectedTripForFuel?.tripNumber}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="fuel-amount">Fuel Amount (pounds)</Label>
+              <Input
+                id="fuel-amount"
+                type="number"
+                placeholder="Enter fuel amount in pounds"
+                value={fuelAmount}
+                onChange={(e) => setFuelAmount(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Estimated: {fuelAmount ? Math.round(parseFloat(fuelAmount) / 6.7) : 0} gallons
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fuel-priority">Priority</Label>
+              <Select value={fuelPriority} onValueChange={(value: any) => setFuelPriority(value)}>
+                <SelectTrigger id="fuel-priority">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fuel-notes">Notes (Optional)</Label>
+              <Input
+                id="fuel-notes"
+                placeholder="Additional notes for maintenance"
+                value={fuelNotes}
+                onChange={(e) => setFuelNotes(e.target.value)}
+              />
+            </div>
+
+            {selectedTripForFuel && (
+              <div className="bg-accent/50 p-3 rounded-lg text-sm">
+                <p className="font-semibold mb-1">Trip Details:</p>
+                <p>Aircraft: {selectedTripForFuel.tailNumber}</p>
+                <p>First Departure: {selectedTripForFuel.legs[0]?.departure} ({selectedTripForFuel.legs[0]?.departureICAO})</p>
+                <p>Departure Time: {selectedTripForFuel.legs[0] && format(parseISO(selectedTripForFuel.legs[0].departureTime), 'MMM d, yyyy HH:mm')}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setFuelRequestModalOpen(false)}>
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={handleFuelRequestSubmit}>
+              <Fuel className="w-4 h-4 mr-2" />
+              Submit Request
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

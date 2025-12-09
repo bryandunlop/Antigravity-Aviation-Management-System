@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useHazards, WORKFLOW_STAGES } from '../contexts/HazardContext';
+import { useNotificationContext } from './contexts/NotificationContext';
+import ProgressTracker from './HazardWorkflow/ProgressTracker';
 
 export default function HazardWorkflow() {
   const { id } = useParams();
@@ -78,6 +80,13 @@ export default function HazardWorkflow() {
 
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState('');
+
+  // Approval states
+  const [lineManagerComments, setLineManagerComments] = useState('');
+  const [executiveComments, setExecutiveComments] = useState('');
+
+  // Get notification context
+  const { addNotification } = useNotificationContext();
 
   // Hydrate state from hazard when loaded
   useEffect(() => {
@@ -213,6 +222,115 @@ export default function HazardWorkflow() {
     toast.success('Hazard report published to all employees');
   };
 
+  // Notification helper
+  const sendNotification = (recipient: string, title: string, message: string, actionUrl?: string) => {
+    addNotification({
+      title,
+      message,
+      type: 'safety',
+      priority: 'high',
+      module: 'Safety Management',
+      relatedId: hazard.id,
+      actionUrl: actionUrl || `/safety/hazard-workflow/${hazard.id}`,
+      actionText: 'View Hazard'
+    });
+
+    // Track notification in hazard
+    if (id) {
+      updateHazard(id, {
+        notificationsSent: [
+          ...(hazard.notificationsSent || []),
+          { recipient, type: title, date: new Date().toISOString() }
+        ]
+      });
+    }
+  };
+
+  // Approval handlers
+  const handleLineManagerApproval = (approved: boolean) => {
+    if (!id) return;
+
+    const nextStage = approved ? WORKFLOW_STAGES.EXEC_APPROVAL : WORKFLOW_STAGES.SM_CA_REVIEW;
+    const action = approved ? 'approved' : 'rejected';
+
+    updateHazard(id, {
+      approvals: {
+        ...hazard.approvals,
+        lineManager: {
+          approved,
+          approvedBy: 'Current User', // Use auth
+          approvedDate: new Date().toISOString(),
+          comments: lineManagerComments
+        }
+      },
+      workflowStage: nextStage,
+      workflowHistory: [
+        ...(hazard.workflowHistory || []),
+        {
+          stage: WORKFLOW_STAGES.LINE_MANAGER_APPROVAL,
+          date: new Date().toISOString(),
+          user: 'Current User',
+          action: `Line Manager ${action} corrective action`
+        }
+      ]
+    });
+
+    setCurrentStage(nextStage);
+    setLineManagerComments('');
+
+    // Send notifications
+    if (approved) {
+      sendNotification('Executive', 'Executive Approval Required', `Hazard ${hazard.id}: ${hazard.title} requires your approval`);
+      toast.success('Approved! Forwarded to Executive for final approval.');
+    } else {
+      sendNotification('Safety Manager', 'Corrective Action Rejected', `Hazard ${hazard.id} corrective action needs revision`);
+      toast.warning('Rejected. Returned to Safety Manager for revision.');
+    }
+  };
+
+  const handleExecutiveApproval = (approved: boolean) => {
+    if (!id) return;
+
+    const nextStage = approved ? WORKFLOW_STAGES.IMPLEMENTATION_ASSIGNMENT : WORKFLOW_STAGES.SM_CA_REVIEW;
+    const action = approved ? 'approved' : 'rejected';
+
+    updateHazard(id, {
+      approvals: {
+        ...hazard.approvals,
+        executive: {
+          approved,
+          approvedBy: 'Current User',
+          approvedDate: new Date().toISOString(),
+          comments: executiveComments
+        }
+      },
+      workflowStage: nextStage,
+      workflowHistory: [
+        ...(hazard.workflowHistory || []),
+        {
+          stage: WORKFLOW_STAGES.EXEC_APPROVAL,
+          date: new Date().toISOString(),
+          user: 'Current User',
+          action: `Executive ${action} corrective action`
+        }
+      ]
+    });
+
+    setCurrentStage(nextStage);
+    setExecutiveComments('');
+
+    if (approved) {
+      const executers = hazard.paceAssignments?.executers || [];
+      executers.forEach(exec => {
+        sendNotification(exec.value, 'Implementation Assignment', `You have been assigned to implement corrective actions for Hazard ${hazard.id}`);
+      });
+      toast.success('Approved! Proceeding to implementation.');
+    } else {
+      sendNotification('Safety Manager', 'Corrective Action Rejected by Executive', `Hazard ${hazard.id} needs revision`);
+      toast.warning('Rejected. Returned to Safety Manager.');
+    }
+  };
+
   const addPaceContributor = () => {
     setPaceAssignments({
       ...paceAssignments,
@@ -279,6 +397,15 @@ export default function HazardWorkflow() {
           </Button>
         </div>
       </div>
+
+      {/* Progress Tracker */}
+      <ProgressTracker
+        currentStage={currentStage}
+        onStageClick={(stage) => {
+          // Allow navigation to completed or current stages
+          setCurrentStage(stage);
+        }}
+      />
 
       {/* Progress Bar */}
       <Card>
@@ -943,57 +1070,165 @@ export default function HazardWorkflow() {
         </Card>
       )}
 
-      {/* Step 7: Line Manager & Executive Approval */}
+      {/* Step 7: Approval Workflow */}
       {(currentStageIndex >= stages.indexOf(WORKFLOW_STAGES.LINE_MANAGER_APPROVAL)) && (
         <Card className={(currentStage === WORKFLOW_STAGES.LINE_MANAGER_APPROVAL || currentStage === WORKFLOW_STAGES.EXEC_APPROVAL) ? 'border-2 border-blue-500 shadow-lg' : ''}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
-              Step 7: Approval Chain
+              Step 7: Approval Workflow
             </CardTitle>
             <CardDescription>
               Line Manager → Accountable Executive (returns to SM if denied)
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="p-4 border rounded-lg flex items-center justify-between">
+          <CardContent className="space-y-6">
+            {/* Line Manager Approval */}
+            <div className="p-4 border-2 rounded-lg" style={{
+              borderColor: currentStage === WORKFLOW_STAGES.LINE_MANAGER_APPROVAL ? '#3b82f6' : '#e5e7eb',
+              backgroundColor: currentStage === WORKFLOW_STAGES.LINE_MANAGER_APPROVAL ? '#eff6ff' : 'white'
+            }}>
+              <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="font-medium">Line Manager Approval</p>
+                  <p className="font-medium text-lg">Line Manager Approval</p>
                   <p className="text-sm text-muted-foreground">Review by department line manager</p>
                 </div>
-                {currentStage === WORKFLOW_STAGES.LINE_MANAGER_APPROVAL ? (
-                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                    Pending Approval
-                  </Badge>
-                ) : currentStageIndex > stages.indexOf(WORKFLOW_STAGES.LINE_MANAGER_APPROVAL) ? (
+                {hazard.approvals?.lineManager?.approved ? (
                   <Badge className="bg-green-100 text-green-800 border-green-200">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     Approved
+                  </Badge>
+                ) : currentStage === WORKFLOW_STAGES.LINE_MANAGER_APPROVAL ? (
+                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                    Pending Approval
                   </Badge>
                 ) : (
                   <Badge variant="outline">Not Started</Badge>
                 )}
               </div>
 
-              <div className="p-4 border rounded-lg flex items-center justify-between">
+              {/* Show approval interface if current stage */}
+              {currentStage === WORKFLOW_STAGES.LINE_MANAGER_APPROVAL && (
+                <div className="space-y-4 mt-4 pt-4 border-t">
+                  <div className="p-3 bg-gray-50 rounded">
+                    <Label className="text-sm font-medium mb-2 block">Proposed Corrective Action</Label>
+                    <p className="text-sm whitespace-pre-wrap">{hazard.correctiveActionDetails || 'No details provided'}</p>
+                  </div>
+
+                  <div>
+                    <Label>Comments / Feedback</Label>
+                    <Textarea
+                      placeholder="Add your comments or feedback on the proposed corrective action..."
+                      value={lineManagerComments}
+                      onChange={(e) => setLineManagerComments(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => handleLineManagerApproval(true)}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Approve
+                    </Button>
+                    <Button
+                      onClick={() => handleLineManagerApproval(false)}
+                      variant="outline"
+                      className="flex-1 border-red-500 text-red-600 hover:bg-red-50"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Request Changes
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Show approval details if already approved */}
+              {hazard.approvals?.lineManager && (
+                <div className="mt-4 pt-4 border-t text-sm">
+                  <p><strong>Approved by:</strong> {hazard.approvals.lineManager.approvedBy}</p>
+                  <p><strong>Date:</strong> {new Date(hazard.approvals.lineManager.approvedDate || '').toLocaleDateString()}</p>
+                  {hazard.approvals.lineManager.comments && (
+                    <p className="mt-2"><strong>Comments:</strong> {hazard.approvals.lineManager.comments}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Executive Approval */}
+            <div className="p-4 border-2 rounded-lg" style={{
+              borderColor: currentStage === WORKFLOW_STAGES.EXEC_APPROVAL ? '#3b82f6' : '#e5e7eb',
+              backgroundColor: currentStage === WORKFLOW_STAGES.EXEC_APPROVAL ? '#eff6ff' : 'white'
+            }}>
+              <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="font-medium">Accountable Executive Approval</p>
+                  <p className="font-medium text-lg">Accountable Executive Approval</p>
                   <p className="text-sm text-muted-foreground">Final executive approval</p>
                 </div>
-                {currentStage === WORKFLOW_STAGES.EXEC_APPROVAL ? (
-                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                    Pending Approval
-                  </Badge>
-                ) : currentStageIndex > stages.indexOf(WORKFLOW_STAGES.EXEC_APPROVAL) ? (
+                {hazard.approvals?.executive?.approved ? (
                   <Badge className="bg-green-100 text-green-800 border-green-200">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     Approved
+                  </Badge>
+                ) : currentStage === WORKFLOW_STAGES.EXEC_APPROVAL ? (
+                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                    Pending Approval
                   </Badge>
                 ) : (
                   <Badge variant="outline">Not Started</Badge>
                 )}
               </div>
+
+              {/* Show approval interface if current stage */}
+              {currentStage === WORKFLOW_STAGES.EXEC_APPROVAL && (
+                <div className="space-y-4 mt-4 pt-4 border-t">
+                  <div className="p-3 bg-gray-50 rounded">
+                    <Label className="text-sm font-medium mb-2 block">Proposed Corrective Action</Label>
+                    <p className="text-sm whitespace-pre-wrap">{hazard.correctiveActionDetails || 'No details provided'}</p>
+                  </div>
+
+                  <div>
+                    <Label>Executive Comments / Feedback</Label>
+                    <Textarea
+                      placeholder="Add your executive comments or feedback..."
+                      value={executiveComments}
+                      onChange={(e) => setExecutiveComments(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => handleExecutiveApproval(true)}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Approve
+                    </Button>
+                    <Button
+                      onClick={() => handleExecutiveApproval(false)}
+                      variant="outline"
+                      className="flex-1 border-red-500 text-red-600 hover:bg-red-50"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Request Changes
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Show approval details if already approved */}
+              {hazard.approvals?.executive && (
+                <div className="mt-4 pt-4 border-t text-sm">
+                  <p><strong>Approved by:</strong> {hazard.approvals.executive.approvedBy}</p>
+                  <p><strong>Date:</strong> {new Date(hazard.approvals.executive.approvedDate || '').toLocaleDateString()}</p>
+                  {hazard.approvals.executive.comments && (
+                    <p className="mt-2"><strong>Comments:</strong> {hazard.approvals.executive.comments}</p>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

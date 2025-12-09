@@ -12,11 +12,11 @@ import { Checkbox } from './ui/checkbox';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { toast } from 'sonner';
-import { 
-  Shield, 
-  AlertTriangle, 
-  FileText, 
-  Send, 
+import {
+  Shield,
+  AlertTriangle,
+  FileText,
+  Send,
   Eye,
   EyeOff,
   Lock,
@@ -38,28 +38,28 @@ interface ASAPReportForm {
   reportId: string;
   submissionDate: string;
   reporterType: string;
-  
+
   // Incident details
   eventDate: string;
   eventTime: string;
   location: string;
   aircraftType: string;
   flightPhase: string;
-  
+
   // Event classification
   eventType: string[];
   severityLevel: string;
   contributingFactors: string[];
-  
+
   // Narrative (for NASA submission)
   eventDescription: string;
   consequences: string;
   recommendedActions: string;
-  
+
   // System tracking (anonymized)
   trackingCategory: string;
   internalFollowupRequired: boolean;
-  
+
   // Submission preferences
   submitToNASA: boolean;
   requestFollowup: boolean;
@@ -215,17 +215,21 @@ export default function ASAPReport({ userRole }: { userRole: string }) {
 
     // Generate anonymous report ID
     const reportId = `ASAP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
-    
+
     const finalReport = {
       ...formData,
       reportId,
       submissionDate: new Date().toISOString()
     };
 
+
     // In a real implementation, this would:
     // 1. Store anonymized data internally for tracking
     // 2. Submit full report to NASA ASRS if requested
-    console.log('ASAP Report Submitted:', finalReport);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEV] ASAP Report Submitted:', finalReport);
+    }
+
 
     if (formData.submitToNASA) {
       // Simulate NASA submission
@@ -298,7 +302,7 @@ export default function ASAPReport({ userRole }: { userRole: string }) {
           <Alert>
             <Shield className="h-4 w-4" />
             <AlertDescription>
-              <strong>Confidential Reporting:</strong> This system maintains your anonymity while enabling safety improvements. 
+              <strong>Confidential Reporting:</strong> This system maintains your anonymity while enabling safety improvements.
               Reports are used for trend analysis and corrective actions, not punitive measures.
             </AlertDescription>
           </Alert>
@@ -399,7 +403,7 @@ export default function ASAPReport({ userRole }: { userRole: string }) {
                           <Checkbox
                             id={`event-${type}`}
                             checked={formData.eventType?.includes(type) || false}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               handleMultiSelect('eventType', type, checked as boolean)
                             }
                           />
@@ -459,7 +463,7 @@ export default function ASAPReport({ userRole }: { userRole: string }) {
                           <Checkbox
                             id={`factor-${factor}`}
                             checked={formData.contributingFactors?.includes(factor) || false}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               handleMultiSelect('contributingFactors', factor, checked as boolean)
                             }
                           />
@@ -689,7 +693,7 @@ export default function ASAPReport({ userRole }: { userRole: string }) {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -701,7 +705,7 @@ export default function ASAPReport({ userRole }: { userRole: string }) {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -743,12 +747,12 @@ export default function ASAPReport({ userRole }: { userRole: string }) {
                 <div>
                   <h4 className="font-medium mb-2">What is ASAP?</h4>
                   <p className="text-sm text-muted-foreground">
-                    The Aviation Safety Action Program (ASAP) is a voluntary safety program that encourages 
-                    aviation professionals to report safety concerns without fear of retribution, when the 
+                    The Aviation Safety Action Program (ASAP) is a voluntary safety program that encourages
+                    aviation professionals to report safety concerns without fear of retribution, when the
                     report is submitted in accordance with the program.
                   </p>
                 </div>
-                
+
                 <div>
                   <h4 className="font-medium mb-2">Program Benefits</h4>
                   <ul className="text-sm text-muted-foreground space-y-1">
@@ -758,11 +762,11 @@ export default function ASAPReport({ userRole }: { userRole: string }) {
                     <li>• Enhanced safety culture through open reporting</li>
                   </ul>
                 </div>
-                
+
                 <div>
                   <h4 className="font-medium mb-2">NASA ASRS Integration</h4>
                   <p className="text-sm text-muted-foreground">
-                    Reports can be simultaneously submitted to NASA's Aviation Safety Reporting System, 
+                    Reports can be simultaneously submitted to NASA's Aviation Safety Reporting System,
                     which provides additional legal protections and contributes to national aviation safety research.
                   </p>
                 </div>

@@ -13,15 +13,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Slider } from './ui/slider';
 import { Switch } from './ui/switch';
 import { Textarea } from './ui/textarea';
-import { 
-  Calendar, 
-  Users, 
-  Plane, 
-  TrendingUp, 
-  TrendingDown, 
-  Clock, 
-  MapPin, 
-  AlertTriangle, 
+import {
+  Calendar,
+  Users,
+  Plane,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  MapPin,
+  AlertTriangle,
   CheckCircle,
   BarChart3,
   Target,
@@ -48,7 +48,8 @@ import {
   Globe,
   BookOpen,
   MessageSquare,
-  Package
+  Package,
+  Info
 } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell } from 'recharts';
 
@@ -63,17 +64,19 @@ interface CrewMember {
     // Flight-related metrics
     flightDays: number;
     tripDays: number;
+    trips?: number;
+    internationalTrips?: number;
     ronDays: number;
     positionDays: number;
     weekendDays: number;
-    
+
     // Duty-related metrics
     standbyDays: number;
     miscDuty: number;
     trainingDays: number;
     otherDutyDays: number;
     totalDutyDays: number;
-    
+
     // Rest-related metrics
     stopScheduled: number;
     stopWorkedDays: number;
@@ -81,10 +84,10 @@ interface CrewMember {
     vacationDays: number;
     miscOffDays: number;
     totalRestDays: number;
-    
+
     // Availability
     unscheduledAvailable: number;
-    
+
     // Legacy fields for compatibility
     offDays: number;
     dutyHours: number;
@@ -95,17 +98,19 @@ interface CrewMember {
     // Flight-related metrics
     flightDays: number;
     tripDays: number;
+    trips?: number;
+    internationalTrips?: number;
     ronDays: number;
     positionDays: number;
     weekendDays: number;
-    
+
     // Duty-related metrics
     standbyDays: number;
     miscDuty: number;
     trainingDays: number;
     otherDutyDays: number;
     totalDutyDays: number;
-    
+
     // Rest-related metrics
     stopScheduled: number; // Total STOP days scheduled
     stopWorkedDays: number; // STOP days where crew worked
@@ -113,10 +118,10 @@ interface CrewMember {
     vacationDays: number;
     miscOffDays: number;
     totalRestDays: number;
-    
+
     // Availability
     unscheduledAvailable: number;
-    
+
     // Legacy fields for compatibility
     offDays: number;
     dutyHours: number;
@@ -126,6 +131,8 @@ interface CrewMember {
   nextMonth: {
     flightDays: number;
     tripDays: number;
+    trips?: number;
+    internationalTrips?: number;
     ronDays: number;
     positionDays: number;
     weekendDays: number;
@@ -149,6 +156,8 @@ interface CrewMember {
   twoMonthsOut: {
     flightDays: number;
     tripDays: number;
+    trips?: number;
+    internationalTrips?: number;
     ronDays: number;
     positionDays: number;
     weekendDays: number;
@@ -280,6 +289,13 @@ export default function CrewSchedulingWorkload() {
     unit: '',
     maxValue: 100
   });
+  // New state for utilization visualizations
+  const [selectedMonth, setSelectedMonth] = useState<'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut'>('currentMonth');
+  const [utilizationView, setUtilizationView] = useState<'balance' | 'timeline'>('balance');
+  const [sortUtilizationBy, setSortUtilizationBy] = useState<'overutilized' | 'underutilized' | 'name'>('overutilized');
+  const [utilizationFilter, setUtilizationFilter] = useState<'all' | 'over' | 'under'>('all');
+  const [dateRange, setDateRange] = useState<'3M' | '6M' | '12M'>('6M');
+  const [showOutliersOnly, setShowOutliersOnly] = useState(false);
   const [previousWorkloadScores, setPreviousWorkloadScores] = useState<Record<string, number>>({});
   const [showImpactAlert, setShowImpactAlert] = useState(false);
   const [impactSummary, setImpactSummary] = useState('');
@@ -382,7 +398,7 @@ export default function CrewSchedulingWorkload() {
 
     const enabledMetrics = currentMetricConfig.metrics.filter(m => m.enabled);
     const totalWeight = enabledMetrics.reduce((sum, metric) => sum + metric.weight, 0);
-    
+
     if (totalWeight === 0) return 0;
 
     let weightedScore = 0;
@@ -418,7 +434,7 @@ export default function CrewSchedulingWorkload() {
           ...crew,
           workloadScore: calculateWorkloadScore(crew, 'current')
         }));
-        
+
         setCrewMembers(updatedCrew);
 
         // Calculate impact if we have previous scores
@@ -448,21 +464,21 @@ export default function CrewSchedulingWorkload() {
     updatedCrew.forEach(crew => {
       const previousScore = previousScores[crew.id] || 0;
       const change = crew.workloadScore - previousScore;
-      
+
       if (Math.abs(change) > 10) { // Significant change threshold
         significantChanges++;
       }
-      
+
       totalChange += Math.abs(change);
       if (change > highestIncrease) highestIncrease = change;
       if (change < highestDecrease) highestDecrease = change;
     });
 
     const avgChange = totalChange / updatedCrew.length;
-    
+
     let summary = `Configuration change affected ${significantChanges} crew members significantly. `;
     summary += `Average workload score change: ${avgChange.toFixed(1)} points. `;
-    
+
     if (highestIncrease > 15) {
       summary += `Largest increase: +${highestIncrease.toFixed(1)} points. `;
     }
@@ -488,7 +504,7 @@ export default function CrewSchedulingWorkload() {
       return names.map((name, index) => {
         const position = positions[index % positions.length];
         const base = bases[index % bases.length];
-        
+
         // Historical averages
         const avgTripDays = 12 + Math.random() * 6;
         const avgRonDays = 8 + Math.random() * 4;
@@ -525,7 +541,7 @@ export default function CrewSchedulingWorkload() {
         const currentOffDays = 30 - currentTripDays - currentStandbyDays;
         const currentDutyHours = Math.round(avgDutyHours + (Math.random() - 0.5) * 15);
         const currentFlightHours = Math.round(avgFlightHours + (Math.random() - 0.5) * 10);
-        
+
         // New detailed metrics for current month
         const currentFlightDays = currentTripDays - currentRonDays; // Flight days excluding RON
         const currentPositionDays = Math.floor(Math.random() * 3); // Positioning days
@@ -534,7 +550,7 @@ export default function CrewSchedulingWorkload() {
         const currentMiscDuty = Math.floor(Math.random() * 2);
         const currentOtherDutyDays = Math.floor(Math.random() * 2);
         const currentTotalDutyDays = currentTripDays + currentStandbyDays + currentTrainingDays + currentMiscDuty + currentOtherDutyDays;
-        
+
         // STOP schedule metrics
         const currentStopScheduled = 8; // 2 weekend days per STOP x 4 STOPs per month (every other weekend)
         const currentStopWorked = Math.floor(Math.random() * 3); // Sometimes crew works during STOP
@@ -779,9 +795,9 @@ export default function CrewSchedulingWorkload() {
       avgRonDaysPerCrew: activeCrew.length > 0 ? Math.round(activeCrew.reduce((sum, c) => sum + c.currentMonth.ronDays, 0) / activeCrew.length * 10) / 10 : 0,
       avgStandbyDaysPerCrew: activeCrew.length > 0 ? Math.round(activeCrew.reduce((sum, c) => sum + c.currentMonth.standbyDays, 0) / activeCrew.length * 10) / 10 : 0,
     };
-    
+
     setWorkloadSummary(summary);
-    
+
     // Update workload scores after crew data is generated (only on initial load)
     if (currentMetricConfig && isInitialLoadRef.current) {
       const updatedCrew = crew.map(member => ({
@@ -805,7 +821,7 @@ export default function CrewSchedulingWorkload() {
     .sort((a, b) => {
       let aValue: number;
       let bValue: number;
-      
+
       switch (sortBy) {
         case 'workloadScore':
           aValue = a.workloadScore;
@@ -827,7 +843,7 @@ export default function CrewSchedulingWorkload() {
           aValue = 0;
           bValue = 0;
       }
-      
+
       return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
     });
 
@@ -878,42 +894,202 @@ export default function CrewSchedulingWorkload() {
     }
   ];
 
+  // Generate crew utilization balance data
+  const generateUtilizationBalanceData = () => {
+    const monthKey = selectedMonth as 'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut';
+
+    // Use configurable target average (10 days) instead of fleet average
+    const targetAverage = 10;
+
+    // Calculate actual fleet average for display purposes
+    const actualFleetAverage = activeFilteredCrew.length > 0
+      ? activeFilteredCrew.reduce((sum, c) => sum + (c[monthKey]?.tripDays || 0), 0) / activeFilteredCrew.length
+      : 0;
+
+    // Generate balance data for each crew member
+    let balanceData = activeFilteredCrew.map(crew => {
+      const tripDays = crew[monthKey]?.tripDays || 0;
+      const utilizationPercent = (tripDays / 20) * 100; // Assuming 20 days is max
+      const deviation = tripDays - targetAverage;
+      const deviationPercent = targetAverage > 0 ? (deviation / targetAverage) * 100 : 0;
+
+      let status: 'critical-over' | 'warning-over' | 'balanced' | 'under' | 'critical-under';
+      if (deviationPercent > 20) status = 'critical-over';
+      else if (deviationPercent > 10) status = 'warning-over';
+      else if (deviationPercent < -20) status = 'critical-under';
+      else if (deviationPercent < -10) status = 'under';
+      else status = 'balanced';
+
+      return {
+        crewId: crew.id,
+        crewName: crew.name,
+        position: crew.position,
+        utilizationPercent,
+        targetAverage,
+        actualFleetAverage,
+        deviation,
+        deviationPercent,
+        status,
+        tripDays: crew[monthKey]?.tripDays || 0,
+        ronDays: crew[monthKey]?.ronDays || 0,
+        standbyDays: crew[monthKey]?.standbyDays || 0,
+      };
+    });
+
+    // Apply filter
+    if (utilizationFilter === 'over') {
+      balanceData = balanceData.filter(d => d.deviationPercent > 10);
+    } else if (utilizationFilter === 'under') {
+      balanceData = balanceData.filter(d => d.deviationPercent < -10);
+    }
+
+    // Apply sort
+    if (sortUtilizationBy === 'overutilized') {
+      balanceData.sort((a, b) => b.deviationPercent - a.deviationPercent);
+    } else if (sortUtilizationBy === 'underutilized') {
+      balanceData.sort((a, b) => a.deviationPercent - b.deviationPercent);
+    } else {
+      balanceData.sort((a, b) => a.crewName.localeCompare(b.crewName));
+    }
+
+    return { balanceData, targetAverage, actualFleetAverage };
+  };
+
+  // Generate utilization trend data over time
+  const generateUtilizationTrendData = () => {
+    const months = dateRange === '3M' ? 3 : dateRange === '6M' ? 6 : 12;
+    const today = new Date();
+    const trendData = [];
+
+    // Generate historical data (mock)
+    for (let i = months; i > 0; i--) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+      const crewUtilization: Record<string, number> = {};
+      let totalUtil = 0;
+      let overCount = 0;
+      let underCount = 0;
+      let balancedCount = 0;
+
+      activeFilteredCrew.forEach(crew => {
+        // Generate mock historical utilization with some variation
+        const baseUtil = 65 + Math.random() * 20;
+        const util = Math.max(0, Math.min(100, baseUtil + (Math.random() - 0.5) * 30));
+        crewUtilization[crew.id] = util;
+        totalUtil += util;
+
+        if (util > 80) overCount++;
+        else if (util < 60) underCount++;
+        else balancedCount++;
+      });
+
+      trendData.push({
+        month: monthName,
+        date,
+        isPast: true,
+        fleetAverage: activeFilteredCrew.length > 0 ? totalUtil / activeFilteredCrew.length : 0,
+        crewUtilization,
+        overUtilizedCount: overCount,
+        underUtilizedCount: underCount,
+        balancedCount,
+      });
+    }
+
+    // Add current and future months using actual data
+    const futureMonths = [
+      { key: 'currentMonth' as const, offset: 0, label: 'Current' },
+      { key: 'nextMonth' as const, offset: 1, label: 'Next' },
+      { key: 'twoMonthsOut' as const, offset: 2, label: '+2 Months' },
+    ];
+
+    futureMonths.forEach(({ key, offset }) => {
+      const date = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+      const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+      const crewUtilization: Record<string, number> = {};
+      let totalUtil = 0;
+      let overCount = 0;
+      let underCount = 0;
+      let balancedCount = 0;
+
+      activeFilteredCrew.forEach(crew => {
+        const tripDays = crew[key]?.tripDays || 0;
+        const util = (tripDays / 20) * 100;
+        crewUtilization[crew.id] = util;
+        totalUtil += util;
+
+        if (util > 80) overCount++;
+        else if (util < 60) underCount++;
+        else balancedCount++;
+      });
+
+      trendData.push({
+        month: monthName,
+        date,
+        isPast: offset === 0,
+        fleetAverage: activeFilteredCrew.length > 0 ? totalUtil / activeFilteredCrew.length : 0,
+        crewUtilization,
+        overUtilizedCount: overCount,
+        underUtilizedCount: underCount,
+        balancedCount,
+      });
+    });
+
+    return trendData;
+  };
+
+  const utilizationBalanceData = generateUtilizationBalanceData();
+  const utilizationTrendData = generateUtilizationTrendData();
+
+  // Helper function to get color for utilization status
+  const getUtilizationColor = (status: string) => {
+    switch (status) {
+      case 'critical-over': return '#ef4444'; // red
+      case 'warning-over': return '#f97316'; // orange
+      case 'balanced': return '#22c55e'; // green
+      case 'under': return '#3b82f6'; // blue
+      case 'critical-under': return '#1d4ed8'; // dark blue
+      default: return '#6b7280'; // gray
+    }
+  };
+
   // Metric configuration functions
   const handleMetricWeightChange = (metricId: string, newWeight: number) => {
     if (!currentMetricConfig) return;
-    
+
     const updatedMetrics = currentMetricConfig.metrics.map(metric =>
       metric.id === metricId ? { ...metric, weight: newWeight } : metric
     );
-    
+
     const newConfig = {
       ...currentMetricConfig,
       metrics: updatedMetrics,
       modifiedAt: new Date().toISOString()
     };
-    
+
     setCurrentMetricConfig(newConfig);
   };
 
   const toggleMetric = (metricId: string) => {
     if (!currentMetricConfig) return;
-    
+
     const updatedMetrics = currentMetricConfig.metrics.map(metric =>
       metric.id === metricId ? { ...metric, enabled: !metric.enabled } : metric
     );
-    
+
     const newConfig = {
       ...currentMetricConfig,
       metrics: updatedMetrics,
       modifiedAt: new Date().toISOString()
     };
-    
+
     setCurrentMetricConfig(newConfig);
   };
 
   const addCustomMetric = () => {
     if (!currentMetricConfig || !newCustomMetric.name) return;
-    
+
     const customMetric: WorkloadMetric = {
       id: `custom-${Date.now()}`,
       name: newCustomMetric.name,
@@ -925,17 +1101,17 @@ export default function CrewSchedulingWorkload() {
       maxValue: newCustomMetric.maxValue,
       getValue: () => Math.random() * newCustomMetric.maxValue // Placeholder for custom logic
     };
-    
+
     const updatedMetrics = [...currentMetricConfig.metrics, customMetric];
-    
+
     const newConfig = {
       ...currentMetricConfig,
       metrics: updatedMetrics,
       modifiedAt: new Date().toISOString()
     };
-    
+
     setCurrentMetricConfig(newConfig);
-    
+
     setNewCustomMetric({
       name: '',
       description: '',
@@ -947,7 +1123,7 @@ export default function CrewSchedulingWorkload() {
 
   const removeCustomMetric = (metricId: string) => {
     if (!currentMetricConfig) return;
-    
+
     const updatedMetrics = currentMetricConfig.metrics.filter(m => m.id !== metricId);
 
     const newConfig = {
@@ -955,16 +1131,16 @@ export default function CrewSchedulingWorkload() {
       metrics: updatedMetrics,
       modifiedAt: new Date().toISOString()
     };
-    
+
     setCurrentMetricConfig(newConfig);
   };
 
   const saveConfiguration = () => {
     if (!currentMetricConfig) return;
-    
+
     const configName = prompt('Enter a name for this configuration:');
     if (!configName) return;
-    
+
     const newConfig: MetricConfiguration = {
       ...currentMetricConfig,
       id: `config-${Date.now()}`,
@@ -972,7 +1148,7 @@ export default function CrewSchedulingWorkload() {
       isDefault: false,
       createdAt: new Date().toISOString()
     };
-    
+
     setSavedConfigurations(prev => [...prev, newConfig]);
   };
 
@@ -985,7 +1161,7 @@ export default function CrewSchedulingWorkload() {
     setCurrentMetricConfig(defaultConfig);
   };
 
-  const applyPresetConfiguration = (preset: 'balanced' | 'duty-heavy' | 'travel-focused') => {
+  const applyPresetConfiguration = (preset: 'balanced' | 'duty-heavy' | 'travel-focused' | 'flight-focused' | 'fatigue-aware' | 'utilization') => {
     if (!currentMetricConfig) return;
 
     let presetConfig: MetricConfiguration | null = null;
@@ -999,33 +1175,60 @@ export default function CrewSchedulingWorkload() {
           metrics: currentMetricConfig.metrics.map(m => ({ ...m, weight: 5 })) // Equal weight of 5 days each
         };
         break;
-      
+
       case 'duty-heavy':
         presetConfig = {
           ...currentMetricConfig,
-          name: 'Duty-Heavy Configuration', 
+          name: 'Duty-Heavy Configuration',
           description: 'Emphasizes duty hours and standby time',
           metrics: currentMetricConfig.metrics.map(m => {
-            if (m.id === 'duty-hours') return { ...m, weight: 12 }; // 12 days weight
-            if (m.id === 'standby-days') return { ...m, weight: 8 }; // 8 days weight
-            if (m.id === 'trip-days') return { ...m, weight: 4 }; // 4 days weight
-            if (m.id === 'ron-days') return { ...m, weight: 3 }; // 3 days weight
-            return { ...m, weight: 5 }; // Default for any custom metrics
+            if (m.id === 'duty-hours') return { ...m, weight: 12 };
+            if (m.id === 'standby-days') return { ...m, weight: 8 };
+            if (m.id === 'trip-days') return { ...m, weight: 4 };
+            if (m.id === 'ron-days') return { ...m, weight: 3 };
+            return { ...m, weight: 5 };
           })
         };
         break;
-      
+
       case 'travel-focused':
+      case 'flight-focused':
         presetConfig = {
           ...currentMetricConfig,
-          name: 'Travel-Focused Configuration',
-          description: 'Emphasizes trip days and RON considerations', 
+          name: 'Flight-focused Configuration',
+          description: 'Emphasizes trip days and RON considerations',
           metrics: currentMetricConfig.metrics.map(m => {
-            if (m.id === 'trip-days') return { ...m, weight: 12 }; // 12 days weight
-            if (m.id === 'ron-days') return { ...m, weight: 8 }; // 8 days weight
-            if (m.id === 'duty-hours') return { ...m, weight: 4 }; // 4 days weight
-            if (m.id === 'standby-days') return { ...m, weight: 3 }; // 3 days weight
-            return { ...m, weight: 5 }; // Default for any custom metrics
+            if (m.id === 'trip-days') return { ...m, weight: 15 };
+            if (m.id === 'ron-days') return { ...m, weight: 10 };
+            if (m.id === 'duty-hours') return { ...m, weight: 5 };
+            return { ...m, weight: 3 };
+          })
+        };
+        break;
+
+      case 'fatigue-aware':
+        presetConfig = {
+          ...currentMetricConfig,
+          name: 'Fatigue Management',
+          description: 'Focuses on fatigue-inducing metrics',
+          metrics: currentMetricConfig.metrics.map(m => {
+            if (m.id === 'ron-days') return { ...m, weight: 15 };
+            if (m.id === 'duty-hours') return { ...m, weight: 12 };
+            if (m.id === 'standby-days') return { ...m, weight: 8 };
+            return { ...m, weight: 4 };
+          })
+        };
+        break;
+
+      case 'utilization':
+        presetConfig = {
+          ...currentMetricConfig,
+          name: 'Utilization Focused',
+          description: 'Maximizes crew utilization metrics',
+          metrics: currentMetricConfig.metrics.map(m => {
+            if (m.id === 'trip-days') return { ...m, weight: 20 };
+            if (m.id === 'duty-hours') return { ...m, weight: 15 };
+            return { ...m, weight: 2 };
           })
         };
         break;
@@ -1087,15 +1290,15 @@ export default function CrewSchedulingWorkload() {
 
   const getCrewMetricBreakdown = (crew: CrewMember) => {
     if (!currentMetricConfig) return [];
-    
+
     const enabledMetrics = currentMetricConfig.metrics.filter(m => m.enabled);
     const totalWeight = enabledMetrics.reduce((sum, metric) => sum + metric.weight, 0);
-    
+
     return enabledMetrics.map(metric => {
       const value = metric.getValue(crew, 'current');
       const normalizedValue = Math.min(value / metric.maxValue, 1);
       const weightedContribution = totalWeight > 0 ? (normalizedValue * metric.weight) / totalWeight * 100 : 0;
-      
+
       return {
         name: metric.name,
         value: value,
@@ -1115,7 +1318,7 @@ export default function CrewSchedulingWorkload() {
   if (viewMode === 'individual' && selectedCrew) {
     const crewData = getIndividualCrewData(selectedCrew);
     const metricBreakdown = getCrewMetricBreakdown(selectedCrew);
-    
+
     return (
       <div className="space-y-6 p-6">
         {/* Header with Back Button */}
@@ -1135,7 +1338,7 @@ export default function CrewSchedulingWorkload() {
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-3">
             <Badge className={`${getWorkloadColor(selectedCrew.workloadScore)} text-lg px-4 py-2`}>
               Workload Score: {selectedCrew.workloadScore.toFixed(0)}
@@ -1156,7 +1359,7 @@ export default function CrewSchedulingWorkload() {
           <Alert className="border-orange-200 bg-orange-50">
             <EyeOff className="h-4 w-4 text-orange-600" />
             <AlertDescription className="text-orange-800">
-              <strong>Excluded from Metrics:</strong> This crew member is currently excluded from all workload calculations and fleet averages. 
+              <strong>Excluded from Metrics:</strong> This crew member is currently excluded from all workload calculations and fleet averages.
               Their data is shown for reference only.
             </AlertDescription>
           </Alert>
@@ -1178,7 +1381,7 @@ export default function CrewSchedulingWorkload() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card className="lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm">Training Status</CardTitle>
@@ -1207,7 +1410,7 @@ export default function CrewSchedulingWorkload() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm">RON Days</CardTitle>
@@ -1220,7 +1423,7 @@ export default function CrewSchedulingWorkload() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm">Standby Days</CardTitle>
@@ -1233,7 +1436,7 @@ export default function CrewSchedulingWorkload() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm">Duty Hours</CardTitle>
@@ -1246,7 +1449,7 @@ export default function CrewSchedulingWorkload() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm">Flight Hours</CardTitle>
@@ -1294,8 +1497,8 @@ export default function CrewSchedulingWorkload() {
           <Alert className="border-blue-200 bg-blue-50">
             <Eye className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
-              <strong>Metrics Calculation:</strong> {crewMembers.filter(c => c.excludeFromMetrics).length} crew member(s) excluded from workload calculations. 
-              All averages and charts reflect only active, included crew members. 
+              <strong>Metrics Calculation:</strong> {crewMembers.filter(c => c.excludeFromMetrics).length} crew member(s) excluded from workload calculations.
+              All averages and charts reflect only active, included crew members.
               {showExcludedCrew ? 'Excluded crew are shown with reduced opacity.' : 'Click "Show Excluded" to view them.'}
             </AlertDescription>
           </Alert>
@@ -1323,7 +1526,7 @@ export default function CrewSchedulingWorkload() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Duty & Flight Hours Trend</CardTitle>
@@ -1399,7 +1602,7 @@ export default function CrewSchedulingWorkload() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -1418,7 +1621,7 @@ export default function CrewSchedulingWorkload() {
                 </div>
                 <Progress value={(selectedCrew.training.trainingHoursCompleted / selectedCrew.training.trainingHoursRequired) * 100} />
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Medical</span>
@@ -1437,7 +1640,7 @@ export default function CrewSchedulingWorkload() {
                   <span className="text-muted-foreground">{selectedCrew.training.lineCheckExpiry}</span>
                 </div>
               </div>
-              
+
               {selectedCrew.training.upcomingRequirements.length > 0 && (
                 <div>
                   <span className="font-medium text-sm">Upcoming Requirements</span>
@@ -1450,7 +1653,7 @@ export default function CrewSchedulingWorkload() {
               )}
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -1475,7 +1678,7 @@ export default function CrewSchedulingWorkload() {
                   </div>
                 </div>
               ))}
-              
+
               {Object.keys(selectedCrew.routeFamiliarity).length === 0 && (
                 <p className="text-sm text-muted-foreground italic">No recent route history available</p>
               )}
@@ -1506,7 +1709,7 @@ export default function CrewSchedulingWorkload() {
                   <div className="text-sm text-muted-foreground">Consecutive Days</div>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span>Last Rest Period</span>
@@ -1564,7 +1767,7 @@ export default function CrewSchedulingWorkload() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -1652,7 +1855,7 @@ export default function CrewSchedulingWorkload() {
             Workload analysis, crew balance optimization, and travel tracking for Gulfstream G650 operations
           </p>
         </div>
-        
+
         <div className="flex space-x-2">
           <Button variant="outline" onClick={() => setShowMetricsConfig(true)}>
             <Settings className="h-4 w-4 mr-2" />
@@ -1671,7 +1874,7 @@ export default function CrewSchedulingWorkload() {
 
       {/* Main Tabs */}
       <Tabs defaultValue="workload" className="space-y-6">
-        <TabsList className="grid w-full max-w-3xl grid-cols-3">
+        <TabsList className="grid w-full max-w-4xl grid-cols-4">
           <TabsTrigger value="workload" className="flex items-center gap-2">
             <Gauge className="h-4 w-4" />
             Workload Planning
@@ -1684,376 +1887,143 @@ export default function CrewSchedulingWorkload() {
             <BarChart3 className="h-4 w-4" />
             Analytics & Visualizations
           </TabsTrigger>
+          <TabsTrigger value="manage" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Manage Crew
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="workload" className="space-y-6 overflow-x-hidden">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Total Crew</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{workloadSummary.totalCrew}</div>
-            <p className="text-xs text-muted-foreground">
-              {workloadSummary.activecrew} in metrics • {crewMembers.filter(c => c.excludeFromMetrics).length} excluded
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Current Utilization</CardTitle>
-            <Gauge className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{workloadSummary.currentUtilization}%</div>
-            <p className="text-xs text-muted-foreground">
-              {workloadSummary.projectedUtilization}% projected
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Balance Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{workloadSummary.imbalanceAlerts}</div>
-            <p className="text-xs text-muted-foreground">
-              crew members need attention
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Avg Trip Days</CardTitle>
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{workloadSummary.avgTripDaysPerCrew}</div>
-            <p className="text-xs text-muted-foreground">
-              per crew member
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Avg RON Days</CardTitle>
-            <Moon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{workloadSummary.avgRonDaysPerCrew}</div>
-            <p className="text-xs text-muted-foreground">
-              per crew member
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Avg Standby</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{workloadSummary.avgStandbyDaysPerCrew}</div>
-            <p className="text-xs text-muted-foreground">
-              days per crew
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm">Total Crew</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{workloadSummary.totalCrew}</div>
+                <p className="text-xs text-muted-foreground">
+                  {workloadSummary.activecrew} in metrics • {crewMembers.filter(c => c.excludeFromMetrics).length} excluded
+                </p>
+              </CardContent>
+            </Card>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Workload Distribution</CardTitle>
-            <CardDescription>Number of crew in each workload category</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={workloadDistributionData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, count }) => `${name}: ${count}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                />
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>3-Month Workload Trends</CardTitle>
-            <CardDescription>Average workload metrics over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={monthlyTrendsData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Area type="monotone" dataKey="tripDays" stackId="1" stroke="#0037B1" fill="#0037B1" />
-                <Area type="monotone" dataKey="ronDays" stackId="1" stroke="#00A1DF" fill="#00A1DF" />
-                <Area type="monotone" dataKey="standbyDays" stackId="1" stroke="#44BEEE" fill="#44BEEE" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm">Current Utilization</CardTitle>
+                <Gauge className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{workloadSummary.currentUtilization}%</div>
+                <p className="text-xs text-muted-foreground">
+                  {workloadSummary.projectedUtilization}% projected
+                </p>
+              </CardContent>
+            </Card>
 
-      {/* Metrics Configuration Dialog */}
-      <Dialog open={showMetricsConfig} onOpenChange={setShowMetricsConfig}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Workload Metrics Configuration</DialogTitle>
-            <DialogDescription>
-              Customize how workload scores are calculated using day-based weights
-            </DialogDescription>
-          </DialogHeader>
-          
-          {!currentMetricConfig ? (
-            <div className="py-8 text-center text-muted-foreground">
-              Loading configuration...
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <Tabs defaultValue="current" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="current">Current Configuration</TabsTrigger>
-                  <TabsTrigger value="presets">Quick Presets</TabsTrigger>
-                  <TabsTrigger value="custom">Add Custom Metric</TabsTrigger>
-                  <TabsTrigger value="manage">Manage Configurations</TabsTrigger>
-                </TabsList>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm">Balance Alerts</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">{workloadSummary.imbalanceAlerts}</div>
+                <p className="text-xs text-muted-foreground">
+                  crew members need attention
+                </p>
+              </CardContent>
+            </Card>
 
-                <TabsContent value="current" className="space-y-4">
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-base font-medium">Current Configuration: {currentMetricConfig.name}</Label>
-                      <p className="text-sm text-muted-foreground">{currentMetricConfig.description}</p>
-                    </div>
-                    
-                    {currentMetricConfig.metrics.map((metric) => (
-                      <Card key={metric.id} className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center space-x-3">
-                            <Switch
-                              checked={metric.enabled}
-                              onCheckedChange={() => toggleMetric(metric.id)}
-                            />
-                            <div>
-                              <Label className="text-base">{metric.name}</Label>
-                              <p className="text-sm text-muted-foreground">{metric.description}</p>
-                            </div>
-                          </div>
-                          {metric.category === 'custom' && (
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => removeCustomMetric(metric.id)}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                        
-                        {metric.enabled && (
-                          <div className="space-y-3">
-                            <div>
-                              <Label className="text-sm">Weight: {metric.weight} days</Label>
-                              <Slider
-                                value={[metric.weight]}
-                                onValueChange={([value]) => handleMetricWeightChange(metric.id, value)}
-                                max={20}
-                                min={1}
-                                step={1}
-                                className="mt-2"
-                              />
-                              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                                <span>1 day</span>
-                                <span>20 days</span>
-                              </div>
-                            </div>
-                            
-                            <div className="text-xs text-muted-foreground">
-                              Max value: {metric.maxValue} {metric.unit} | Category: {metric.category}
-                            </div>
-                          </div>
-                        )}
-                      </Card>
-                    ))}
-                  </div>
-                  
-                  <div className="flex justify-between pt-4">
-                    <Button variant="outline" onClick={resetToDefaults}>
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Reset to Defaults
-                    </Button>
-                    <Button onClick={saveConfiguration}>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Configuration
-                    </Button>
-                  </div>
-                </TabsContent>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm">Avg Trip Days</CardTitle>
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{workloadSummary.avgTripDaysPerCrew}</div>
+                <p className="text-xs text-muted-foreground">
+                  per crew member
+                </p>
+              </CardContent>
+            </Card>
 
-                <TabsContent value="presets" className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => applyPresetConfiguration('balanced')}>
-                      <h5 className="font-medium mb-2">Balanced Workload</h5>
-                      <p className="text-sm text-muted-foreground">
-                        Equal weight across all metrics for a balanced view of crew workload
-                      </p>
-                    </Card>
-                    
-                    <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => applyPresetConfiguration('flight-focused')}>
-                      <h5 className="font-medium mb-2">Flight-Focused</h5>
-                      <p className="text-sm text-muted-foreground">
-                        Prioritizes trip days and flight hours over other metrics
-                      </p>
-                    </Card>
-                    
-                    <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => applyPresetConfiguration('fatigue-aware')}>
-                      <h5 className="font-medium mb-2">Fatigue Management</h5>
-                      <p className="text-sm text-muted-foreground">
-                        Emphasizes RON days and consecutive duty for fatigue prevention
-                      </p>
-                    </Card>
-                    
-                    <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => applyPresetConfiguration('utilization')}>
-                      <h5 className="font-medium mb-2">Utilization Optimization</h5>
-                      <p className="text-sm text-muted-foreground">
-                        Focuses on maximizing crew utilization and minimizing standby
-                      </p>
-                    </Card>
-                  </div>
-                </TabsContent>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm">Avg RON Days</CardTitle>
+                <Moon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{workloadSummary.avgRonDaysPerCrew}</div>
+                <p className="text-xs text-muted-foreground">
+                  per crew member
+                </p>
+              </CardContent>
+            </Card>
 
-                <TabsContent value="custom" className="space-y-4">
-                  <Card className="p-4">
-                    <h5 className="font-medium mb-4">Add Custom Metric</h5>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Metric Name</Label>
-                        <Input
-                          value={newCustomMetric.name}
-                          onChange={(e) => setNewCustomMetric({...newCustomMetric, name: e.target.value})}
-                          placeholder="e.g., International Trips"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label>Description</Label>
-                        <Textarea
-                          value={newCustomMetric.description}
-                          onChange={(e) => setNewCustomMetric({...newCustomMetric, description: e.target.value})}
-                          placeholder="Describe what this metric measures..."
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Weight (days)</Label>
-                          <Input
-                            type="number"
-                            value={newCustomMetric.weight}
-                            onChange={(e) => setNewCustomMetric({...newCustomMetric, weight: parseInt(e.target.value) || 5})}
-                            min={1}
-                            max={20}
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label>Unit</Label>
-                          <Input
-                            value={newCustomMetric.unit}
-                            onChange={(e) => setNewCustomMetric({...newCustomMetric, unit: e.target.value})}
-                            placeholder="e.g., days, hours"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label>Maximum Value</Label>
-                        <Input
-                          type="number"
-                          value={newCustomMetric.maxValue}
-                          onChange={(e) => setNewCustomMetric({...newCustomMetric, maxValue: parseInt(e.target.value) || 100})}
-                          placeholder="Maximum expected value for normalization"
-                        />
-                      </div>
-                      
-                      <Button onClick={addCustomMetric} className="w-full">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Custom Metric
-                      </Button>
-                    </div>
-                  </Card>
-                </TabsContent>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm">Avg Standby</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{workloadSummary.avgStandbyDaysPerCrew}</div>
+                <p className="text-xs text-muted-foreground">
+                  days per crew
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-                <TabsContent value="manage" className="space-y-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h5 className="font-medium">Saved Configurations</h5>
-                    <div className="space-x-2">
-                      <Button variant="outline" onClick={resetToDefaults}>
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        Reset to Defaults
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {savedConfigurations.map((config) => (
-                      <Card key={config.id} className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h5 className="font-medium">{config.name}</h5>
-                            <p className="text-sm text-muted-foreground">{config.description}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Created: {new Date(config.createdAt).toLocaleDateString()}
-                              {config.modifiedAt !== config.createdAt && (
-                                <> • Modified: {new Date(config.modifiedAt).toLocaleDateString()}</>
-                              )}
-                            </p>
-                          </div>
-                          <div className="space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => loadConfiguration(config)}
-                              disabled={config.id === currentMetricConfig?.id}
-                            >
-                              {config.id === currentMetricConfig?.id ? 'Current' : 'Load'}
-                            </Button>
-                            {!config.isDefault && (
-                              <Button variant="destructive" size="sm">
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Workload Distribution</CardTitle>
+                <CardDescription>Number of crew in each workload category</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={workloadDistributionData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, count }) => `${name}: ${count}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                    />
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>3-Month Workload Trends</CardTitle>
+                <CardDescription>Average workload metrics over time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={monthlyTrendsData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Area type="monotone" dataKey="tripDays" stackId="1" stroke="#0037B1" fill="#0037B1" />
+                    <Area type="monotone" dataKey="ronDays" stackId="1" stroke="#00A1DF" fill="#00A1DF" />
+                    <Area type="monotone" dataKey="standbyDays" stackId="1" stroke="#44BEEE" fill="#44BEEE" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+
 
         </TabsContent>
 
@@ -2134,7 +2104,7 @@ export default function CrewSchedulingWorkload() {
                   {crewMembers.slice(0, 10).map((crew) => {
                     const maxNights = Math.max(...crewMembers.map(c => c.currentMonth?.ronDays || 0));
                     const percentage = maxNights > 0 ? ((crew.currentMonth?.ronDays || 0) / maxNights) * 100 : 0;
-                    
+
                     return (
                       <div key={crew.id} className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -2164,7 +2134,7 @@ export default function CrewSchedulingWorkload() {
                   {(() => {
                     // Aggregate country visits across all crew
                     const countryTotals = new Map<string, number>();
-                    
+
                     crewMembers.forEach(crew => {
                       (crew.currentMonth?.countries || []).forEach(country => {
                         countryTotals.set(country, (countryTotals.get(country) || 0) + 1);
@@ -2203,16 +2173,16 @@ export default function CrewSchedulingWorkload() {
                 {crewMembers.map((crew) => {
                   const avgRonAllCrew = crewMembers.length > 0 ? crewMembers.reduce((sum, c) => sum + (c.currentMonth?.ronDays || 0), 0) / crewMembers.length : 0;
                   const crewRonDays = crew.currentMonth?.ronDays || 0;
-                  const balanceStatus = crewRonDays > avgRonAllCrew * 1.2 ? 'high' : 
-                                      crewRonDays < avgRonAllCrew * 0.8 ? 'low' : 'balanced';
-                  
+                  const balanceStatus = crewRonDays > avgRonAllCrew * 1.2 ? 'high' :
+                    crewRonDays < avgRonAllCrew * 0.8 ? 'low' : 'balanced';
+
                   return (
                     <div key={crew.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                       <div className="flex-1">
                         <div className="font-medium">{crew.name}</div>
                         <div className="text-sm text-muted-foreground">{crew.position} • {crew.base}</div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-8">
                         <div className="text-center">
                           <div className="flex items-center space-x-2">
@@ -2220,29 +2190,29 @@ export default function CrewSchedulingWorkload() {
                             <span className="text-sm">{crew.currentMonth?.trips || 0} trips</span>
                           </div>
                         </div>
-                        
+
                         <div className="text-center">
                           <div className="flex items-center space-x-2">
                             <Moon className="h-3 w-3 text-muted-foreground" />
                             <span className="text-sm">{crewRonDays} nights</span>
                           </div>
                         </div>
-                        
+
                         <div className="text-center">
                           <div className="flex items-center space-x-2">
                             <Globe className="h-3 w-3 text-muted-foreground" />
                             <span className="text-sm">{crew.currentMonth?.countries?.length || 0} countries</span>
                           </div>
                         </div>
-                        
+
                         <Badge className={
                           balanceStatus === 'high' ? 'bg-red-100 text-red-800' :
-                          balanceStatus === 'low' ? 'bg-blue-100 text-blue-800' :
-                          'bg-green-100 text-green-800'
+                            balanceStatus === 'low' ? 'bg-blue-100 text-blue-800' :
+                              'bg-green-100 text-green-800'
                         }>
                           {balanceStatus === 'high' ? 'Above Average' :
-                           balanceStatus === 'low' ? 'Below Average' :
-                           'Balanced'}
+                            balanceStatus === 'low' ? 'Below Average' :
+                              'Balanced'}
                         </Badge>
                       </div>
                     </div>
@@ -2269,7 +2239,7 @@ export default function CrewSchedulingWorkload() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm">Current Utilization</CardTitle>
@@ -2282,7 +2252,7 @@ export default function CrewSchedulingWorkload() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm">Balance Alerts</CardTitle>
@@ -2295,7 +2265,7 @@ export default function CrewSchedulingWorkload() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm">Avg Trip Days</CardTitle>
@@ -2308,7 +2278,7 @@ export default function CrewSchedulingWorkload() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm">Avg RON Days</CardTitle>
@@ -2321,7 +2291,7 @@ export default function CrewSchedulingWorkload() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm">Avg Standby</CardTitle>
@@ -2336,52 +2306,270 @@ export default function CrewSchedulingWorkload() {
             </Card>
           </div>
 
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Workload Distribution</CardTitle>
-                <CardDescription>Number of crew in each workload category</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={workloadDistributionData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, count }) => `${name}: ${count}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="count"
-                    />
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>3-Month Workload Trends</CardTitle>
-                <CardDescription>Average workload metrics over time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={monthlyTrendsData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Area type="monotone" dataKey="tripDays" stackId="1" stroke="#0037B1" fill="#0037B1" />
-                    <Area type="monotone" dataKey="ronDays" stackId="1" stroke="#00A1DF" fill="#00A1DF" />
-                    <Area type="monotone" dataKey="standbyDays" stackId="1" stroke="#44BEEE" fill="#44BEEE" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+          {/* Charts Row - Crew Utilization Balance Tracking */}
+          <div className="space-y-6">
+            {/* Controls Row */}
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <Select value={selectedMonth} onValueChange={(value: any) => setSelectedMonth(value)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select month" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="previousMonth">Previous Month</SelectItem>
+                    <SelectItem value="currentMonth">Current Month</SelectItem>
+                    <SelectItem value="nextMonth">Next Month</SelectItem>
+                    <SelectItem value="twoMonthsOut">Two Months Out</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center gap-2 border rounded-md p-1">
+                  <Button
+                    variant={utilizationView === 'balance' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setUtilizationView('balance')}
+                  >
+                    Balance View
+                  </Button>
+                  <Button
+                    variant={utilizationView === 'timeline' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setUtilizationView('timeline')}
+                  >
+                    Timeline View
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Report
+                </Button>
+              </div>
+            </div>
+
+            {/* Balance View */}
+            {utilizationView === 'balance' && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                      <CardTitle>Crew Utilization Balance</CardTitle>
+                      <CardDescription>
+                        Target: {utilizationBalanceData.targetAverage} days | Fleet Avg: {utilizationBalanceData.actualFleetAverage.toFixed(1)} days - Click crew to view details
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Select value={sortUtilizationBy} onValueChange={(value: any) => setSortUtilizationBy(value)}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="overutilized">Most Over-Utilized</SelectItem>
+                          <SelectItem value="underutilized">Most Under-Utilized</SelectItem>
+                          <SelectItem value="name">Alphabetical</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex items-center gap-1 border rounded-md p-1">
+                        <Button
+                          variant={utilizationFilter === 'all' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setUtilizationFilter('all')}
+                        >
+                          All
+                        </Button>
+                        <Button
+                          variant={utilizationFilter === 'over' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setUtilizationFilter('over')}
+                        >
+                          Over
+                        </Button>
+                        <Button
+                          variant={utilizationFilter === 'under' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setUtilizationFilter('under')}
+                        >
+                          Under
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {utilizationBalanceData.balanceData.map((crew) => (
+                      <div
+                        key={crew.crewId}
+                        className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                        onClick={() => {
+                          const crewMember = crewMembers.find(c => c.id === crew.crewId);
+                          if (crewMember) handleCrewSelect(crewMember);
+                        }}
+                      >
+                        <div className="w-40 flex-shrink-0">
+                          <div className="font-medium text-sm">{crew.crewName}</div>
+                          <div className="text-xs text-muted-foreground">{crew.position}</div>
+                        </div>
+
+                        <div className="flex-1 relative min-w-0">
+                          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border z-0" />
+                          <div className="relative h-8 flex items-center">
+                            <div
+                              className="absolute h-6 rounded transition-all"
+                              style={{
+                                backgroundColor: getUtilizationColor(crew.status),
+                                width: `${Math.min(Math.abs(crew.deviationPercent) / 2, 50)}%`,
+                                [crew.deviation >= 0 ? 'left' : 'right']: '50%',
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="w-32 flex-shrink-0 text-right">
+                          <div className="text-sm font-medium">
+                            {crew.deviation >= 0 ? '+' : ''}{crew.deviation.toFixed(1)} days
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {crew.utilizationPercent.toFixed(0)}% utilized
+                          </div>
+                        </div>
+
+                        <Badge
+                          className="w-24 justify-center flex-shrink-0"
+                          style={{
+                            backgroundColor: getUtilizationColor(crew.status),
+                            color: 'white',
+                          }}
+                        >
+                          {crew.status === 'critical-over' && 'Critical'}
+                          {crew.status === 'warning-over' && 'High'}
+                          {crew.status === 'balanced' && 'Balanced'}
+                          {crew.status === 'under' && 'Available'}
+                          {crew.status === 'critical-under' && 'Low'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+
+                  {utilizationBalanceData.balanceData.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No crew members match the current filter
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Timeline View */}
+            {utilizationView === 'timeline' && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                      <CardTitle>Utilization Trend Timeline</CardTitle>
+                      <CardDescription>
+                        Fleet average utilization over time
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 border rounded-md p-1">
+                        <Button
+                          variant={dateRange === '3M' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setDateRange('3M')}
+                        >
+                          3M
+                        </Button>
+                        <Button
+                          variant={dateRange === '6M' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setDateRange('6M')}
+                        >
+                          6M
+                        </Button>
+                        <Button
+                          variant={dateRange === '12M' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setDateRange('12M')}
+                        >
+                          12M
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={utilizationTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="month"
+                        tick={{ fontSize: 12 }}
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                      />
+                      <YAxis
+                        label={{ value: 'Utilization %', angle: -90, position: 'insideLeft' }}
+                        domain={[0, 100]}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-background border rounded-lg p-3 shadow-lg">
+                                <p className="font-medium">{data.month}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Fleet Average: {data.fleetAverage.toFixed(1)}%
+                                </p>
+                                <div className="mt-2 text-xs space-y-1">
+                                  <p className="text-green-600">✓ Balanced: {data.balancedCount}</p>
+                                  <p className="text-orange-600">⚠ Over-utilized: {data.overUtilizedCount}</p>
+                                  <p className="text-blue-600">↓ Under-utilized: {data.underUtilizedCount}</p>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="fleetAverage"
+                        stroke="#0037B1"
+                        strokeWidth={3}
+                        name="Fleet Average"
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+
+                  <div className="mt-4 flex items-center justify-center gap-6 text-xs flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500" />
+                      <span>Optimal (60-80%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-orange-500" />
+                      <span>High (80-90%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      <span>Over (&gt;90%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-blue-500" />
+                      <span>Under (&lt;60%)</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Month Filter and Export Options */}
@@ -2421,38 +2609,38 @@ export default function CrewSchedulingWorkload() {
                 {crewMembers.filter(c => !c.excludeFromMetrics).length} active crew members
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="overflow-x-auto -mx-6 px-6">
+            <CardContent className="p-0">
+              <div className="relative overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="p-3 text-left font-medium sticky left-6 bg-muted/50 z-[3] min-w-[150px] border-r shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">Crew Member</th>
-                      <th className="p-3 text-left font-medium min-w-[100px]">Position</th>
-                      
+                      <th className="p-3 text-left font-medium sticky left-0 bg-muted/50 z-10 min-w-[180px] border-r-2 border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]">Crew Member</th>
+                      <th className="p-3 text-left font-medium min-w-[120px]">Position</th>
+
                       {/* Flight-related metrics */}
                       <th className="p-3 text-center font-medium bg-blue-50 min-w-[100px]">Flight Days</th>
                       <th className="p-3 text-center font-medium bg-blue-50 min-w-[100px]">RON Days</th>
                       <th className="p-3 text-center font-medium bg-blue-50 min-w-[110px]">Position Days</th>
                       <th className="p-3 text-center font-medium bg-blue-50 min-w-[120px]">Weekend Days</th>
                       <th className="p-3 text-center font-medium bg-blue-50 min-w-[100px]">Trip Days</th>
-                      
+
                       {/* Duty-related metrics */}
                       <th className="p-3 text-center font-medium bg-purple-50 min-w-[120px]">Standby Days</th>
                       <th className="p-3 text-center font-medium bg-purple-50 min-w-[100px]">Misc Duty</th>
                       <th className="p-3 text-center font-medium bg-purple-50 min-w-[120px]">Training Days</th>
                       <th className="p-3 text-center font-medium bg-purple-50 min-w-[130px]">Other Duty Days</th>
                       <th className="p-3 text-center font-medium bg-purple-100 min-w-[130px]">Total Duty Days</th>
-                      
+
                       {/* STOP-related metrics */}
                       <th className="p-3 text-center font-medium bg-orange-50 min-w-[130px]">STOP Scheduled</th>
                       <th className="p-3 text-center font-medium bg-orange-50 min-w-[150px]">STOP Worked Days</th>
                       <th className="p-3 text-center font-medium bg-orange-50 min-w-[150px]">Payback STOP Days</th>
-                      
+
                       {/* Rest-related metrics */}
                       <th className="p-3 text-center font-medium bg-green-50 min-w-[100px]">Vacation</th>
                       <th className="p-3 text-center font-medium bg-green-50 min-w-[100px]">Misc OFF</th>
                       <th className="p-3 text-center font-medium bg-green-100 min-w-[130px]">Total Rest Days</th>
-                      
+
                       {/* Availability */}
                       <th className="p-3 text-center font-medium bg-yellow-50 min-w-[160px]">Unscheduled Available</th>
                     </tr>
@@ -2462,46 +2650,46 @@ export default function CrewSchedulingWorkload() {
                       const monthData = crew[selectedTimeframe as 'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut'];
                       return (
                         <tr key={crew.id} className={`border-b hover:bg-muted/30 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/10'}`}>
-                          <td className={`p-3 font-medium sticky left-6 z-[2] border-r shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] ${index % 2 === 0 ? 'bg-white hover:bg-muted/30' : 'bg-muted/10 hover:bg-muted/30'}`}>{crew.name}</td>
+                          <td className={`p-3 font-medium sticky left-0 z-10 border-r-2 border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)] ${index % 2 === 0 ? 'bg-white' : 'bg-muted/10'}`}>{crew.name}</td>
                           <td className="p-3">
                             <Badge variant="outline">{crew.position}</Badge>
                           </td>
-                          
+
                           {/* Flight-related metrics */}
                           <td className="p-3 text-center bg-blue-50/30">{monthData.flightDays}</td>
                           <td className="p-3 text-center bg-blue-50/30">{monthData.ronDays}</td>
                           <td className="p-3 text-center bg-blue-50/30">{monthData.positionDays}</td>
                           <td className="p-3 text-center bg-blue-50/30">{monthData.weekendDays}</td>
                           <td className="p-3 text-center bg-blue-50/30">{monthData.tripDays}</td>
-                          
+
                           {/* Duty-related metrics */}
                           <td className="p-3 text-center bg-purple-50/30">{monthData.standbyDays}</td>
                           <td className="p-3 text-center bg-purple-50/30">{monthData.miscDuty}</td>
                           <td className="p-3 text-center bg-purple-50/30">{monthData.trainingDays}</td>
                           <td className="p-3 text-center bg-purple-50/30">{monthData.otherDutyDays}</td>
                           <td className="p-3 text-center bg-purple-100/50 font-semibold">{monthData.totalDutyDays}</td>
-                          
+
                           {/* STOP-related metrics */}
                           <td className="p-3 text-center bg-orange-50/30">{monthData.stopScheduled}</td>
                           <td className="p-3 text-center bg-orange-50/30">{monthData.stopWorkedDays}</td>
                           <td className="p-3 text-center bg-orange-50/30">{monthData.paybackStopDays}</td>
-                          
+
                           {/* Rest-related metrics */}
                           <td className="p-3 text-center bg-green-50/30">{monthData.vacationDays}</td>
                           <td className="p-3 text-center bg-green-50/30">{monthData.miscOffDays}</td>
                           <td className="p-3 text-center bg-green-100/50 font-semibold">{monthData.totalRestDays}</td>
-                          
+
                           {/* Availability */}
                           <td className="p-3 text-center bg-yellow-50/30 font-semibold">{monthData.unscheduledAvailable}</td>
                         </tr>
                       );
                     })}
-                    
+
                     {/* Totals Row */}
                     <tr className="border-t-2 bg-muted font-semibold">
-                      <td className="p-3 sticky left-6 bg-muted z-[2] border-r shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">TOTALS</td>
+                      <td className="p-3 sticky left-0 bg-muted z-10 border-r-2 border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]">TOTALS</td>
                       <td className="p-3"></td>
-                      
+
                       {/* Flight-related totals */}
                       <td className="p-3 text-center bg-blue-100">
                         {crewMembers.filter(c => !c.excludeFromMetrics).reduce((sum, crew) => sum + (crew[selectedTimeframe as 'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut']?.flightDays || 0), 0)}
@@ -2518,7 +2706,7 @@ export default function CrewSchedulingWorkload() {
                       <td className="p-3 text-center bg-blue-100">
                         {crewMembers.filter(c => !c.excludeFromMetrics).reduce((sum, crew) => sum + (crew[selectedTimeframe as 'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut']?.tripDays || 0), 0)}
                       </td>
-                      
+
                       {/* Duty-related totals */}
                       <td className="p-3 text-center bg-purple-100">
                         {crewMembers.filter(c => !c.excludeFromMetrics).reduce((sum, crew) => sum + (crew[selectedTimeframe as 'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut']?.standbyDays || 0), 0)}
@@ -2535,7 +2723,7 @@ export default function CrewSchedulingWorkload() {
                       <td className="p-3 text-center bg-purple-200">
                         {crewMembers.filter(c => !c.excludeFromMetrics).reduce((sum, crew) => sum + (crew[selectedTimeframe as 'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut']?.totalDutyDays || 0), 0)}
                       </td>
-                      
+
                       {/* STOP-related totals */}
                       <td className="p-3 text-center bg-orange-100">
                         {crewMembers.filter(c => !c.excludeFromMetrics).reduce((sum, crew) => sum + (crew[selectedTimeframe as 'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut']?.stopScheduled || 0), 0)}
@@ -2546,7 +2734,7 @@ export default function CrewSchedulingWorkload() {
                       <td className="p-3 text-center bg-orange-100">
                         {crewMembers.filter(c => !c.excludeFromMetrics).reduce((sum, crew) => sum + (crew[selectedTimeframe as 'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut']?.paybackStopDays || 0), 0)}
                       </td>
-                      
+
                       {/* Rest-related totals */}
                       <td className="p-3 text-center bg-green-100">
                         {crewMembers.filter(c => !c.excludeFromMetrics).reduce((sum, crew) => sum + (crew[selectedTimeframe as 'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut']?.vacationDays || 0), 0)}
@@ -2557,7 +2745,7 @@ export default function CrewSchedulingWorkload() {
                       <td className="p-3 text-center bg-green-200">
                         {crewMembers.filter(c => !c.excludeFromMetrics).reduce((sum, crew) => sum + (crew[selectedTimeframe as 'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut']?.totalRestDays || 0), 0)}
                       </td>
-                      
+
                       {/* Availability total */}
                       <td className="p-3 text-center bg-yellow-100">
                         {crewMembers.filter(c => !c.excludeFromMetrics).reduce((sum, crew) => sum + (crew[selectedTimeframe as 'previousMonth' | 'currentMonth' | 'nextMonth' | 'twoMonthsOut']?.unscheduledAvailable || 0), 0)}
@@ -2575,12 +2763,12 @@ export default function CrewSchedulingWorkload() {
               <CardTitle>STOP Schedule Details</CardTitle>
               <CardDescription>Individual crew STOP assignments and payback status</CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="overflow-x-auto -mx-6 px-6">
+            <CardContent className="p-0">
+              <div className="relative overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="p-3 text-left font-medium sticky left-6 bg-muted/50 z-[3] min-w-[150px] border-r shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">Crew Member</th>
+                      <th className="p-3 text-left font-medium sticky left-0 bg-muted/50 z-10 min-w-[180px] border-r-2 border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]">Crew Member</th>
                       <th className="p-3 text-left font-medium">STOP Type</th>
                       <th className="p-3 text-center font-medium">Current Cycle</th>
                       <th className="p-3 text-left font-medium">Next STOP-1 Weekend</th>
@@ -2593,7 +2781,7 @@ export default function CrewSchedulingWorkload() {
                   <tbody>
                     {crewMembers.filter(c => !c.excludeFromMetrics).map((crew, index) => (
                       <tr key={crew.id} className={`border-b hover:bg-muted/30 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/10'}`}>
-                        <td className={`p-3 font-medium sticky left-6 z-[2] border-r shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] ${index % 2 === 0 ? 'bg-white hover:bg-muted/30' : 'bg-muted/10 hover:bg-muted/30'}`}>{crew.name}</td>
+                        <td className={`p-3 font-medium sticky left-0 z-10 border-r-2 border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)] ${index % 2 === 0 ? 'bg-white' : 'bg-muted/10'}`}>{crew.name}</td>
                         <td className="p-3">
                           <Badge variant={crew.stopSchedule.stopType === 'STOP-1' ? 'default' : 'outline'}>
                             {crew.stopSchedule.stopType}
@@ -2613,7 +2801,376 @@ export default function CrewSchedulingWorkload() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Manage Crew Tab */}
+        <TabsContent value="manage" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Crew Member Management</CardTitle>
+                  <CardDescription>
+                    Manage crew member inclusion in workload calculations. Crew members are automatically imported from MyAirOps.
+                  </CardDescription>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <div className="font-medium">{crewMembers.filter(c => !c.excludeFromMetrics).length} Active</div>
+                  <div className="text-xs">{crewMembers.filter(c => c.excludeFromMetrics).length} Excluded</div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {crewMembers.filter(c => c.excludeFromMetrics).length > 0 && (
+                <Alert className="mb-4 border-orange-200 bg-orange-50">
+                  <AlertTriangle className="h-4 w-4 text-orange-600" />
+                  <AlertDescription className="text-orange-800">
+                    <strong>{crewMembers.filter(c => c.excludeFromMetrics).length} crew member(s)</strong> are currently excluded from workload calculations and metrics.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="rounded-md border">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="p-3 text-left font-medium">Name</th>
+                      <th className="p-3 text-left font-medium">Position</th>
+                      <th className="p-3 text-left font-medium">Base</th>
+                      <th className="p-3 text-left font-medium">Status</th>
+                      <th className="p-3 text-left font-medium">Current Trip Days</th>
+                      <th className="p-3 text-center font-medium">Include in Metrics</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {crewMembers
+                      .sort((a, b) => {
+                        if (a.excludeFromMetrics !== b.excludeFromMetrics) {
+                          return a.excludeFromMetrics ? 1 : -1;
+                        }
+                        return a.name.localeCompare(b.name);
+                      })
+                      .map((crew) => (
+                        <tr
+                          key={crew.id}
+                          className={`border-b transition-colors hover:bg-muted/50 ${crew.excludeFromMetrics ? 'bg-muted/30 opacity-60' : ''
+                            }`}
+                        >
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium">{crew.name}</div>
+                              {crew.excludeFromMetrics && (
+                                <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                  Excluded
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 text-sm">{crew.position}</td>
+                          <td className="p-3 text-sm">{crew.base}</td>
+                          <td className="p-3">
+                            <Badge
+                              variant={
+                                crew.status === 'active' ? 'default' :
+                                  crew.status === 'on-leave' ? 'secondary' :
+                                    'outline'
+                              }
+                              className="text-xs"
+                            >
+                              {crew.status.charAt(0).toUpperCase() + crew.status.slice(1).replace('-', ' ')}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{crew.currentMonth?.tripDays || 0}</span>
+                              <span className="text-muted-foreground">days</span>
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center justify-center">
+                              <Button
+                                variant={crew.excludeFromMetrics ? "outline" : "default"}
+                                size="sm"
+                                onClick={() => toggleCrewExclusion(crew.id)}
+                                className="w-32"
+                              >
+                                {crew.excludeFromMetrics ? (
+                                  <>
+                                    <EyeOff className="h-4 w-4 mr-2" />
+                                    Excluded
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Included
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  About Crew Management
+                </h4>
+                <ul className="text-sm text-muted-foreground space-y-1 ml-6 list-disc">
+                  <li>Crew members are automatically imported from MyAirOps</li>
+                  <li>Excluded crew members are not included in workload calculations, averages, or utilization metrics</li>
+                  <li>Use this when crew members go on extended leave, medical leave, or are temporarily unavailable</li>
+                  <li>Excluded crew data is still visible for reference but won't affect fleet metrics</li>
+                  <li>Toggle crew members back to "Included" when they return to active duty</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+
+
+      {/* Metrics Configuration Dialog */}
+      <Dialog open={showMetricsConfig} onOpenChange={setShowMetricsConfig}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Workload Metrics Configuration</DialogTitle>
+            <DialogDescription>
+              Customize how workload scores are calculated using day-based weights
+            </DialogDescription>
+          </DialogHeader>
+
+          {!currentMetricConfig ? (
+            <div className="py-8 text-center text-muted-foreground">
+              Loading configuration...
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <Tabs defaultValue="current" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="current">Current Configuration</TabsTrigger>
+                  <TabsTrigger value="presets">Quick Presets</TabsTrigger>
+                  <TabsTrigger value="custom">Add Custom Metric</TabsTrigger>
+                  <TabsTrigger value="manage">Manage Configurations</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="current" className="space-y-4">
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-base font-medium">Current Configuration: {currentMetricConfig.name}</Label>
+                      <p className="text-sm text-muted-foreground">{currentMetricConfig.description}</p>
+                    </div>
+
+                    {currentMetricConfig.metrics.map((metric) => (
+                      <Card key={metric.id} className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <Switch
+                              checked={metric.enabled}
+                              onCheckedChange={() => toggleMetric(metric.id)}
+                            />
+                            <div>
+                              <Label className="text-base">{metric.name}</Label>
+                              <p className="text-sm text-muted-foreground">{metric.description}</p>
+                            </div>
+                          </div>
+                          {metric.category === 'custom' && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => removeCustomMetric(metric.id)}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+
+                        {metric.enabled && (
+                          <div className="space-y-3">
+                            <div>
+                              <Label className="text-sm">Weight: {metric.weight} days</Label>
+                              <Slider
+                                value={[metric.weight]}
+                                onValueChange={([value]: number[]) => handleMetricWeightChange(metric.id, value)}
+                                max={20}
+                                min={1}
+                                step={1}
+                                className="mt-2"
+                              />
+                              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                                <span>1 day</span>
+                                <span>20 days</span>
+                              </div>
+                            </div>
+
+                            <div className="text-xs text-muted-foreground">
+                              Max value: {metric.maxValue} {metric.unit} | Category: {metric.category}
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-between pt-4">
+                    <Button variant="outline" onClick={resetToDefaults}>
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Reset to Defaults
+                    </Button>
+                    <Button onClick={saveConfiguration}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Configuration
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="presets" className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => applyPresetConfiguration('balanced')}>
+                      <h5 className="font-medium mb-2">Balanced Workload</h5>
+                      <p className="text-sm text-muted-foreground">
+                        Equal weight across all metrics for a balanced view of crew workload
+                      </p>
+                    </Card>
+
+                    <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => applyPresetConfiguration('flight-focused')}>
+                      <h5 className="font-medium mb-2">Flight-Focused</h5>
+                      <p className="text-sm text-muted-foreground">
+                        Prioritizes trip days and flight hours over other metrics
+                      </p>
+                    </Card>
+
+                    <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => applyPresetConfiguration('fatigue-aware')}>
+                      <h5 className="font-medium mb-2">Fatigue Management</h5>
+                      <p className="text-sm text-muted-foreground">
+                        Emphasizes RON days and consecutive duty for fatigue prevention
+                      </p>
+                    </Card>
+
+                    <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => applyPresetConfiguration('utilization')}>
+                      <h5 className="font-medium mb-2">Utilization Optimization</h5>
+                      <p className="text-sm text-muted-foreground">
+                        Focuses on maximizing crew utilization and minimizing standby
+                      </p>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="custom" className="space-y-4">
+                  <Card className="p-4">
+                    <h5 className="font-medium mb-4">Add Custom Metric</h5>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Metric Name</Label>
+                        <Input
+                          value={newCustomMetric.name}
+                          onChange={(e) => setNewCustomMetric({ ...newCustomMetric, name: e.target.value })}
+                          placeholder="e.g., International Trips"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Description</Label>
+                        <Textarea
+                          value={newCustomMetric.description}
+                          onChange={(e) => setNewCustomMetric({ ...newCustomMetric, description: e.target.value })}
+                          placeholder="Describe what this metric measures..."
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Weight (days)</Label>
+                          <Input
+                            type="number"
+                            value={newCustomMetric.weight}
+                            onChange={(e) => setNewCustomMetric({ ...newCustomMetric, weight: parseInt(e.target.value) || 5 })}
+                            min={1}
+                            max={20}
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Unit</Label>
+                          <Input
+                            value={newCustomMetric.unit}
+                            onChange={(e) => setNewCustomMetric({ ...newCustomMetric, unit: e.target.value })}
+                            placeholder="e.g., days, hours"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Maximum Value</Label>
+                        <Input
+                          type="number"
+                          value={newCustomMetric.maxValue}
+                          onChange={(e) => setNewCustomMetric({ ...newCustomMetric, maxValue: parseInt(e.target.value) || 100 })}
+                          placeholder="Maximum expected value for normalization"
+                        />
+                      </div>
+
+                      <Button onClick={addCustomMetric} className="w-full">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Custom Metric
+                      </Button>
+                    </div>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="manage" className="space-y-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h5 className="font-medium">Saved Configurations</h5>
+                    <div className="space-x-2">
+                      <Button variant="outline" onClick={resetToDefaults}>
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Reset to Defaults
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {savedConfigurations.map((config) => (
+                      <Card key={config.id} className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h5 className="font-medium">{config.name}</h5>
+                            <p className="text-sm text-muted-foreground">{config.description}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Created: {new Date(config.createdAt).toLocaleDateString()}
+                              {config.modifiedAt !== config.createdAt && (
+                                <> • Modified: {new Date(config.modifiedAt).toLocaleDateString()}</>
+                              )}
+                            </p>
+                          </div>
+                          <div className="space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => loadConfiguration(config)}
+                              disabled={config.id === currentMetricConfig?.id}
+                            >
+                              {config.id === currentMetricConfig?.id ? 'Current' : 'Load'}
+                            </Button>
+                            {!config.isDefault && (
+                              <Button variant="destructive" size="sm">
+                                Delete
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Balance Recommendations Dialog */}
       <Dialog open={showBalanceRecommendations} onOpenChange={setShowBalanceRecommendations}>
@@ -2624,16 +3181,16 @@ export default function CrewSchedulingWorkload() {
               AI-powered recommendations to optimize crew workload distribution
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <strong>High Priority:</strong> 3 crew members are showing critical workload scores above 85. 
+                <strong>High Priority:</strong> 3 crew members are showing critical workload scores above 85.
                 Consider redistributing upcoming assignments.
               </AlertDescription>
             </Alert>
-            
+
             <div className="space-y-3">
               <h4 className="font-medium">Recommended Actions:</h4>
               <ul className="space-y-2 text-sm">
@@ -2643,13 +3200,13 @@ export default function CrewSchedulingWorkload() {
                 <li>• Consider cross-training crew on G550 to increase scheduling flexibility</li>
               </ul>
             </div>
-            
+
             <Separator />
-            
+
             <div>
               <h4 className="font-medium mb-2">Projected Impact</h4>
               <p className="text-sm text-muted-foreground">
-                Implementing these recommendations would reduce average workload by 8.3 points 
+                Implementing these recommendations would reduce average workload by 8.3 points
                 and eliminate all critical alerts for next month.
               </p>
             </div>

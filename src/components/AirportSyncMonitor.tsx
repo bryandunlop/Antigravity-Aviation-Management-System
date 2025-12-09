@@ -12,7 +12,6 @@ import {
   TrendingUp,
   Calendar
 } from 'lucide-react';
-import { projectId, publicAnonKey } from '../utils/supabase/info';
 
 interface SyncReport {
   timestamp: string;
@@ -42,25 +41,24 @@ export default function AirportSyncMonitor() {
   const fetchLastReport = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-d89dc2de/sync/report`,
-        {
-          headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      // Mock Data - Supabase removed
+      setTimeout(() => {
+        setLastReport({
+          timestamp: new Date().toISOString(),
+          total: 1250,
+          successful: 1248,
+          updated: 2,
+          failed: 0,
+          details: [
+            { icao: 'KTEB', status: 'updated', changes: ['Updated FBO hours'] },
+            { icao: 'EGLL', status: 'updated', changes: ['Runway 27L maintenance note added'] }
+          ]
+        });
+        setLoading(false);
+      }, 500);
 
-      if (response.ok) {
-        const data = await response.json();
-        setLastReport(data.report);
-      } else {
-        console.log('No sync reports found yet');
-      }
     } catch (error) {
       console.error('Error fetching sync report:', error);
-    } finally {
       setLoading(false);
     }
   };
@@ -72,26 +70,11 @@ export default function AirportSyncMonitor() {
 
     setSyncing(true);
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-d89dc2de/sync/all`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      // Mock Sync - Supabase removed
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      const data = await response.json();
-      
-      if (data.success) {
-        alert(`Sync Complete!\n\nTotal: ${data.summary.total}\nUpdated: ${data.summary.updated}\nUnchanged: ${data.summary.successful - data.summary.updated}\nFailed: ${data.summary.failed}`);
-        fetchLastReport();
-      } else {
-        alert('Sync failed. Check console for details.');
-        console.error('Sync error:', data);
-      }
+      alert('Sync Simulation Complete!\n\nTotal: 1250\nUpdated: 0\nUnchanged: 1250\nFailed: 0');
+      fetchLastReport();
     } catch (error) {
       console.error('Error triggering sync:', error);
       alert('Failed to trigger sync. Check console for details.');
@@ -108,32 +91,13 @@ export default function AirportSyncMonitor() {
 
     setSyncing(true);
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-d89dc2de/sync/airport/${selectedAirport.toUpperCase()}`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      // Mock Sync - Supabase removed
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const data = await response.json();
-      
-      if (data.success) {
-        const changeText = data.changes.length > 0 
-          ? `\n\nChanges:\n${data.changes.join('\n')}`
-          : '\n\nNo changes detected.';
-        
-        alert(`Sync Complete!\n\n${data.message}${changeText}`);
-        
-        // Refresh logs for this airport
-        fetchAirportLogs(selectedAirport.toUpperCase());
-      } else {
-        alert('Sync failed. Check console for details.');
-        console.error('Sync error:', data);
-      }
+      alert(`Sync Simulation Complete for ${selectedAirport.toUpperCase()}!\n\nNo changes detected.`);
+
+      // Refresh logs for this airport
+      fetchAirportLogs(selectedAirport.toUpperCase());
     } catch (error) {
       console.error('Error syncing airport:', error);
       alert('Failed to sync airport. Check console for details.');
@@ -144,18 +108,10 @@ export default function AirportSyncMonitor() {
 
   const fetchAirportLogs = async (icao: string) => {
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-d89dc2de/sync/logs/${icao}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const data = await response.json();
-      setSyncLogs(data.logs || []);
+      // Mock logs - Supabase removed
+      setSyncLogs([
+        { timestamp: new Date().toISOString(), previousUpdate: '2023-11-15T10:00:00Z', changes: [] }
+      ]);
     } catch (error) {
       console.error('Error fetching logs:', error);
     }
@@ -187,7 +143,7 @@ export default function AirportSyncMonitor() {
       <div>
         <h1 className="text-2xl">Airport Data Sync Monitor</h1>
         <p className="text-muted-foreground">
-          Monitor and manage automated airport data synchronization
+          Monitor and manage automated airport data synchronization (Demo Mode)
         </p>
       </div>
 

@@ -11,12 +11,12 @@ import { Switch } from './ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  Mail, 
-  Send, 
-  Clock, 
-  Users, 
-  Settings, 
+import {
+  Mail,
+  Send,
+  Clock,
+  Users,
+  Settings,
   Check,
   AlertTriangle,
   Eye,
@@ -205,8 +205,9 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
   };
 
   const handleSendEmail = () => {
-    // Simulate sending email
-    console.log('Sending email:', composeForm);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEV] Sending email:', composeForm);
+    }
     setIsComposeDialogOpen(false);
     setComposeForm({
       recipients: '',
@@ -239,7 +240,7 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
             Manage automated notifications for document distribution and compliance
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => setIsComposeDialogOpen(true)}
           className="flex items-center gap-2"
         >
@@ -336,10 +337,10 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
                       <div className="text-sm text-muted-foreground">
                         <p>To: {notification.recipients.join(', ')}</p>
                         <p>
-                          {notification.status === 'sent' && notification.sentAt && 
+                          {notification.status === 'sent' && notification.sentAt &&
                             `Sent: ${notification.sentAt.toLocaleString()}`
                           }
-                          {notification.status === 'scheduled' && notification.scheduledFor && 
+                          {notification.status === 'scheduled' && notification.scheduledFor &&
                             `Scheduled: ${notification.scheduledFor.toLocaleString()}`
                           }
                         </p>
@@ -421,10 +422,10 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
                   <Label>Document Distribution Emails</Label>
                   <p className="text-sm text-muted-foreground">Send emails when documents are distributed</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={emailSettings.enableDistributionEmails}
-                  onCheckedChange={(checked) => 
-                    setEmailSettings({...emailSettings, enableDistributionEmails: checked})
+                  onCheckedChange={(checked) =>
+                    setEmailSettings({ ...emailSettings, enableDistributionEmails: checked })
                   }
                 />
               </div>
@@ -434,10 +435,10 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
                   <Label>Acknowledgment Reminders</Label>
                   <p className="text-sm text-muted-foreground">Send reminder emails for pending acknowledgments</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={emailSettings.enableReminderEmails}
-                  onCheckedChange={(checked) => 
-                    setEmailSettings({...emailSettings, enableReminderEmails: checked})
+                  onCheckedChange={(checked) =>
+                    setEmailSettings({ ...emailSettings, enableReminderEmails: checked })
                   }
                 />
               </div>
@@ -447,10 +448,10 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
                   <Label>Proposal Notifications</Label>
                   <p className="text-sm text-muted-foreground">Send emails for document proposals</p>
                 </div>
-                <Switch 
+                <Switch
                   checked={emailSettings.enableProposalEmails}
-                  onCheckedChange={(checked) => 
-                    setEmailSettings({...emailSettings, enableProposalEmails: checked})
+                  onCheckedChange={(checked) =>
+                    setEmailSettings({ ...emailSettings, enableProposalEmails: checked })
                   }
                 />
               </div>
@@ -465,8 +466,8 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Reminder Interval (days)</Label>
-                  <Select value={emailSettings.reminderInterval} onValueChange={(value) => 
-                    setEmailSettings({...emailSettings, reminderInterval: value})
+                  <Select value={emailSettings.reminderInterval} onValueChange={(value) =>
+                    setEmailSettings({ ...emailSettings, reminderInterval: value })
                   }>
                     <SelectTrigger>
                       <SelectValue />
@@ -482,8 +483,8 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
 
                 <div className="space-y-2">
                   <Label>Maximum Reminders</Label>
-                  <Select value={emailSettings.maxReminders} onValueChange={(value) => 
-                    setEmailSettings({...emailSettings, maxReminders: value})
+                  <Select value={emailSettings.maxReminders} onValueChange={(value) =>
+                    setEmailSettings({ ...emailSettings, maxReminders: value })
                   }>
                     <SelectTrigger>
                       <SelectValue />
@@ -508,30 +509,30 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>From Email</Label>
-                  <Input 
+                  <Input
                     value={emailSettings.fromEmail}
-                    onChange={(e) => setEmailSettings({...emailSettings, fromEmail: e.target.value})}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, fromEmail: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>From Name</Label>
-                  <Input 
+                  <Input
                     value={emailSettings.fromName}
-                    onChange={(e) => setEmailSettings({...emailSettings, fromName: e.target.value})}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, fromName: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>SMTP Server</Label>
-                  <Input 
+                  <Input
                     value={emailSettings.smtpServer}
-                    onChange={(e) => setEmailSettings({...emailSettings, smtpServer: e.target.value})}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, smtpServer: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>SMTP Port</Label>
-                  <Input 
+                  <Input
                     value={emailSettings.smtpPort}
-                    onChange={(e) => setEmailSettings({...emailSettings, smtpPort: e.target.value})}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, smtpPort: e.target.value })}
                   />
                 </div>
               </div>
@@ -627,7 +628,7 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
               <Label>Recipients</Label>
               <Textarea
                 value={composeForm.recipients}
-                onChange={(e) => setComposeForm({...composeForm, recipients: e.target.value})}
+                onChange={(e) => setComposeForm({ ...composeForm, recipients: e.target.value })}
                 placeholder="Enter email addresses separated by commas"
                 rows={2}
               />
@@ -637,7 +638,7 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
               <Label>Subject</Label>
               <Input
                 value={composeForm.subject}
-                onChange={(e) => setComposeForm({...composeForm, subject: e.target.value})}
+                onChange={(e) => setComposeForm({ ...composeForm, subject: e.target.value })}
                 placeholder="Email subject line"
               />
             </div>
@@ -646,7 +647,7 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
               <Label>Content</Label>
               <Textarea
                 value={composeForm.content}
-                onChange={(e) => setComposeForm({...composeForm, content: e.target.value})}
+                onChange={(e) => setComposeForm({ ...composeForm, content: e.target.value })}
                 placeholder="Email content"
                 rows={8}
               />
@@ -657,7 +658,7 @@ export default function EmailNotificationSystem({ userRole }: EmailNotificationS
               <Input
                 type="datetime-local"
                 value={composeForm.scheduleFor}
-                onChange={(e) => setComposeForm({...composeForm, scheduleFor: e.target.value})}
+                onChange={(e) => setComposeForm({ ...composeForm, scheduleFor: e.target.value })}
               />
             </div>
 

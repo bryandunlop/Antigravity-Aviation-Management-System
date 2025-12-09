@@ -169,6 +169,7 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
       label: "Overview",
       items: [
         { name: 'Dashboard', href: '/', icon: Home, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling', 'document-manager'] },
+        { name: 'Settings', href: '/settings', icon: Settings, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling', 'document-manager', 'admin-assistant'] },
         { name: 'Flight Family', href: '/flight-family', icon: MessageSquare, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling', 'document-manager', 'admin-assistant'] },
         { name: 'Procedural Bulletins', href: '/procedural-bulletins', icon: BookOpen, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling', 'document-manager'] },
         { name: 'Restaurant Database', href: '/restaurant-database', icon: Utensils, roles: ['pilot', 'inflight', 'maintenance', 'admin'] },
@@ -360,7 +361,7 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
   };
 
   const getRoleDisplayName = (role: string) => {
-    const roleMap = {
+    const roleMap: Record<string, string> = {
       'pilot': 'Pilot',
       'inflight': 'Inflight Crew',
       'maintenance': 'Maintenance',

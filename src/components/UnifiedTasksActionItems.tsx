@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 import { toast } from 'sonner';
-import { 
+import {
   CheckCircle,
   Clock,
   AlertTriangle,
@@ -35,6 +35,8 @@ import {
   CheckCheck,
   Settings
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useHazards, WORKFLOW_STAGES, Hazard } from '../contexts/HazardContext';
 
 // Import existing types and utilities from ActionItems
 import { ActionItemsProps, ActionItem, NewItemForm } from './ActionItems/types';
@@ -81,19 +83,19 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
-  
+
   // Action Items states
   const [selectedActionItem, setSelectedActionItem] = useState<ActionItem | null>(null);
   const [isActionItemDialogOpen, setIsActionItemDialogOpen] = useState(false);
   const [isUpdateProgressDialogOpen, setIsUpdateProgressDialogOpen] = useState(false);
   const [updatingActionItem, setUpdatingActionItem] = useState<ActionItem | null>(null);
-  
+
   // UpdateProgressDialog specific states
   const [updatedSections, setUpdatedSections] = useState<Array<{ name: string; status: string }>>([]);
   const [updateComment, setUpdateComment] = useState('');
   const [newSectionName, setNewSectionName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Personal Tasks states  
   const [isUpdatePersonalTaskProgressOpen, setIsUpdatePersonalTaskProgressOpen] = useState(false);
   const [updatingPersonalTask, setUpdatingPersonalTask] = useState<PersonalTask | null>(null);
@@ -145,18 +147,18 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
       isPersonal: true
     }
   ]);
-  
+
   const [selectedPersonalTask, setSelectedPersonalTask] = useState<PersonalTask | null>(null);
   const [isPersonalTaskDialogOpen, setIsPersonalTaskDialogOpen] = useState(false);
   const [isNewPersonalTaskDialogOpen, setIsNewPersonalTaskDialogOpen] = useState(false);
   const [isEditPersonalTaskDialogOpen, setIsEditPersonalTaskDialogOpen] = useState(false);
   const [editingPersonalTask, setEditingPersonalTask] = useState<PersonalTask | null>(null);
-  
+
   // New Personal Task Form
   const [newPersonalTaskForm, setNewPersonalTaskForm] = useState({
     title: '',
     description: '',
-    priority: 'Medium' as const,
+    priority: 'Medium' as 'Critical' | 'High' | 'Medium' | 'Low',
     dueDate: '',
     tags: [''],
     sections: [''],
@@ -180,13 +182,140 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
       {children}
     </div>
   );
-  
+
   const AvatarFallback = ({ className, children }: { className?: string; children: React.ReactNode }) => (
     <span className={className}>{children}</span>
   );
 
+
   // Get action items for current user
-  const userActionItems = getUserActionItems(MOCK_ACTION_ITEMS, userRole);
+  const { hazards } = useHazards();
+
+  // Derive action items from Hazard Workflow
+  const getHazardTasks = (): ActionItem[] => {
+    const tasks: ActionItem[] = [];
+
+    hazards.forEach(hazard => {
+      // Helper to cast priority safely
+      const getPriority = (sev?: string): 'Critical' | 'High' | 'Medium' | 'Low' => {
+        const p = sev || 'Medium';
+        if (['Critical', 'High', 'Medium', 'Low'].includes(p)) return p as any;
+        return 'Medium';
+      };
+
+      // 1. Process Owner Actions (Assignments)
+      if (hazard.workflowStage === WORKFLOW_STAGES.ASSIGNED_CORRECTIVE_ACTION) {
+        // In real app, check if user is the assigned process owner 
+        const isProcessOwner = hazard.paceAssignments?.processOwner?.value === 'Current User' ||
+          (hazard.paceAssignments?.processOwner?.value && userRole === 'safety'); // Fallback for demo
+
+        if (isProcessOwner) {
+          tasks.push({
+            id: `HzTask-${hazard.id}-CA`,
+            title: `Develop Corrective Action: ${hazard.id}`,
+            description: `Hazard "${hazard.title}" requires a corrective action plan to be developed.`,
+            priority: getPriority(hazard.severity),
+            status: 'Pending',
+            assignedDate: hazard.reportedDate,
+            dueDate: '2025-02-28', // Placeholder logic 
+            assignedBy: 'Safety Manager',
+            module: 'Safety Management',
+            contributors: [],
+            sections: [
+              { name: 'Root Cause Analysis', status: 'pending' },
+              { name: 'Corrective Action Plan', status: 'pending' }
+            ],
+            sectionsComplete: 0,
+            totalSections: 2,
+            progress: 0,
+            link: `/safety/hazard-workflow/${hazard.id}`,
+            recentActivity: [] as any[]
+          } as ActionItem);
+        }
+      }
+
+      // 2. Approvals (Line Manager / Exec)
+      if (hazard.workflowStage === WORKFLOW_STAGES.LINE_MANAGER_APPROVAL && userRole === 'lead') {
+        tasks.push({
+          id: `HzTask-${hazard.id}-Approve`,
+          title: `Review & Approve Hazard Report: ${hazard.id}`,
+          description: `Review proposed corrective actions for hazard "${hazard.title}".`,
+          priority: 'High',
+          status: 'Pending',
+          assignedDate: hazard.reportedDate,
+          dueDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+          assignedBy: 'Safety Manager',
+          module: 'Safety Management',
+          contributors: [],
+          sections: [
+            { name: 'Review Plan', status: 'pending' },
+            { name: 'Approval Decision', status: 'pending' }
+          ],
+          sectionsComplete: 0,
+          totalSections: 2,
+          progress: 0,
+          link: `/safety/hazard-workflow/${hazard.id}`,
+          recentActivity: [] as any[]
+        } as ActionItem);
+      }
+
+      // 3. Execution (Implementation)
+      if (hazard.workflowStage === WORKFLOW_STAGES.IMPLEMENTATION_IN_PROGRESS) {
+        // Check if user is an executer
+        const isExecuter = hazard.paceAssignments?.executers?.some(e => e.value === 'Current User') || userRole === 'maintenance';
+
+        if (isExecuter) {
+          tasks.push({
+            id: `HzTask-${hazard.id}-Exec`,
+            title: `Implement Corrective Actions: ${hazard.id}`,
+            description: `Execute the approved corrective actions for hazard "${hazard.title}".`,
+            priority: getPriority(hazard.severity),
+            status: 'In Progress',
+            assignedDate: hazard.reportedDate,
+            dueDate: '2025-03-15', // Fallback 
+            assignedBy: hazard.paceAssignments?.processOwner?.value || 'Process Owner',
+            module: 'Safety Management',
+            contributors: [],
+            sections: [
+              { name: 'Implementation', status: 'in-progress' },
+              { name: 'Verification', status: 'pending' }
+            ],
+            sectionsComplete: 0,
+            totalSections: 2,
+            progress: 30, // Mock progress
+            link: `/safety/hazard-workflow/${hazard.id}`,
+            recentActivity: [] as any[]
+          } as ActionItem);
+        }
+      }
+
+      // 4. Contributors (General)
+      if (hazard.paceAssignments?.contributors?.some(c => c.value === 'Current User')) {
+        tasks.push({
+          id: `HzTask-${hazard.id}-Contrib`,
+          title: `Contribute to Hazard Report: ${hazard.id}`,
+          description: `You are listed as a contributor for hazard "${hazard.title}". Please provide input.`,
+          priority: 'Low',
+          status: 'Pending',
+          assignedDate: hazard.reportedDate,
+          dueDate: new Date().toISOString().split('T')[0],
+          assignedBy: 'Safety Manager',
+          module: 'Safety Management',
+          contributors: [],
+          sections: [],
+          sectionsComplete: 0,
+          totalSections: 1,
+          progress: 0,
+          link: `/safety/hazard-workflow/${hazard.id}`,
+          recentActivity: [] as any[]
+        } as ActionItem);
+      }
+    });
+
+    return tasks;
+  };
+
+  const userActionItems = [...getUserActionItems(MOCK_ACTION_ITEMS, userRole), ...getHazardTasks()];
   const actionItemsStats = getStats(userActionItems);
 
   // Get personal task stats
@@ -195,7 +324,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
     const active = personalTasks.filter(t => t.status === 'In Progress').length;
     const completed = personalTasks.filter(t => t.status === 'Completed').length;
     const collaborativeCount = personalTasks.filter(t => t.collaborators.length > 1).length;
-    
+
     return { total, active, completed, collaborativeCount };
   };
 
@@ -205,10 +334,10 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
   const getFilteredActionItems = () => {
     return userActionItems.filter(item => {
       const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.description.toLowerCase().includes(searchTerm.toLowerCase());
+        item.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || item.status.toLowerCase().replace(' ', '') === statusFilter;
       const matchesPriority = priorityFilter === 'all' || item.priority.toLowerCase() === priorityFilter;
-      
+
       return matchesSearch && matchesStatus && matchesPriority;
     });
   };
@@ -216,11 +345,11 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
   const getFilteredPersonalTasks = () => {
     return personalTasks.filter(task => {
       const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           task.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+        task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesStatus = statusFilter === 'all' || task.status.toLowerCase().replace(' ', '') === statusFilter;
       const matchesPriority = priorityFilter === 'all' || task.priority.toLowerCase() === priorityFilter;
-      
+
       return matchesSearch && matchesStatus && matchesPriority;
     });
   };
@@ -275,7 +404,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
       collaborators: []
     });
     setIsNewPersonalTaskDialogOpen(false);
-    
+
     toast.success('Personal Task Created', {
       description: `"${newTask.title}" has been added to your tasks.`
     });
@@ -293,12 +422,12 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
       if (task.id === taskId) {
         let updatedSections = task.sections;
         let sectionsComplete = task.sectionsComplete;
-        
+
         if (sectionUpdates) {
           updatedSections = sectionUpdates;
           sectionsComplete = sectionUpdates.filter(section => section.status === 'completed').length;
         }
-        
+
         return {
           ...task,
           progress: newProgress,
@@ -309,7 +438,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
       }
       return task;
     }));
-    
+
     setIsUpdatePersonalTaskProgressOpen(false);
     setUpdatingPersonalTask(null);
     toast.success('Progress Updated', {
@@ -336,7 +465,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
     }
 
     setIsSubmitting(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false);
@@ -345,7 +474,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
       setUpdatedSections([]);
       setUpdateComment('');
       setNewSectionName('');
-      
+
       toast.success('Action Item Progress Updated', {
         description: 'Progress has been updated successfully.'
       });
@@ -406,10 +535,18 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
         <div className="flex items-start justify-between mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
-              <h3 className="font-medium">{task.title}</h3>
-              <Badge className={task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : 
-                              task.status === 'Completed' ? 'bg-green-100 text-green-800' : 
-                              'bg-gray-100 text-gray-800'}>
+              <h3 className="font-medium">
+                {(task as any).link ? (
+                  <Link to={(task as any).link} className="hover:underline text-blue-600">
+                    {task.title}
+                  </Link>
+                ) : (
+                  task.title
+                )}
+              </h3>
+              <Badge className={task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                task.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                  'bg-gray-100 text-gray-800'}>
                 {task.status.toUpperCase()}
               </Badge>
               {isActionItem && (
@@ -428,13 +565,13 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
               </Badge>
             </div>
             <p className="text-muted-foreground mb-3">
-              {isActionItem 
+              {isActionItem
                 ? `${(task as ActionItem).module} • Assigned by ${(task as ActionItem).assignedBy}`
                 : `Personal Task • Created ${formatDate((task as PersonalTask).createdDate)}`
               }
             </p>
             <p className="text-sm mb-4">{task.description}</p>
-            
+
             {/* Contributors/Collaborators */}
             <div className="flex items-center gap-3 mb-4">
               <span className="text-sm font-medium">
@@ -457,7 +594,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
           </div>
           <div className="ml-6 text-right">
             <div className="text-xs text-muted-foreground">
-              {isActionItem 
+              {isActionItem
                 ? `Started ${formatDate((task as ActionItem).assignedDate)}`
                 : `Created ${formatDate((task as PersonalTask).createdDate)}`
               }
@@ -477,7 +614,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
             </Badge>
           </div>
           <Progress value={task.progress} className="mb-3" />
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             {task.sections.map((section, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -516,13 +653,18 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
             </span>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => {
                 if (isActionItem) {
                   setSelectedActionItem(task as ActionItem);
-                  setIsActionItemDialogOpen(true);
+                  if ((task as any).link) {
+                    // If it's a linked task (like hazard), navigate directly
+                    window.location.href = (task as any).link;
+                  } else {
+                    setIsActionItemDialogOpen(true);
+                  }
                 } else {
                   setSelectedPersonalTask(task as PersonalTask);
                   setIsPersonalTaskDialogOpen(true);
@@ -532,8 +674,8 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
               <Eye className="w-4 h-4 mr-2" />
               View Details
             </Button>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               className="bg-blue-600 hover:bg-blue-700"
               onClick={() => {
                 if (isActionItem) {
@@ -548,8 +690,8 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
               Update Progress
             </Button>
             {!isActionItem && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   setEditingPersonalTask(task as PersonalTask);
@@ -677,7 +819,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
                 </Button>
               )}
             </div>
-            
+
             {getFilteredActionItems().length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
@@ -739,7 +881,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
                 Create Personal Task
               </Button>
             </div>
-            
+
             {getFilteredPersonalTasks().length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
@@ -772,7 +914,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
               Create a personal task to track your own goals and collaborate with others.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Task Title *</Label>
@@ -803,9 +945,9 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="priority">Priority</Label>
-                <Select 
-                  value={newPersonalTaskForm.priority} 
-                  onValueChange={(value: 'Critical' | 'High' | 'Medium' | 'Low') => 
+                <Select
+                  value={newPersonalTaskForm.priority}
+                  onValueChange={(value: 'Critical' | 'High' | 'Medium' | 'Low') =>
                     setNewPersonalTaskForm({
                       ...newPersonalTaskForm,
                       priority: value
@@ -887,9 +1029,9 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
             {/* Collaborators */}
             <div className="space-y-2">
               <Label>Invite Collaborators (Optional)</Label>
-              <Select 
-                value="" 
-                onValueChange={(userId) => {
+              <Select
+                value=""
+                onValueChange={(userId: string) => {
                   if (!newPersonalTaskForm.collaborators.includes(userId)) {
                     setNewPersonalTaskForm({
                       ...newPersonalTaskForm,
@@ -902,7 +1044,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
                   <SelectValue placeholder="Select users to collaborate" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableUsers.filter(user => 
+                  {availableUsers.filter(user =>
                     !newPersonalTaskForm.collaborators.includes(user.id)
                   ).map(user => (
                     <SelectItem key={user.id} value={user.id}>
@@ -911,7 +1053,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
                   ))}
                 </SelectContent>
               </Select>
-              
+
               {newPersonalTaskForm.collaborators.length > 0 && (
                 <div className="mt-2">
                   <p className="text-sm text-muted-foreground mb-2">Selected collaborators:</p>
@@ -955,7 +1097,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
       {/* Action Item Dialogs */}
       {selectedActionItem && (
         <DetailsDialog
-          actionItem={selectedActionItem}
+          item={selectedActionItem}
           isOpen={isActionItemDialogOpen}
           onClose={() => {
             setIsActionItemDialogOpen(false);
@@ -993,7 +1135,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
                 Update the progress for "{updatingPersonalTask.title}"
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-6">
               {/* Overall Progress */}
               <div className="space-y-3">
@@ -1022,18 +1164,18 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
                         <span className="font-medium">{section.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Select 
-                          value={section.status} 
+                        <Select
+                          value={section.status}
                           onValueChange={(newStatus: 'pending' | 'in-progress' | 'completed') => {
                             const updatedSections = [...updatingPersonalTask.sections];
-                            updatedSections[index] = { 
-                              ...section, 
+                            updatedSections[index] = {
+                              ...section,
                               status: newStatus,
                               progress: newStatus === 'completed' ? 100 : newStatus === 'in-progress' ? 50 : 0
                             };
                             const completedCount = updatedSections.filter(s => s.status === 'completed').length;
                             const newProgress = Math.round((completedCount / updatedSections.length) * 100);
-                            
+
                             setUpdatingPersonalTask({
                               ...updatingPersonalTask,
                               sections: updatedSections,
@@ -1102,7 +1244,7 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
                 Personal Task Details • Created {formatDate(selectedPersonalTask.createdDate)}
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-6">
               {/* Task Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1114,11 +1256,10 @@ export default function UnifiedTasksActionItems({ userRole }: UnifiedTasksAction
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Status</Label>
-                  <Badge className={`mt-1 ${
-                    selectedPersonalTask.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                  <Badge className={`mt-1 ${selectedPersonalTask.status === 'Completed' ? 'bg-green-100 text-green-800' :
                     selectedPersonalTask.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                      'bg-gray-100 text-gray-800'
+                    }`}>
                     {selectedPersonalTask.status}
                   </Badge>
                 </div>

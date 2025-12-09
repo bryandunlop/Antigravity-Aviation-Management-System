@@ -5,13 +5,14 @@ import { RealForeFlightAPIClient } from './realClient';
 import { MockForeFlightClient } from './client';
 import { ForeFlightConfig, ForeFlightSyncStatus } from './types';
 import { toast } from 'sonner';
+import { logger } from '../logger';
 
 export class ForeFlightSyncService {
   private client: RealForeFlightAPIClient | MockForeFlightClient;
   private config: ForeFlightConfig;
   private syncInterval: NodeJS.Timeout | null = null;
   private isRunning: boolean = false;
-  
+
   // Callbacks for when data is synced
   private onFlightPlansSynced?: (flightPlans: any[]) => void;
   private onLogbookSynced?: (entries: any[]) => void;
@@ -31,11 +32,11 @@ export class ForeFlightSyncService {
 
   start(intervalMs: number = 60000) { // Default 1 minute
     if (this.isRunning) {
-      console.log('[ForeFlight Sync] Already running');
+      logger.log('[ForeFlight Sync] Already running');
       return;
     }
 
-    console.log(`[ForeFlight Sync] Starting (interval: ${intervalMs}ms)`);
+    logger.log(`[ForeFlight Sync] Starting (interval: ${intervalMs}ms)`);
     this.isRunning = true;
 
     // Run initial sync
@@ -53,18 +54,18 @@ export class ForeFlightSyncService {
       this.syncInterval = null;
     }
     this.isRunning = false;
-    console.log('[ForeFlight Sync] Stopped');
+    logger.log('[ForeFlight Sync] Stopped');
   }
 
   // ==================== PERFORM SYNC ====================
 
   private async performSync() {
     if (!this.config.syncEnabled) {
-      console.log('[ForeFlight Sync] Sync disabled in config');
+      logger.log('[ForeFlight Sync] Sync disabled in config');
       return;
     }
 
-    console.log('[ForeFlight Sync] Starting sync cycle...');
+    logger.log('[ForeFlight Sync] Starting sync cycle...');
 
     const syncStatus: Partial<ForeFlightSyncStatus> = {
       lastSync: new Date().toISOString(),
@@ -105,7 +106,7 @@ export class ForeFlightSyncService {
         await this.syncFiles(syncStatus);
       }
 
-      console.log('[ForeFlight Sync] Sync cycle complete', syncStatus.stats);
+      logger.log('[ForeFlight Sync] Sync cycle complete', syncStatus.stats);
 
     } catch (error) {
       console.error('[ForeFlight Sync] Sync cycle failed:', error);
@@ -124,7 +125,7 @@ export class ForeFlightSyncService {
 
   private async syncFlightPlans(syncStatus: Partial<ForeFlightSyncStatus>) {
     try {
-      console.log('[ForeFlight Sync] Syncing flight plans...');
+      logger.log('[ForeFlight Sync] Syncing flight plans...');
 
       // Get flight plans from last 7 days
       const startDate = new Date();
@@ -137,7 +138,7 @@ export class ForeFlightSyncService {
 
       if (response.success && response.data) {
         const flightPlans = response.data.items;
-        console.log(`[ForeFlight Sync] Found ${flightPlans.length} flight plans`);
+        logger.log(`[ForeFlight Sync] Found ${flightPlans.length} flight plans`);
 
         syncStatus.stats!.flightPlansSynced = flightPlans.length;
 
@@ -165,7 +166,7 @@ export class ForeFlightSyncService {
 
   private async syncLogbook(syncStatus: Partial<ForeFlightSyncStatus>) {
     try {
-      console.log('[ForeFlight Sync] Syncing logbook entries...');
+      logger.log('[ForeFlight Sync] Syncing logbook entries...');
 
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 7);
@@ -177,7 +178,7 @@ export class ForeFlightSyncService {
 
       if (response.success && response.data) {
         const entries = response.data.items;
-        console.log(`[ForeFlight Sync] Found ${entries.length} logbook entries`);
+        logger.log(`[ForeFlight Sync] Found ${entries.length} logbook entries`);
 
         syncStatus.stats!.logbookEntriesSynced = entries.length;
 
@@ -203,7 +204,7 @@ export class ForeFlightSyncService {
 
   private async syncSquawks(syncStatus: Partial<ForeFlightSyncStatus>) {
     try {
-      console.log('[ForeFlight Sync] Syncing squawks...');
+      logger.log('[ForeFlight Sync] Syncing squawks...');
 
       // In a real implementation, this would call a squawks endpoint
       // For now, we'll skip if the method doesn't exist
@@ -212,7 +213,7 @@ export class ForeFlightSyncService {
 
         if (response.success && response.data) {
           const squawks = response.data.items;
-          console.log(`[ForeFlight Sync] Found ${squawks.length} squawks`);
+          logger.log(`[ForeFlight Sync] Found ${squawks.length} squawks`);
 
           syncStatus.stats!.squawksImported = squawks.length;
 
@@ -237,13 +238,13 @@ export class ForeFlightSyncService {
 
   private async syncPositions(syncStatus: Partial<ForeFlightSyncStatus>) {
     try {
-      console.log('[ForeFlight Sync] Syncing aircraft positions...');
+      logger.log('[ForeFlight Sync] Syncing aircraft positions...');
 
       const response = await this.client.getFleetPositions();
 
       if (response.success && response.data) {
         const positions = response.data;
-        console.log(`[ForeFlight Sync] Found ${positions.length} aircraft positions`);
+        logger.log(`[ForeFlight Sync] Found ${positions.length} aircraft positions`);
 
         syncStatus.stats!.positionUpdates = positions.length;
 
@@ -269,13 +270,13 @@ export class ForeFlightSyncService {
 
   private async syncFiles(syncStatus: Partial<ForeFlightSyncStatus>) {
     try {
-      console.log('[ForeFlight Sync] Syncing files...');
+      logger.log('[ForeFlight Sync] Syncing files...');
 
       const response = await this.client.getFiles({ limit: 50 });
 
       if (response.success && response.data) {
         const files = response.data.items;
-        console.log(`[ForeFlight Sync] Found ${files.length} files`);
+        logger.log(`[ForeFlight Sync] Found ${files.length} files`);
 
         syncStatus.stats!.filesSynced = files.length;
 
@@ -361,7 +362,7 @@ export class ForeFlightSyncService {
   // ==================== MANUAL SYNC ====================
 
   async syncNow() {
-    console.log('[ForeFlight Sync] Manual sync triggered');
+    logger.log('[ForeFlight Sync] Manual sync triggered');
     await this.performSync();
     toast.success('ForeFlight sync complete', {
       description: 'All data has been refreshed'
@@ -382,7 +383,7 @@ export function initializeSyncService(
   }
 
   globalSyncService = new ForeFlightSyncService(client, config);
-  
+
   if (config.syncEnabled) {
     globalSyncService.start();
   }

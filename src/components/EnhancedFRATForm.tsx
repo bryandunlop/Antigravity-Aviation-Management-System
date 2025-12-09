@@ -229,7 +229,9 @@ export default function EnhancedFRATForm({ userRole = 'pilot', initialData, onCl
     if (onSave) {
       onSave(data);
     } else {
-      console.log('Form saved:', data);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[DEV] Form saved:', data);
+      }
       toast.success(newStatus === 'draft' ? 'Draft saved successfully' : 'FRAT submitted successfully');
       if (newStatus === 'submitted' && onClose) {
         onClose();
