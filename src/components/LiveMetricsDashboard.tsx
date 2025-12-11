@@ -294,10 +294,10 @@ export default function LiveMetricsDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-[#001a5c] to-black text-slate-200 font-sans selection:bg-[var(--color-pg-cyan)] selection:text-white pb-20">
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-accent selection:text-accent-foreground pb-20">
 
       {/* Top Navigation Bar */}
-      <nav className="sticky top-0 z-50 border-b border-white/5 bg-slate-900/40 backdrop-blur-2xl">
+      <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-2xl">
         <div className="max-w-[1920px] mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
@@ -317,8 +317,8 @@ export default function LiveMetricsDashboard() {
                 <button
                   key={item}
                   className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${i === 0
-                      ? 'bg-white/10 text-white ring-1 ring-white/10'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    ? 'bg-white/10 text-white ring-1 ring-white/10'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
                     }`}
                 >
                   {item}

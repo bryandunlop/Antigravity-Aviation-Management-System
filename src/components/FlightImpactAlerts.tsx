@@ -7,10 +7,10 @@ import { Separator } from './ui/separator';
 import { Alert, AlertDescription } from './ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { useFlightNASImpact } from './hooks/useFlightNASImpact';
-import { 
-  AlertTriangle, 
-  Clock, 
-  Plane, 
+import {
+  AlertTriangle,
+  Clock,
+  Plane,
   MapPin,
   ChevronDown,
   ChevronUp,
@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 
 export default function FlightImpactAlerts() {
-  const { impactData, loading, error, refetch } = useFlightNASImpact();
+  const { impactData, loading, isRefreshing, error, refetch } = useFlightNASImpact();
   const [expandedFlights, setExpandedFlights] = useState<Set<string>>(new Set());
 
   const toggleFlightExpanded = (flightId: string) => {
@@ -145,9 +145,9 @@ export default function FlightImpactAlerts() {
             variant="ghost"
             size="sm"
             onClick={refetch}
-            disabled={loading}
+            disabled={loading || isRefreshing}
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading || isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
 
@@ -182,13 +182,13 @@ export default function FlightImpactAlerts() {
 
               return (
                 <div key={flight.id} className="border rounded-lg overflow-hidden">
-                  <Collapsible 
-                    open={isExpanded} 
+                  <Collapsible
+                    open={isExpanded}
                     onOpenChange={() => toggleFlightExpanded(flight.id)}
                   >
                     <CollapsibleTrigger asChild>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         className="w-full p-4 hover:bg-accent/50 justify-start"
                       >
                         <div className="flex items-center justify-between w-full">
@@ -211,8 +211,8 @@ export default function FlightImpactAlerts() {
                             <Badge variant="outline" className="text-xs">
                               {flight.impacts.length} impact{flight.impacts.length !== 1 ? 's' : ''}
                             </Badge>
-                            {isExpanded ? 
-                              <ChevronUp className="w-4 h-4" /> : 
+                            {isExpanded ?
+                              <ChevronUp className="w-4 h-4" /> :
                               <ChevronDown className="w-4 h-4" />
                             }
                           </div>
@@ -238,16 +238,16 @@ export default function FlightImpactAlerts() {
                                 {impact.affectedAirport}
                               </div>
                             </div>
-                            
+
                             <p className="text-sm text-muted-foreground mb-2">{impact.details}</p>
-                            
+
                             {impact.estimatedDelay && (
                               <div className="flex items-center gap-1 text-sm mb-2">
                                 <Clock className="w-3 h-3 text-orange-500" />
                                 <span>Estimated delay: <strong>{impact.estimatedDelay} minutes</strong></span>
                               </div>
                             )}
-                            
+
                             <div className="bg-blue-50 border border-blue-200 rounded p-2 text-sm">
                               <div className="flex items-start gap-2">
                                 <Bell className="w-3 h-3 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -286,7 +286,7 @@ export default function FlightImpactAlerts() {
         </ScrollArea>
 
         <Separator className="my-4" />
-        
+
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Last updated: {new Date().toLocaleTimeString()}</span>
           <Button

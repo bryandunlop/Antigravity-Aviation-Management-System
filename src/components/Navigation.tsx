@@ -3,9 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from './ui/sidebar';
 import NotificationCenter from './NotificationCenter';
+import { ThemeToggle } from './ThemeToggle';
 import BreadcrumbNav from './BreadcrumbNav';
 import CommandPalette from './CommandPalette';
-import FloatingActionButton from './FloatingActionButton';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { TouchBackend } from 'react-dnd-touch-backend';
 import {
@@ -52,7 +52,8 @@ import {
   Database,
   Sparkles,
   GripVertical,
-  RotateCcw
+  RotateCcw,
+  Calculator
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -123,9 +124,9 @@ const DraggableNavigationGroup = ({
 
               return (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={isActive} className={`hover:bg-white/5 hover:text-white ${isActive ? 'bg-[var(--color-pg-blue)] text-white font-medium shadow-[0_0_15px_-3px_var(--color-pg-blue)]' : 'text-slate-400'}`}>
+                  <SidebarMenuButton asChild isActive={isActive} className={`hover:bg-accent hover:text-accent-foreground ${isActive ? 'bg-primary text-primary-foreground font-medium shadow-sm' : 'text-muted-foreground'}`}>
                     <Link to={item.href} className="flex items-center gap-3">
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-[var(--color-pg-cyan)]' : 'text-slate-500 group-hover:text-white'}`} />
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground'}`} />
                       <span>{item.name}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -170,9 +171,9 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
       items: [
         { name: 'Dashboard', href: '/', icon: Home, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling', 'document-manager'] },
         { name: 'Settings', href: '/settings', icon: Settings, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling', 'document-manager', 'admin-assistant'] },
-        { name: 'Flight Family', href: '/flight-family', icon: MessageSquare, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling', 'document-manager', 'admin-assistant'] },
+        // { name: 'Flight Family', href: '/flight-family', icon: MessageSquare, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling', 'document-manager', 'admin-assistant'] },
         { name: 'Procedural Bulletins', href: '/procedural-bulletins', icon: BookOpen, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling', 'document-manager'] },
-        { name: 'Restaurant Database', href: '/restaurant-database', icon: Utensils, roles: ['pilot', 'inflight', 'maintenance', 'admin'] },
+        // { name: 'Restaurant Database', href: '/restaurant-database', icon: Utensils, roles: ['pilot', 'inflight', 'maintenance', 'admin'] },
         { name: 'Tasks & Action Items', href: '/tasks-action-items', icon: Target, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling'] },
         { name: 'AOG Management', href: '/aog-management', icon: AlertOctagon, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling'] },
       ]
@@ -269,6 +270,12 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
         { name: 'Document Center', href: '/documents', icon: Archive, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling', 'document-manager'] },
         { name: 'Document Management', href: '/document-management', icon: FileText, roles: ['document-manager'] },
         { name: 'Document Request', href: '/document-management', icon: Send, roles: ['pilot', 'inflight', 'admin', 'lead', 'safety', 'maintenance', 'scheduling'] },
+      ]
+    },
+    {
+      label: "Tax Compliance",
+      items: [
+        { name: 'Tax Dashboard', href: '/tax-compliance', icon: Calculator, roles: ['tax', 'admin'] },
       ]
     },
     {
@@ -370,7 +377,8 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
       'document-manager': 'Document Manager',
       'admin-assistant': 'Administrative Assistant',
       'lead': 'Leadership',
-      'admin': 'Administrator'
+      'admin': 'Administrator',
+      'tax': 'Tax Analyst'
     };
     return roleMap[role] || role;
   };
@@ -385,16 +393,21 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <Sidebar className="border-r border-white/5 bg-slate-900/60 backdrop-blur-xl">
+      <div className="flex min-h-screen w-full overflow-x-hidden">
+        <Sidebar className="border-r border-border/50 bg-card/90 backdrop-blur-xl">
           <SidebarHeader className="border-b border-white/5 p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--color-pg-blue)] to-[var(--color-pg-blue-vivid)] flex items-center justify-center shadow-[0_0_15px_var(--color-pg-blue)]">
-                <Plane className="w-5 h-5 text-white" />
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
+                  <Plane className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-foreground tracking-wide text-sm">P&G Flight Ops</h2>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{getRoleDisplayName(userRole)}</p>
+                </div>
               </div>
-              <div>
-                <h2 className="font-bold text-white tracking-wide text-sm">P&G Flight Ops</h2>
-                <p className="text-[10px] text-[var(--color-pg-cyan)] uppercase tracking-wider">{getRoleDisplayName(userRole)}</p>
+              <div className="md:hidden">
+                <ThemeToggle />
               </div>
             </div>
 
@@ -447,21 +460,21 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
           </SidebarContent>
         </Sidebar>
 
-        <div className="flex-1 flex flex-col relative">
+        <div className="flex-1 flex flex-col relative min-w-0">
           {/* Enhanced top bar with notification center */}
-          <header className="sticky top-0 z-40 border-b border-white/5 bg-slate-900/40 backdrop-blur-2xl px-6 py-4 flex items-center justify-between">
+          <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-2xl px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Large, prominent sidebar toggle */}
               <div className="flex items-center gap-3">
-                <SidebarTrigger className="h-10 w-10 p-0 border border-white/10 bg-white/5 hover:bg-white/10 text-white transition-all duration-200 shadow-sm rounded-lg">
+                <SidebarTrigger className="h-10 w-10 p-0 border border-border/50 bg-background/50 hover:bg-accent hover:text-accent-foreground text-foreground transition-all duration-200 shadow-sm rounded-lg">
                   <PanelLeft className="h-5 w-5" />
                   <span className="sr-only">Toggle navigation menu</span>
                 </SidebarTrigger>
               </div>
 
               {/* Breadcrumbs / Page Title Placeholder */}
-              <div className="hidden md:flex items-center gap-2 text-sm text-slate-400">
-                <span className="text-white font-medium">{getRoleDisplayName(userRole)} Workspace</span>
+              <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="text-foreground font-medium">{getRoleDisplayName(userRole)} Workspace</span>
               </div>
             </div>
 
@@ -471,19 +484,21 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
               <Button
                 variant="ghost"
                 onClick={() => setIsCommandPaletteOpen(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all w-64 justify-between group"
+                className="flex items-center gap-2 px-3 py-2 bg-background/50 border border-border/50 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-all w-64 justify-between group"
               >
                 <div className="flex items-center gap-2">
-                  <Search className="w-4 h-4 group-hover:text-[var(--color-pg-cyan)] transition-colors" />
+                  <Search className="w-4 h-4 group-hover:text-primary transition-colors" />
                   <span>Search system...</span>
                 </div>
-                <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-slate-500">
+                <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-border/50 bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                   <span className="text-xs">⌘</span>K
                 </kbd>
               </Button>
 
               {/* Notification Center */}
               <NotificationCenter userRole={userRole} />
+
+              <ThemeToggle />
 
               {/* Logout button */}
               <Button
@@ -510,9 +525,6 @@ function NavigationContent({ userRole, onLogout, children }: NavigationProps) {
           onClose={() => setIsCommandPaletteOpen(false)}
           userRole={userRole}
         />
-
-        {/* Floating Action Button */}
-        <FloatingActionButton userRole={userRole} />
       </div>
     </SidebarProvider>
   );

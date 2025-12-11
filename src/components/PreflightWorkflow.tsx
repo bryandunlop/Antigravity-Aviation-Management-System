@@ -310,7 +310,7 @@ export default function PreflightWorkflow() {
       {
         id: 'trip-001',
         tripNumber: 'T-2024-156',
-        tailNumber: 'N650GS',
+        tailNumber: 'N1PG',
         passengers: ['John Smith (BOD)', 'Sarah Johnson (C-Suite, CFO)'],
         crewMembers: ['Capt. Mike Wilson', 'FO Sarah Davis', 'FA Jessica Martinez'],
         startDate: '2025-12-10T08:00:00Z',
@@ -366,7 +366,7 @@ export default function PreflightWorkflow() {
       {
         id: 'trip-002',
         tripNumber: 'T-2024-157',
-        tailNumber: 'N651GS',
+        tailNumber: 'N2PG',
         passengers: ['David Chen (Authorized User)', 'Emily Roberts (Standard)'],
         crewMembers: ['Capt. Tom Anderson', 'FO Lisa Brown'],
         startDate: '2025-12-08T06:00:00Z',
@@ -407,7 +407,7 @@ export default function PreflightWorkflow() {
       {
         id: 'trip-003',
         tripNumber: 'T-2024-158',
-        tailNumber: 'N650GS',
+        tailNumber: 'N1PG',
         passengers: ['Robert Williams (C-Suite, CEO)'],
         crewMembers: ['Capt. James Taylor', 'FO Maria Garcia', 'FA Robert Lee'],
         startDate: '2025-12-12T09:00:00Z',
@@ -448,7 +448,7 @@ export default function PreflightWorkflow() {
       {
         id: 'trip-004',
         tripNumber: 'T-2024-159',
-        tailNumber: 'N652GS',
+        tailNumber: 'N5PG',
         passengers: ['Michael Brown (BOD)', 'Jennifer Davis (C-Suite, COO)', 'Amanda White (Authorized User)'],
         crewMembers: ['Capt. Robert Chen', 'FO Kevin Martinez', 'FA Laura Thompson'],
         startDate: '2025-12-07T10:00:00Z',
@@ -491,7 +491,7 @@ export default function PreflightWorkflow() {
       {
         id: 'trip-005',
         tripNumber: 'T-2024-160',
-        tailNumber: 'N650GS',
+        tailNumber: 'N1PG',
         passengers: ['Patricia Moore (Standard, Notes: VIP Guest)', 'Thomas Anderson (Authorized User)'],
         crewMembers: ['Capt. Daniel Park', 'FO Michelle Lee'],
         startDate: '2025-12-09T14:00:00Z',
@@ -547,7 +547,7 @@ export default function PreflightWorkflow() {
       {
         id: 'trip-006',
         tripNumber: 'T-2024-161',
-        tailNumber: 'N651GS',
+        tailNumber: 'N2PG',
         passengers: ['Christopher Taylor (BOD)', 'Lisa Martinez (C-Suite, CTO)'],
         crewMembers: ['Capt. Andrew Wilson', 'FO Rebecca Johnson', 'FA Michael Davis'],
         startDate: '2025-12-11T06:00:00Z',
@@ -602,7 +602,7 @@ export default function PreflightWorkflow() {
       {
         id: 'trip-007',
         tripNumber: 'T-2024-162',
-        tailNumber: 'N652GS',
+        tailNumber: 'N5PG',
         passengers: ['Elizabeth Clark (Authorized User)', 'James Rodriguez (Standard)'],
         crewMembers: ['Capt. Steven Harris', 'FO Nicole Brown'],
         startDate: '2025-12-06T09:00:00Z',
@@ -643,7 +643,7 @@ export default function PreflightWorkflow() {
       {
         id: 'trip-008',
         tripNumber: 'T-2024-163',
-        tailNumber: 'N650GS',
+        tailNumber: 'N1PG',
         passengers: ['William Turner (C-Suite, CEO)', 'Mary Wilson (BOD)', 'Jessica Lewis (C-Suite, CFO)'],
         crewMembers: ['Capt. Christopher Moore', 'FO Amanda Taylor', 'FA David Anderson'],
         startDate: '2025-12-11T18:00:00Z',
@@ -698,7 +698,7 @@ export default function PreflightWorkflow() {
       {
         id: 'trip-009',
         tripNumber: 'T-2024-164',
-        tailNumber: 'N651GS',
+        tailNumber: 'N2PG',
         passengers: ['Richard Walker (Authorized User)'],
         crewMembers: ['Capt. Patricia Garcia', 'FO Brian Martinez'],
         startDate: '2025-12-05T12:00:00Z',
@@ -741,7 +741,7 @@ export default function PreflightWorkflow() {
       {
         id: 'trip-010',
         tripNumber: 'T-2024-165',
-        tailNumber: 'N652GS',
+        tailNumber: 'N5PG',
         passengers: ['Nancy King (Standard, Notes: First time flyer)', 'Kevin Wright (Authorized User)', 'Sandra Lopez (Standard)'],
         crewMembers: ['Capt. Matthew Scott', 'FO Jennifer Young', 'FA Christopher Allen'],
         startDate: '2025-12-09T15:00:00Z',

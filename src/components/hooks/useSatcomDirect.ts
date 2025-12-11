@@ -63,6 +63,7 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
   const [aircraftStatuses, setAircraftStatuses] = useState<AircraftStatus[]>([]);
   const [fleetSummary, setFleetSummary] = useState<FleetSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
@@ -70,7 +71,7 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
   const generateMockData = useCallback(() => {
     const mockPositions: AircraftPosition[] = [
       {
-        tailNumber: 'N123AB',
+        tailNumber: 'N1PG',
         callSign: 'FLT001',
         latitude: 40.7589,
         longitude: -73.7004, // Near JFK
@@ -87,7 +88,7 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
         flightTime: 240
       },
       {
-        tailNumber: 'N456CD',
+        tailNumber: 'N5PG',
         callSign: 'FLT002',
         latitude: 25.7959,
         longitude: -80.2870, // Near MIA
@@ -103,7 +104,7 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
         flightTime: 0
       },
       {
-        tailNumber: 'N789EF',
+        tailNumber: 'N2PG',
         callSign: '',
         latitude: 25.7959,
         longitude: -80.2870, // At MIA
@@ -117,7 +118,7 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
         flightTime: 0
       },
       {
-        tailNumber: 'N234CD',
+        tailNumber: 'N6PG',
         callSign: 'FLT004',
         latitude: 41.9742,
         longitude: -87.9073, // Near ORD
@@ -132,29 +133,12 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
         estimatedArrival: '2025-02-05T15:30:00Z',
         fuelRemaining: 1600,
         flightTime: 180
-      },
-      {
-        tailNumber: 'N567EF',
-        callSign: 'FLT005',
-        latitude: 40.6892,
-        longitude: -74.1745, // Near EWR
-        altitude: 2500,
-        groundSpeed: 180,
-        heading: 220,
-        verticalSpeed: 800,
-        timestamp: new Date().toISOString(),
-        flightPhase: 'Climb',
-        departureAirport: 'EWR',
-        arrivalAirport: 'ATL',
-        estimatedArrival: '2025-02-05T20:15:00Z',
-        fuelRemaining: 4200,
-        flightTime: 15
       }
     ];
 
     const mockStatuses: AircraftStatus[] = [
       {
-        tailNumber: 'N123AB',
+        tailNumber: 'N1PG',
         isOnline: true,
         lastContact: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
         satcomStatus: 'Connected',
@@ -168,7 +152,7 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
         currentFlightPlan: 'LAX-JFK'
       },
       {
-        tailNumber: 'N456CD',
+        tailNumber: 'N5PG',
         isOnline: true,
         lastContact: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
         satcomStatus: 'Connected',
@@ -191,7 +175,7 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
         nextScheduledFlight: 'FLT002 - JFK to MIA at 14:15'
       },
       {
-        tailNumber: 'N789EF',
+        tailNumber: 'N2PG',
         isOnline: false,
         lastContact: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
         satcomStatus: 'Maintenance',
@@ -213,7 +197,7 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
         ]
       },
       {
-        tailNumber: 'N234CD',
+        tailNumber: 'N6PG',
         isOnline: true,
         lastContact: new Date(Date.now() - 1 * 60 * 1000).toISOString(),
         satcomStatus: 'Connected',
@@ -225,25 +209,11 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
         },
         alerts: [],
         currentFlightPlan: 'ORD-LGA'
-      },
-      {
-        tailNumber: 'N567EF',
-        isOnline: true,
-        lastContact: new Date(Date.now() - 30 * 1000).toISOString(),
-        satcomStatus: 'Connected',
-        systemHealth: {
-          engine: 'Normal',
-          hydraulics: 'Normal',
-          electrical: 'Normal',
-          avionics: 'Normal'
-        },
-        alerts: [],
-        currentFlightPlan: 'EWR-ATL'
       }
     ];
 
     const mockFleetSummary: FleetSummary = {
-      totalAircraft: 5,
+      totalAircraft: 4,
       activeFlights: 3,
       parkedAircraft: 2,
       maintenanceAircraft: 1,
@@ -259,24 +229,20 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
     };
   }, []);
 
-  const fetchSatcomData = useCallback(async () => {
+  const fetchSatcomData = useCallback(async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // In real implementation, these would be actual API calls:
-      // const positionsResponse = await fetch('/api/satcom/positions', {
-      //   headers: { 'Authorization': `Bearer ${apiKey}` }
-      // });
-      // const statusResponse = await fetch('/api/satcom/status', {
-      //   headers: { 'Authorization': `Bearer ${apiKey}` }
-      // });
+      // Simulate API call delay - reduced for better UX
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const mockData = generateMockData();
-      
+
       setAircraftPositions(mockData.positions);
       setAircraftStatuses(mockData.statuses);
       setFleetSummary(mockData.summary);
@@ -287,6 +253,7 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
       console.error('Satcom Direct API error:', err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, [generateMockData]);
 
@@ -294,13 +261,13 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
     try {
       // In real app, make API call to acknowledge alert
       // await fetch(`/api/satcom/alerts/${alertId}/acknowledge`, { method: 'POST' });
-      
-      setAircraftStatuses(prev => 
+
+      setAircraftStatuses(prev =>
         prev.map(status => {
           if (status.tailNumber === tailNumber) {
             return {
               ...status,
-              alerts: status.alerts.map(alert => 
+              alerts: status.alerts.map(alert =>
                 alert.id === alertId ? { ...alert, acknowledged: true } : alert
               )
             };
@@ -320,27 +287,27 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
   }, [aircraftPositions, aircraftStatuses]);
 
   const getActiveFlights = useCallback(() => {
-    return aircraftPositions.filter(aircraft => 
+    return aircraftPositions.filter(aircraft =>
       aircraft.flightPhase !== 'Parked' && aircraft.callSign
     );
   }, [aircraftPositions]);
 
   const getSystemAlerts = useCallback(() => {
-    return aircraftStatuses.flatMap(status => 
+    return aircraftStatuses.flatMap(status =>
       status.alerts.filter(alert => !alert.acknowledged)
     );
   }, [aircraftStatuses]);
 
   // Initial fetch
   useEffect(() => {
-    fetchSatcomData();
+    fetchSatcomData(true);
   }, [fetchSatcomData]);
 
   // Auto-refresh
   useEffect(() => {
     if (!autoRefresh) return;
 
-    const interval = setInterval(fetchSatcomData, refreshInterval);
+    const interval = setInterval(() => fetchSatcomData(false), refreshInterval);
     return () => clearInterval(interval);
   }, [autoRefresh, refreshInterval, fetchSatcomData]);
 
@@ -349,9 +316,10 @@ export const useSatcomDirect = ({ refreshInterval = 30000, autoRefresh = true }:
     aircraftStatuses,
     fleetSummary,
     loading,
+    isRefreshing,
     error,
     lastUpdate,
-    refetch: fetchSatcomData,
+    refetch: () => fetchSatcomData(false),
     acknowledgeAlert,
     getAircraftByTailNumber,
     getActiveFlights,

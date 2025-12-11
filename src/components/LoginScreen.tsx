@@ -106,12 +106,18 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                       Lobby Display
                     </div>
                   </SelectItem>
+                  <SelectItem value="tax">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                      Tax Analyst
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full h-12 btn-aviation-primary"
               disabled={!role}
             >

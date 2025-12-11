@@ -47,17 +47,17 @@ export default function MovementReports({ reports, className = '' }: MovementRep
     const getReportTypeColor = (type: string) => {
         switch (type) {
             case 'Takeoff':
-                return 'bg-blue-500';
+                return 'bg-blue-500 dark:bg-blue-600 text-white';
             case 'Landing':
-                return 'bg-green-500';
+                return 'bg-green-500 dark:bg-green-600 text-white';
             case 'Departure':
-                return 'bg-purple-500';
+                return 'bg-purple-500 dark:bg-purple-600 text-white';
             case 'Arrival':
-                return 'bg-emerald-500';
+                return 'bg-emerald-500 dark:bg-emerald-600 text-white';
             case 'Position Report':
-                return 'bg-gray-500';
+                return 'bg-slate-500 dark:bg-slate-600 text-white';
             default:
-                return 'bg-gray-400';
+                return 'bg-slate-400 dark:bg-slate-500 text-white';
         }
     };
 

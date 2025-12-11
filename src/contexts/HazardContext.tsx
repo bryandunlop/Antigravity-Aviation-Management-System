@@ -136,7 +136,7 @@ const INITIAL_HAZARDS: Hazard[] = [
     },
     {
         id: 'HZ-003',
-        title: 'Ground Equipment Malfunction - N123AB',
+        title: 'Ground Equipment Malfunction - N1PG',
         category: 'Equipment',
         severity: 'Medium',
         workflowStage: WORKFLOW_STAGES.CLOSED,

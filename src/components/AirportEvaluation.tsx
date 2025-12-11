@@ -9,7 +9,7 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
+import {
   Plane,
   MapPin,
   Search,
@@ -150,7 +150,7 @@ export default function AirportEvaluation() {
       time: '08:00',
       departure: 'KTEB',
       arrival: 'KPBI',
-      aircraft: 'N123AB',
+      aircraft: 'N1PG',
       status: 'confirmed'
     },
     {
@@ -423,10 +423,10 @@ export default function AirportEvaluation() {
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
       });
     } catch (error) {
       return dateString;
@@ -507,8 +507,8 @@ export default function AirportEvaluation() {
                           </p>
                         </div>
                         <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => {
                               const airport = airportEvaluations.find(a => a.icao === flight.departure);
@@ -521,8 +521,8 @@ export default function AirportEvaluation() {
                             <Eye className="w-4 h-4 mr-1" />
                             View {flight.departure}
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => {
                               const airport = airportEvaluations.find(a => a.icao === flight.arrival);
@@ -634,7 +634,7 @@ export default function AirportEvaluation() {
                       </div>
                       <div>
                         <Label>Details</Label>
-                        <Textarea 
+                        <Textarea
                           placeholder="Provide detailed information about your evaluation or update..."
                           rows={4}
                         />
@@ -736,10 +736,10 @@ export default function AirportEvaluation() {
                           <div className="flex items-center gap-2 mb-2">
                             <h4 className="font-medium">{submission.title}</h4>
                             <Badge variant="outline">{submission.airportIcao}</Badge>
-                            <Badge 
+                            <Badge
                               variant={
                                 submission.status === 'approved' ? 'default' :
-                                submission.status === 'rejected' ? 'destructive' : 'secondary'
+                                  submission.status === 'rejected' ? 'destructive' : 'secondary'
                               }
                             >
                               {submission.status === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}

@@ -332,9 +332,9 @@ export default function LeadDashboard() {
       departing: 2,
       arriving: 1,
       flights: [
-        { id: 'FLT001', tail: 'N123GS', route: 'KTEB → KMIA', status: 'In Air', eta: '45 min', altitude: 41000, speed: 485 },
-        { id: 'FLT002', tail: 'N456GS', route: 'KJFK → EGLL', status: 'In Air', eta: '5h 20m', altitude: 43000, speed: 520 },
-        { id: 'FLT003', tail: 'N789GS', route: 'KLAS → KSFO', status: 'In Air', eta: '1h 10m', altitude: 39000, speed: 465 }
+        { id: 'FLT001', tail: 'N1PG', route: 'KTEB → KMIA', status: 'In Air', eta: '45 min', altitude: 41000, speed: 485 },
+        { id: 'FLT002', tail: 'N5PG', route: 'KJFK → EGLL', status: 'In Air', eta: '5h 20m', altitude: 43000, speed: 520 },
+        { id: 'FLT003', tail: 'N2PG', route: 'KLAS → KSFO', status: 'In Air', eta: '1h 10m', altitude: 39000, speed: 465 }
       ]
     },
     maintenance: {
@@ -343,10 +343,10 @@ export default function LeadDashboard() {
       aogAircraft: 1,
       criticalSquawks: 2,
       activeWorkOrders: [
-        { id: 'WO-2025-089', aircraft: 'N789GS', type: 'Engine Inspection', technician: 'Mike Johnson', progress: 65, priority: 'critical' },
-        { id: 'WO-2025-090', aircraft: 'N123GS', type: '100hr Inspection', technician: 'Sarah Williams', progress: 40, priority: 'high' },
-        { id: 'WO-2025-091', aircraft: 'N456GS', type: 'APU Service', technician: 'Tom Anderson', progress: 80, priority: 'medium' },
-        { id: 'WO-2025-092', aircraft: 'N234GS', type: 'Avionics Update', technician: 'David Brown', progress: 25, priority: 'low' }
+        { id: 'WO-2025-089', aircraft: 'N2PG', type: 'Engine Inspection', technician: 'Mike Johnson', progress: 65, priority: 'critical' },
+        { id: 'WO-2025-090', aircraft: 'N1PG', type: '100hr Inspection', technician: 'Sarah Williams', progress: 40, priority: 'high' },
+        { id: 'WO-2025-091', aircraft: 'N5PG', type: 'APU Service', technician: 'Tom Anderson', progress: 80, priority: 'medium' },
+        { id: 'WO-2025-092', aircraft: 'N6PG', type: 'Avionics Update', technician: 'David Brown', progress: 25, priority: 'low' }
       ]
     },
     fuelFarm: {
@@ -376,7 +376,7 @@ export default function LeadDashboard() {
       dutyTimeWarnings: 2
     },
     recentAlerts: [
-      { id: 'ALT001', time: '2 min ago', type: 'maintenance', severity: 'critical', message: 'N789GS - Engine inspection overdue', action: 'Schedule now' },
+      { id: 'ALT001', time: '2 min ago', type: 'maintenance', severity: 'critical', message: 'N2PG - Engine inspection overdue', action: 'Schedule now' },
       { id: 'ALT002', time: '15 min ago', type: 'weather', severity: 'medium', message: 'KMIA - Thunderstorms approaching', action: 'Monitor' },
       { id: 'ALT003', time: '28 min ago', type: 'fuel', severity: 'medium', message: 'Fuel farm below 90% capacity', action: 'Schedule delivery' },
       { id: 'ALT004', time: '45 min ago', type: 'crew', severity: 'low', message: 'Crew member duty time at 80%', action: 'Plan relief' }
@@ -477,7 +477,7 @@ export default function LeadDashboard() {
       id: 'ALERT001',
       type: 'maintenance',
       severity: 'critical',
-      title: 'N789EF - Engine inspection overdue',
+      title: 'N2PG - Engine inspection overdue',
       description: 'Aircraft grounded until inspection complete',
       timeAgo: '2 hours ago',
       actionRequired: 'Schedule inspection immediately'
@@ -518,14 +518,14 @@ export default function LeadDashboard() {
       time: '08:00',
       type: 'flight',
       title: 'FLT001 - KTEB to KJFK',
-      aircraft: 'N123AB',
+      aircraft: 'N1PG',
       priority: 'high'
     },
     {
       date: '2025-02-06',
       time: '14:30',
       type: 'maintenance',
-      title: '100-hour inspection - N456CD',
+      title: '100-hour inspection - N5PG',
       technician: 'Mike Johnson',
       priority: 'critical'
     },
@@ -586,7 +586,7 @@ export default function LeadDashboard() {
       date: '2025-02-08',
       time: '14:00',
       route: 'KTEB → KMIA',
-      aircraft: 'N123GS (G650)',
+      aircraft: 'N1PG (G650)',
       status: 'Scheduled',
       passengers: ['PAX001', 'PAX003'],
       duration: '2h 45m',
@@ -601,7 +601,7 @@ export default function LeadDashboard() {
       date: '2025-02-10',
       time: '09:30',
       route: 'KJFK → EGLL',
-      aircraft: 'N456GS (G650)',
+      aircraft: 'N5PG (G500)',
       status: 'Confirmed',
       passengers: ['PAX007'],
       duration: '7h 15m',
@@ -616,7 +616,7 @@ export default function LeadDashboard() {
       date: '2025-02-12',
       time: '16:45',
       route: 'KLAS → KSFO',
-      aircraft: 'N789GS (G650)',
+      aircraft: 'N2PG (G650)',
       status: 'Tentative',
       passengers: ['PAX001', 'PAX012'],
       duration: '1h 30m',
@@ -631,7 +631,7 @@ export default function LeadDashboard() {
       date: '2025-02-15',
       time: '11:00',
       route: 'KMIA → KTEB',
-      aircraft: 'N123GS (G650)',
+      aircraft: 'N1PG (G650)',
       status: 'Scheduled',
       passengers: ['PAX003'],
       duration: '2h 50m',

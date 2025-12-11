@@ -10,11 +10,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { 
-  Wrench, 
-  Clock, 
-  CheckCircle, 
-  AlertTriangle, 
+import {
+  Wrench,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
   Plus,
   Search,
   Filter,
@@ -109,7 +109,7 @@ export default function MaintenanceBoard() {
   const aircraft: Aircraft[] = [
     {
       id: 'AC001',
-      registration: 'N123AB',
+      registration: 'N1PG',
       model: 'Gulfstream G650',
       status: 'in-service',
       location: 'Hangar 1',
@@ -130,8 +130,8 @@ export default function MaintenanceBoard() {
     },
     {
       id: 'AC002',
-      registration: 'N456CD',
-      model: 'Gulfstream G650',
+      registration: 'N5PG',
+      model: 'Gulfstream G500',
       status: 'in-work',
       location: 'Hangar 2',
       hoursToNext: 8.2,
@@ -151,7 +151,7 @@ export default function MaintenanceBoard() {
     },
     {
       id: 'AC003',
-      registration: 'N789EF',
+      registration: 'N2PG',
       model: 'Gulfstream G650',
       status: 'aog',
       location: 'Hangar 3',
@@ -177,7 +177,7 @@ export default function MaintenanceBoard() {
       id: 'OP001',
       type: 'departure',
       flightNumber: 'FO045',
-      aircraft: 'N123AB',
+      aircraft: 'N1PG',
       time: '14:30',
       destination: 'KBOS',
       status: 'scheduled'
@@ -186,7 +186,7 @@ export default function MaintenanceBoard() {
       id: 'OP002',
       type: 'arrival',
       flightNumber: 'FO044',
-      aircraft: 'N456CD',
+      aircraft: 'N5PG',
       time: '16:45',
       estimatedTime: '16:52',
       adsbTime: '16:48',
@@ -197,7 +197,7 @@ export default function MaintenanceBoard() {
       id: 'OP003',
       type: 'departure',
       flightNumber: 'FO046',
-      aircraft: 'N456CD',
+      aircraft: 'N5PG',
       time: '20:15',
       destination: 'EGLL',
       status: 'scheduled'
@@ -206,7 +206,7 @@ export default function MaintenanceBoard() {
       id: 'OP004',
       type: 'arrival',
       flightNumber: 'FO043',
-      aircraft: 'N789EF',
+      aircraft: 'N2PG',
       time: '22:30',
       estimatedTime: '22:45',
       origin: 'KORD',
@@ -272,7 +272,7 @@ export default function MaintenanceBoard() {
   const maintenanceTasks = [
     {
       id: 'MT-001',
-      aircraft: 'N123AB',
+      aircraft: 'N1PG',
       type: 'Scheduled',
       task: '100-hour inspection',
       priority: 'High',
@@ -287,7 +287,7 @@ export default function MaintenanceBoard() {
     },
     {
       id: 'MT-002',
-      aircraft: 'N456CD',
+      aircraft: 'N5PG',
       type: 'Unscheduled',
       task: 'Cabin pressure warning repair',
       priority: 'Critical',
@@ -302,7 +302,7 @@ export default function MaintenanceBoard() {
     },
     {
       id: 'MT-003',
-      aircraft: 'N789EF',
+      aircraft: 'N2PG',
       type: 'Scheduled',
       task: 'Landing gear actuator replacement',
       priority: 'Critical',
@@ -317,7 +317,7 @@ export default function MaintenanceBoard() {
     },
     {
       id: 'MT-004',
-      aircraft: 'N321GH',
+      aircraft: 'N6PG',
       type: 'Scheduled',
       task: 'Avionics software update',
       priority: 'Medium',
@@ -335,8 +335,8 @@ export default function MaintenanceBoard() {
   const filteredTasks = maintenanceTasks.filter(task => {
     const matchesFilter = filter === 'all' || task.status.toLowerCase().replace(' ', '') === filter;
     const matchesSearch = task.aircraft.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.task.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.assignedTo.toLowerCase().includes(searchTerm.toLowerCase());
+      task.task.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.assignedTo.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -416,7 +416,7 @@ export default function MaintenanceBoard() {
     {
       id: 'FLR001',
       flightNumber: 'FO045',
-      tailNumber: 'N123AB',
+      tailNumber: 'N1PG',
       aircraft: 'Gulfstream G650',
       departure: 'KTEB',
       arrival: 'KPBI',
@@ -431,8 +431,8 @@ export default function MaintenanceBoard() {
     {
       id: 'FLR002',
       flightNumber: 'FO046',
-      tailNumber: 'N456CD',
-      aircraft: 'Gulfstream G650',
+      tailNumber: 'N5PG',
+      aircraft: 'Gulfstream G500',
       departure: 'KPBI',
       arrival: 'KIAH',
       date: '2024-01-20',
@@ -446,7 +446,7 @@ export default function MaintenanceBoard() {
     {
       id: 'FLR003',
       flightNumber: 'FO047',
-      tailNumber: 'N789EF',
+      tailNumber: 'N2PG',
       aircraft: 'Gulfstream G650',
       departure: 'KIAH',
       arrival: 'KBOS',
@@ -463,9 +463,9 @@ export default function MaintenanceBoard() {
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
       });
     } catch (error) {
       return dateString;
@@ -773,7 +773,7 @@ export default function MaintenanceBoard() {
     const dayData = gratsData.filter(g => g.date === dateStr);
     const amData = dayData.find(g => g.shift === 'AM');
     const pmData = dayData.find(g => g.shift === 'PM');
-    
+
     chartData.unshift({
       date: dateStr,
       dateLabel: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -809,7 +809,7 @@ export default function MaintenanceBoard() {
           <h1>Maintenance Status Board</h1>
           <p className="text-muted-foreground">G650 Fleet Management & Operations</p>
         </div>
-        
+
         <div className="flex items-center gap-4 mt-4 lg:mt-0">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="w-4 h-4" />
@@ -924,12 +924,11 @@ export default function MaintenanceBoard() {
                 <CardContent>
                   <div className="space-y-4">
                     {aircraft.map((plane) => (
-                      <Card 
-                        key={plane.id} 
-                        className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
-                          plane.status === 'aog' ? 'border-red-500 border-2 bg-red-50' : 
-                          plane.status === 'in-work' ? 'border-yellow-300 border-2 bg-yellow-50' : ''
-                        }`}
+                      <Card
+                        key={plane.id}
+                        className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${plane.status === 'aog' ? 'border-red-500 border-2 bg-red-50' :
+                            plane.status === 'in-work' ? 'border-yellow-300 border-2 bg-yellow-50' : ''
+                          }`}
                         onClick={() => setSelectedAircraft(plane)}
                       >
                         <div className="flex items-start justify-between">
@@ -953,7 +952,7 @@ export default function MaintenanceBoard() {
                               </div>
                             </div>
                           </div>
-                          
+
                           {plane.nextFlight && (
                             <div className="text-right text-sm">
                               <div className="font-medium">{plane.nextFlight.flightNumber}</div>
@@ -1109,7 +1108,7 @@ export default function MaintenanceBoard() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="text-sm">
                           <div className="flex items-center gap-2">
                             <Clock className="w-3 h-3" />
@@ -1129,10 +1128,10 @@ export default function MaintenanceBoard() {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
-                        <Badge 
-                          variant="outline" 
+                        <Badge
+                          variant="outline"
                           className={getOperationStatusColor(operation.status)}
                         >
                           {operation.status.charAt(0).toUpperCase() + operation.status.slice(1)}
@@ -1226,11 +1225,10 @@ export default function MaintenanceBoard() {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
-                    className={`h-3 rounded-full ${
-                      averagePercentage < 40 ? 'bg-green-500' : 
-                      averagePercentage < 60 ? 'bg-yellow-500' : 
-                      averagePercentage < 80 ? 'bg-orange-500' : 'bg-red-500'
-                    }`}
+                    className={`h-3 rounded-full ${averagePercentage < 40 ? 'bg-green-500' :
+                        averagePercentage < 60 ? 'bg-yellow-500' :
+                          averagePercentage < 80 ? 'bg-orange-500' : 'bg-red-500'
+                      }`}
                     style={{ width: `${averagePercentage}%` }}
                   ></div>
                 </div>
@@ -1570,7 +1568,7 @@ export default function MaintenanceBoard() {
                           <div className="text-sm text-muted-foreground">Owner: {car.owner}</div>
                         </div>
                       </div>
-                      
+
                       <div className="text-right text-sm">
                         <div className="flex items-center gap-1 justify-end mb-1">
                           <MapPin className="w-3 h-3" />
@@ -1626,7 +1624,7 @@ export default function MaintenanceBoard() {
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
+                    <div
                       className={`h-3 rounded-full ${fuelStatus.bgColor}`}
                       style={{ width: `${fuelPercentage}%` }}
                     />
@@ -1745,7 +1743,7 @@ export default function MaintenanceBoard() {
                         )}
                         {request.status === 'acknowledged' && (
                           <Button size="sm" asChild>
-                            <Link 
+                            <Link
                               to={`/fuel-farm?tailNumber=${encodeURIComponent(request.tailNumber)}&aircraft=${encodeURIComponent(request.aircraft)}&fuelAmount=${request.fuelRequested}&autoOpen=true`}
                             >
                               Start Fueling
@@ -1788,7 +1786,7 @@ export default function MaintenanceBoard() {
                     />
                   </div>
                 </div>
-                
+
                 <Select value={filter} onValueChange={setFilter}>
                   <SelectTrigger className="w-48">
                     <Filter className="w-4 h-4 mr-2" />
@@ -1924,17 +1922,17 @@ export default function MaintenanceBoard() {
                                       <p className="font-medium">{new Date(task.dueDate).toLocaleDateString()}</p>
                                     </div>
                                   </div>
-                                  
+
                                   <div>
                                     <Label>Description</Label>
                                     <p>{task.description}</p>
                                   </div>
-                                  
+
                                   <div>
                                     <Label>Comments</Label>
                                     <p className="text-muted-foreground">{task.comments}</p>
                                   </div>
-                                  
+
                                   <div className="flex gap-2 pt-4">
                                     <Button variant="outline">Update Status</Button>
                                     <Button variant="outline">Add Comment</Button>
@@ -1943,7 +1941,7 @@ export default function MaintenanceBoard() {
                                 </div>
                               </DialogContent>
                             </Dialog>
-                            
+
                             <Button variant="outline" size="sm">
                               <Edit className="w-3 h-3 mr-1" />
                               Edit

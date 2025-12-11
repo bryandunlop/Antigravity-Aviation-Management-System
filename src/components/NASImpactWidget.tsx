@@ -30,7 +30,7 @@ export default function NASImpactWidget({
     compact = false,
     maxFlights = 5
 }: NASImpactWidgetProps) {
-    const { impactData, loading, error, refetch } = useFlightNASImpact();
+    const { impactData, loading, isRefreshing, error, refetch } = useFlightNASImpact();
     const [showAll, setShowAll] = useState(false);
 
     // Filter impacted flights by pilot if pilotName is provided
@@ -157,8 +157,8 @@ export default function NASImpactWidget({
                     <div className="flex-1">
                         <CardTitle className="flex items-center gap-2 text-base">
                             <AlertTriangle className={`w-5 h-5 ${highestSeverity === 'High' ? 'text-red-600' :
-                                    highestSeverity === 'Medium' ? 'text-orange-600' :
-                                        'text-yellow-600'
+                                highestSeverity === 'Medium' ? 'text-orange-600' :
+                                    'text-yellow-600'
                                 }`} />
                             NAS Impact Alerts
                             <Badge className={getSeverityBadgeColor(highestSeverity)}>
@@ -178,10 +178,10 @@ export default function NASImpactWidget({
                         variant="ghost"
                         size="sm"
                         onClick={refetch}
-                        disabled={loading}
+                        disabled={loading || isRefreshing}
                         className="ml-2"
                     >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-4 h-4 ${loading || isRefreshing ? 'animate-spin' : ''}`} />
                     </Button>
                 </div>
             </CardHeader>
@@ -209,8 +209,8 @@ export default function NASImpactWidget({
                             <div
                                 key={flight.id}
                                 className={`p-3 border-l-4 rounded-lg bg-white ${flightSeverity === 'High' ? 'border-l-red-500' :
-                                        flightSeverity === 'Medium' ? 'border-l-orange-500' :
-                                            'border-l-yellow-500'
+                                    flightSeverity === 'Medium' ? 'border-l-orange-500' :
+                                        'border-l-yellow-500'
                                     } border border-gray-200`}
                             >
                                 <div className="flex items-start justify-between mb-2">

@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { 
-  Search, 
-  Plane, 
-  Users, 
-  FileText, 
-  Wrench, 
-  Calendar, 
-  Shield, 
+import {
+  Search,
+  Plane,
+  Users,
+  FileText,
+  Wrench,
+  Calendar,
+  Shield,
   Package,
   Utensils,
   ClipboardCheck,
@@ -53,15 +53,15 @@ const searchableItems: SearchResult[] = [
     icon: Monitor,
     keywords: ['flight operations', 'center', 'dashboard', 'integrated', 'real-time', 'flight management', 'ops center', 'foc']
   },
-  {
-    id: 'flight-family',
-    title: 'Flight Family',
-    description: 'Team messaging and communication platform',
-    href: '/flight-family',
-    category: 'Communication',
-    icon: MessageSquare,
-    keywords: ['message', 'chat', 'team', 'communication', 'flight family', 'crew', 'talk']
-  },
+  // {
+  //   id: 'flight-family',
+  //   title: 'Flight Family',
+  //   description: 'Team messaging and communication platform',
+  //   href: '/flight-family',
+  //   category: 'Communication',
+  //   icon: MessageSquare,
+  //   keywords: ['message', 'chat', 'team', 'communication', 'flight family', 'crew', 'talk']
+  // },
   {
     id: 'aircraft-status',
     title: 'Aircraft Status',
@@ -279,7 +279,7 @@ export default function CommandPalette({ isOpen, onClose, userRole }: CommandPal
 
   const filteredResults = searchableItems.filter(item => {
     if (!query) return true;
-    
+
     const searchTerm = query.toLowerCase();
     return (
       item.title.toLowerCase().includes(searchTerm) ||
@@ -336,7 +336,7 @@ export default function CommandPalette({ isOpen, onClose, userRole }: CommandPal
         <DialogDescription id="command-palette-description" className="sr-only">
           Search for modules, aircraft, passengers, and other flight operations resources. Use arrow keys to navigate and Enter to select.
         </DialogDescription>
-        
+
         <div className="border-b">
           <div className="flex items-center px-4 py-3">
             <Search className="w-4 h-4 text-muted-foreground mr-3" />
@@ -350,7 +350,7 @@ export default function CommandPalette({ isOpen, onClose, userRole }: CommandPal
             />
           </div>
         </div>
-        
+
         <div className="max-h-80 overflow-y-auto">
           {filteredResults.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
@@ -363,9 +363,8 @@ export default function CommandPalette({ isOpen, onClose, userRole }: CommandPal
                 return (
                   <div
                     key={result.id}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-                      index === selectedIndex ? 'bg-accent' : 'hover:bg-accent/50'
-                    }`}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${index === selectedIndex ? 'bg-accent' : 'hover:bg-accent/50'
+                      }`}
                     onClick={() => handleSelect(result.href)}
                   >
                     <div className="p-2 bg-primary/10 rounded-lg">
@@ -388,7 +387,7 @@ export default function CommandPalette({ isOpen, onClose, userRole }: CommandPal
             </div>
           )}
         </div>
-        
+
         <div className="border-t px-4 py-2 text-xs text-muted-foreground">
           Use ↑↓ to navigate, Enter to select, Esc to close
         </div>

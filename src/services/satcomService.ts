@@ -317,7 +317,7 @@ function getMockMovementData(): MovementEvent[] {
             assetId: 4124504,
             aircraftId: 124524,
             assetSerial: "4222",
-            tailNumber: "N123AB",
+            tailNumber: "N1PG",
             flightStatusType: "Complete",
             departureAirport: "KLAX",
             departureAirportName: "LOS ANGELES INTL",
@@ -361,7 +361,7 @@ function getMockMovementData(): MovementEvent[] {
             assetId: 4124505,
             aircraftId: 124525,
             assetSerial: "4223",
-            tailNumber: "N456CD",
+            tailNumber: "N5PG",
             flightStatusType: "In Progress",
             departureAirport: "KORD",
             departureAirportName: "CHICAGO O'HARE INTL",
@@ -407,7 +407,7 @@ function getMockMovementData(): MovementEvent[] {
 function getMockPositionData(params: PositionQueryParams): PositionResponse {
     const mockItems: PositionReport[] = [
         {
-            tailNumber: "N123AB",
+            tailNumber: "N1PG",
             timeOfReport: new Date(Date.now() - 1800000).toISOString(),
             source: "ViaSat",
             movementReportType: "Position Report",
@@ -423,7 +423,7 @@ function getMockPositionData(params: PositionQueryParams): PositionResponse {
             squawkCode: 2167
         },
         {
-            tailNumber: "N456CD",
+            tailNumber: "N5PG",
             timeOfReport: new Date(Date.now() - 600000).toISOString(),
             source: "ViaSat",
             movementReportType: "Takeoff",

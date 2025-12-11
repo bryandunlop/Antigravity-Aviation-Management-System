@@ -124,15 +124,15 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
           crewFatigue: parsedData.crewFatigue || '',
           specialConsiderations: parsedData.specialConsiderations || ''
         });
-        
+
         if (parsedData.editingId) {
           setIsEditing(true);
           setEditingId(parsedData.editingId);
         }
-        
+
         // Clear the edit data after loading
         localStorage.removeItem('frat_edit_data');
-        
+
         if (parsedData.editingId) {
           toast.success('FRAT form loaded for editing');
         } else {
@@ -152,7 +152,9 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
     let score = 0;
     Object.keys(riskFactors).forEach(factor => {
       const value = formData[factor as keyof typeof formData];
+      // @ts-ignore - Dynamic access to risk factors
       if (value && riskFactors[factor as keyof typeof riskFactors][value] !== undefined) {
+        // @ts-ignore - Dynamic access to risk factors
         score += riskFactors[factor as keyof typeof riskFactors][value];
       }
     });
@@ -174,16 +176,16 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic form validation
     const requiredFields = ['flightNumber', 'aircraft', 'departure', 'destination'];
     const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
-    
+
     if (missingFields.length > 0) {
       toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
       return;
     }
-    
+
     setIsSubmitted(true);
   };
 
@@ -192,7 +194,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
     try {
       // Simulate API call to save draft
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // In a real application, this would save to a backend
       const draftData = {
         ...formData,
@@ -201,10 +203,10 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
         status: 'draft',
         savedAt: new Date().toISOString()
       };
-      
+
       // Save to localStorage as fallback
       localStorage.setItem(`frat_draft_${formData.flightNumber || 'temp'}`, JSON.stringify(draftData));
-      
+
       toast.success('FRAT form saved as draft successfully');
     } catch (error) {
       toast.error('Failed to save draft. Please try again.');
@@ -218,7 +220,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
     try {
       // Simulate API call to submit form
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       const submissionData = {
         id: isEditing && editingId ? editingId : `FRAT${Date.now()}`,
         flightNumber: formData.flightNumber,
@@ -237,20 +239,23 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
         riskLevel,
         submittedAt: new Date().toISOString(),
         factors: {
+          // @ts-ignore
           weather: riskFactors.weatherConditions[formData.weatherConditions] || 0,
           airport: 0, // Would be calculated from airport factors
+          // @ts-ignore
           crew: (riskFactors.captainExperience[formData.captainExperience] || 0) + (riskFactors.foExperience[formData.foExperience] || 0) + (riskFactors.crewFatigue[formData.crewFatigue] || 0),
           aircraft: 0, // Would be calculated from aircraft factors
+          // @ts-ignore
           operation: riskFactors.timeOfDay[formData.timeOfDay] || 0
         },
         flaggedItems: generateFlaggedItems(),
         attachments: [],
         formData: { ...formData }
       };
-      
+
       // Update or add submission
       const existingSubmissions = JSON.parse(localStorage.getItem('frat_submissions') || '[]');
-      
+
       if (isEditing && editingId) {
         // Update existing submission
         const index = existingSubmissions.findIndex((s: any) => s.id === editingId);
@@ -266,12 +271,12 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
         existingSubmissions.push(submissionData);
         toast.success('FRAT form submitted successfully!');
       }
-      
+
       localStorage.setItem('frat_submissions', JSON.stringify(existingSubmissions));
-      
+
       // Clear any saved draft
       localStorage.removeItem(`frat_draft_${formData.flightNumber}`);
-      
+
       // Show appropriate message based on risk level
       setTimeout(() => {
         if (riskLevel === 'High') {
@@ -282,7 +287,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
           toast.success('Low risk flight - approved for operations.');
         }
       }, 1000);
-      
+
       // Reset form after successful submission
       setTimeout(() => {
         setIsSubmitted(false);
@@ -308,11 +313,11 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
           crewFatigue: '',
           specialConsiderations: ''
         });
-        
+
         // Navigate back to submissions page
         navigate('/frat/my-submissions');
       }, 2500);
-      
+
     } catch (error) {
       toast.error('Failed to submit FRAT form. Please try again.');
     } finally {
@@ -322,7 +327,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
 
   const generateFlaggedItems = (): string[] => {
     const items: string[] = [];
-    
+
     if (formData.weatherConditions === 'Overcast/Storms') {
       items.push('Severe weather conditions at departure or destination');
     }
@@ -347,7 +352,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
     if (formData.timeOfDay === 'Night' && (formData.weatherConditions === 'Overcast/Storms' || formData.visibility === 'Less than 1 mile')) {
       items.push('Night operations with reduced visibility');
     }
-    
+
     return items;
   };
 
@@ -425,14 +430,14 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
             )}
 
             <div className="flex gap-2 justify-center">
-              <Button 
-                onClick={() => setIsSubmitted(false)} 
+              <Button
+                onClick={() => setIsSubmitted(false)}
                 variant="outline"
                 disabled={isSubmitting}
               >
                 Modify Assessment
               </Button>
-              <Button 
+              <Button
                 onClick={handleFinalSubmit}
                 disabled={isSubmitting}
                 className="min-w-32"
@@ -466,8 +471,8 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
             {isEditing && <Badge variant="outline" className="ml-2">Editing</Badge>}
           </h1>
           <p className="text-muted-foreground">
-            {isEditing 
-              ? 'Edit and resubmit your FRAT assessment' 
+            {isEditing
+              ? 'Edit and resubmit your FRAT assessment'
               : 'Complete all sections for automatic risk scoring'
             }
           </p>
@@ -501,7 +506,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="flightNumber">Flight Number *</Label>
-                  <Select value={formData.flightNumber} onValueChange={(value) => handleInputChange('flightNumber', value)}>
+                  <Select value={formData.flightNumber} onValueChange={(value: string) => handleInputChange('flightNumber', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select flight" />
                     </SelectTrigger>
@@ -517,23 +522,23 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
 
                 <div className="space-y-2">
                   <Label htmlFor="aircraft">Aircraft *</Label>
-                  <Select value={formData.aircraft} onValueChange={(value) => handleInputChange('aircraft', value)}>
+                  <Select value={formData.aircraft} onValueChange={(value: string) => handleInputChange('aircraft', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select aircraft" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="N123AB">N123AB - Citation X</SelectItem>
-                      <SelectItem value="N456CD">N456CD - Gulfstream G650</SelectItem>
-                      <SelectItem value="N789EF">N789EF - Falcon 7X</SelectItem>
-                      <SelectItem value="N234CD">N234CD - Hawker 900XP</SelectItem>
-                      <SelectItem value="N567EF">N567EF - Citation Sovereign</SelectItem>
+                      <SelectItem value="N1PG">N1PG - Gulfstream G650</SelectItem>
+                      <SelectItem value="N2PG">N2PG - Gulfstream G650</SelectItem>
+                      <SelectItem value="N5PG">N5PG - Gulfstream G500</SelectItem>
+                      <SelectItem value="N6PG">N6PG - Gulfstream G500</SelectItem>
+                      <SelectItem value="N1PG">N1PG - Gulfstream G650 (Alternate)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="departure">Departure Airport *</Label>
-                  <Select value={formData.departure} onValueChange={(value) => handleInputChange('departure', value)}>
+                  <Select value={formData.departure} onValueChange={(value: string) => handleInputChange('departure', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select departure" />
                     </SelectTrigger>
@@ -551,7 +556,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
 
                 <div className="space-y-2">
                   <Label htmlFor="destination">Destination Airport *</Label>
-                  <Select value={formData.destination} onValueChange={(value) => handleInputChange('destination', value)}>
+                  <Select value={formData.destination} onValueChange={(value: string) => handleInputChange('destination', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select destination" />
                     </SelectTrigger>
@@ -577,7 +582,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="captainExperience">Captain Total Hours</Label>
-                  <Select value={formData.captainExperience} onValueChange={(value) => handleInputChange('captainExperience', value)}>
+                  <Select value={formData.captainExperience} onValueChange={(value: string) => handleInputChange('captainExperience', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select experience level" />
                     </SelectTrigger>
@@ -592,7 +597,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
 
                 <div className="space-y-2">
                   <Label htmlFor="foExperience">First Officer Total Hours</Label>
-                  <Select value={formData.foExperience} onValueChange={(value) => handleInputChange('foExperience', value)}>
+                  <Select value={formData.foExperience} onValueChange={(value: string) => handleInputChange('foExperience', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select experience level" />
                     </SelectTrigger>
@@ -607,7 +612,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
 
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="crewFatigue">Crew Fatigue Level</Label>
-                  <Select value={formData.crewFatigue} onValueChange={(value) => handleInputChange('crewFatigue', value)}>
+                  <Select value={formData.crewFatigue} onValueChange={(value: string) => handleInputChange('crewFatigue', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select fatigue level" />
                     </SelectTrigger>
@@ -630,7 +635,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="weatherConditions">Weather Conditions</Label>
-                  <Select value={formData.weatherConditions} onValueChange={(value) => handleInputChange('weatherConditions', value)}>
+                  <Select value={formData.weatherConditions} onValueChange={(value: string) => handleInputChange('weatherConditions', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select conditions" />
                     </SelectTrigger>
@@ -645,7 +650,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
 
                 <div className="space-y-2">
                   <Label htmlFor="visibility">Visibility</Label>
-                  <Select value={formData.visibility} onValueChange={(value) => handleInputChange('visibility', value)}>
+                  <Select value={formData.visibility} onValueChange={(value: string) => handleInputChange('visibility', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select visibility" />
                     </SelectTrigger>
@@ -660,7 +665,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
 
                 <div className="space-y-2">
                   <Label htmlFor="windSpeed">Wind Speed</Label>
-                  <Select value={formData.windSpeed} onValueChange={(value) => handleInputChange('windSpeed', value)}>
+                  <Select value={formData.windSpeed} onValueChange={(value: string) => handleInputChange('windSpeed', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select wind speed" />
                     </SelectTrigger>
@@ -675,7 +680,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
 
                 <div className="space-y-2">
                   <Label htmlFor="turbulence">Expected Turbulence</Label>
-                  <Select value={formData.turbulence} onValueChange={(value) => handleInputChange('turbulence', value)}>
+                  <Select value={formData.turbulence} onValueChange={(value: string) => handleInputChange('turbulence', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select turbulence level" />
                     </SelectTrigger>
@@ -690,7 +695,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
 
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="timeOfDay">Time of Day</Label>
-                  <Select value={formData.timeOfDay} onValueChange={(value) => handleInputChange('timeOfDay', value)}>
+                  <Select value={formData.timeOfDay} onValueChange={(value: string) => handleInputChange('timeOfDay', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select time period" />
                     </SelectTrigger>
@@ -789,9 +794,9 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={handleSaveDraft}
             disabled={isSaving || !formData.flightNumber}
           >
@@ -807,7 +812,7 @@ export default function FRATForm({ userRole = 'pilot' }: FRATFormProps) {
               </>
             )}
           </Button>
-          <Button 
+          <Button
             type="submit"
             disabled={!isFormValid()}
           >

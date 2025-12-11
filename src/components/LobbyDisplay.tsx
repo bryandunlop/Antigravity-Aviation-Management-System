@@ -4,15 +4,15 @@ import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { 
-  Plane, 
-  Clock, 
-  Users, 
-  MapPin, 
-  Thermometer, 
-  Wind, 
-  CloudRain, 
-  Sun, 
+import {
+  Plane,
+  Clock,
+  Users,
+  MapPin,
+  Thermometer,
+  Wind,
+  CloudRain,
+  Sun,
   Cloud,
   Eye,
   Navigation,
@@ -44,9 +44,9 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
       id: 'FLT001',
       flightNumber: 'PJ 1001',
       aircraft: {
-        registration: 'N123AB',
-        type: 'Citation CJ3+',
-        model: 'Cessna Citation CJ3+',
+        registration: 'N1PG',
+        type: 'Gulfstream G650',
+        model: 'Gulfstream G650',
         year: 2019,
         seats: 9,
         range: '2,040 nm',
@@ -110,9 +110,9 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
       id: 'FLT002',
       flightNumber: 'PJ 1002',
       aircraft: {
-        registration: 'N456CD',
-        type: 'Phenom 300E',
-        model: 'Embraer Phenom 300E',
+        registration: 'N5PG',
+        type: 'Gulfstream G500',
+        model: 'Gulfstream G500',
         year: 2021,
         seats: 10,
         range: '2,010 nm',
@@ -176,9 +176,9 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
       id: 'FLT003',
       flightNumber: 'PJ 1003',
       aircraft: {
-        registration: 'N789EF',
-        type: 'King Air 350i',
-        model: 'Beechcraft King Air 350i',
+        registration: 'N2PG',
+        type: 'Gulfstream G650',
+        model: 'Gulfstream G650',
         year: 2020,
         seats: 11,
         range: '1,806 nm',
@@ -314,11 +314,11 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
       <div className="text-center mb-8">
         <h1 className="text-6xl font-bold mb-4">Today's Departures</h1>
         <p className="text-3xl text-muted-foreground">
-          {currentTime.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          {currentTime.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
           })}
         </p>
       </div>
@@ -334,19 +334,19 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
                     <div className="text-3xl font-bold">{flight.flightNumber}</div>
                     <div className="text-lg text-muted-foreground">{flight.aircraft.registration}</div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-8">
                     <div className="text-center">
                       <div className="text-2xl font-bold">{flight.departure.time}</div>
                       <div className="text-lg">{flight.departure.city}</div>
                       <div className="text-sm text-muted-foreground">{flight.departure.airport}</div>
                     </div>
-                    
+
                     <div className="flex flex-col items-center">
                       <Plane className="w-8 h-8 text-primary mb-2" />
                       <div className="text-sm text-muted-foreground">{flight.flightTime}</div>
                     </div>
-                    
+
                     <div className="text-center">
                       <div className="text-2xl font-bold">{flight.destination.time}</div>
                       <div className="text-lg">{flight.destination.city}</div>
@@ -354,7 +354,7 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="text-right space-y-2">
                   <Badge className={getStatusColor(flight.status)}>
                     {flight.status}
@@ -425,7 +425,7 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
         <Card className="p-6">
           <CardContent className="p-0">
             <h2 className="text-3xl font-bold mb-6">Flight Information</h2>
-            
+
             <div className="space-y-6">
               <div className="flex items-center justify-between text-xl">
                 <div className="text-center">
@@ -434,12 +434,12 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
                   <div className="text-muted-foreground">{currentFlight.departure.airport}</div>
                   <div className="text-sm text-muted-foreground">Gate {currentFlight.departure.gate}</div>
                 </div>
-                
+
                 <div className="flex flex-col items-center">
                   <Navigation className="w-10 h-10 text-primary mb-2" />
                   <div className="text-muted-foreground">{currentFlight.flightTime}</div>
                 </div>
-                
+
                 <div className="text-center">
                   <div className="font-bold text-2xl">{currentFlight.destination.time}</div>
                   <div className="text-lg">{currentFlight.destination.city}</div>
@@ -447,9 +447,9 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
                   <div className="text-sm text-muted-foreground">Gate {currentFlight.destination.gate}</div>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="grid grid-cols-2 gap-4 text-lg">
                 <div className="flex items-center">
                   <Users className="w-6 h-6 mr-3 text-primary" />
@@ -464,7 +464,7 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
                   <span>{currentFlight.flightTime} Flight Time</span>
                 </div>
                 <div className="flex items-center">
-                  {currentFlight.status === 'On Time' ? 
+                  {currentFlight.status === 'On Time' ?
                     <CheckCircle className="w-6 h-6 mr-3 text-green-600" /> :
                     <AlertTriangle className="w-6 h-6 mr-3 text-orange-600" />
                   }
@@ -584,11 +584,11 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
               <p className="text-xl text-muted-foreground">{currentFlight.departure.city}</p>
               <p className="text-lg text-muted-foreground">{currentFlight.departure.airport}</p>
             </div>
-            
+
             <div className="text-center mb-6">
               {getWeatherIcon(currentFlight.weather.departure.icon)}
             </div>
-            
+
             <div className="space-y-4 text-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -597,7 +597,7 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
                 </div>
                 <strong>{currentFlight.weather.departure.temp}°F</strong>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Cloud className="w-6 h-6 mr-3 text-gray-500" />
@@ -605,7 +605,7 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
                 </div>
                 <strong>{currentFlight.weather.departure.condition}</strong>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Wind className="w-6 h-6 mr-3 text-blue-500" />
@@ -613,7 +613,7 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
                 </div>
                 <strong>{currentFlight.weather.departure.wind}</strong>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Eye className="w-6 h-6 mr-3 text-green-500" />
@@ -633,11 +633,11 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
               <p className="text-xl text-muted-foreground">{currentFlight.destination.city}</p>
               <p className="text-lg text-muted-foreground">{currentFlight.destination.airport}</p>
             </div>
-            
+
             <div className="text-center mb-6">
               {getWeatherIcon(currentFlight.weather.destination.icon)}
             </div>
-            
+
             <div className="space-y-4 text-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -646,7 +646,7 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
                 </div>
                 <strong>{currentFlight.weather.destination.temp}°F</strong>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Cloud className="w-6 h-6 mr-3 text-gray-500" />
@@ -654,7 +654,7 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
                 </div>
                 <strong>{currentFlight.weather.destination.condition}</strong>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Wind className="w-6 h-6 mr-3 text-blue-500" />
@@ -662,7 +662,7 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
                 </div>
                 <strong>{currentFlight.weather.destination.wind}</strong>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Eye className="w-6 h-6 mr-3 text-green-500" />
@@ -705,19 +705,19 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
             <div className="flex items-center">
               <Calendar className="w-6 h-6 text-muted-foreground mr-2" />
               <span className="text-lg">
-                {currentTime.toLocaleDateString('en-US', { 
-                  weekday: 'short', 
-                  month: 'short', 
-                  day: 'numeric' 
+                {currentTime.toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric'
                 })}
               </span>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-6">
             <div className="text-right">
               <div className="text-3xl font-bold">
-                {currentTime.toLocaleTimeString('en-US', { 
+                {currentTime.toLocaleTimeString('en-US', {
                   hour12: false,
                   hour: '2-digit',
                   minute: '2-digit'
@@ -725,14 +725,13 @@ export default function LobbyDisplay({ onLogout }: LobbyDisplayProps) {
               </div>
               <div className="text-sm text-muted-foreground">Local Time</div>
             </div>
-            
+
             <div className="flex space-x-2">
               {[0, 1, 2, 3].map((index) => (
                 <div
                   key={index}
-                  className={`w-3 h-3 rounded-full ${
-                    index === currentPanel ? 'bg-primary' : 'bg-muted-foreground/30'
-                  }`}
+                  className={`w-3 h-3 rounded-full ${index === currentPanel ? 'bg-primary' : 'bg-muted-foreground/30'
+                    }`}
                 />
               ))}
             </div>

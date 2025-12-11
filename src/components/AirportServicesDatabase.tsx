@@ -8,7 +8,7 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { 
+import {
   Plane,
   Plus,
   Search,
@@ -142,7 +142,7 @@ export default function AirportServicesDatabase() {
         {
           flightId: 'FO045',
           date: '2025-02-05',
-          aircraftId: 'N123AB (G650)',
+          aircraftId: 'N1PG (G650)',
           departureTime: '14:30',
           estimatedArrival: '18:45',
           serviceRequirements: ['Fuel', 'Catering', 'Ground Power']
@@ -195,7 +195,7 @@ export default function AirportServicesDatabase() {
         {
           flightId: 'FO038',
           date: '2025-02-08',
-          aircraftId: 'N456CD (G650)',
+          aircraftId: 'N5PG (G500)',
           departureTime: '09:15',
           estimatedArrival: '12:30',
           serviceRequirements: ['Fuel', 'Light Maintenance Check']
@@ -248,7 +248,7 @@ export default function AirportServicesDatabase() {
         {
           flightId: 'FO052',
           date: '2025-02-12',
-          aircraftId: 'N789EF (G650)',
+          aircraftId: 'N2PG (G650)',
           departureTime: '11:00',
           estimatedArrival: '22:30',
           serviceRequirements: ['Fuel', 'Catering', 'Customs Clearance']
@@ -271,23 +271,23 @@ export default function AirportServicesDatabase() {
   ];
 
   const filteredAirports = airports.filter(airport => {
-    const matchesSearch = 
+    const matchesSearch =
       airport.icaoCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       airport.iataCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       airport.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       airport.city.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesRegion = regionFilter === 'all' || 
+
+    const matchesRegion = regionFilter === 'all' ||
       (regionFilter === 'na' && airport.country === 'United States') ||
       (regionFilter === 'eu' && airport.country === 'United Kingdom') ||
       (regionFilter === 'asia' && ['Japan', 'China', 'Singapore'].includes(airport.country));
-    
-    const matchesRating = ratingFilter === 'all' || 
+
+    const matchesRating = ratingFilter === 'all' ||
       (ratingFilter === '5' && airport.overallRating === 5) ||
       (ratingFilter === '4' && airport.overallRating === 4) ||
       (ratingFilter === '3' && airport.overallRating === 3) ||
       (ratingFilter === '2' && airport.overallRating <= 2);
-    
+
     return matchesSearch && matchesRegion && matchesRating;
   });
 
@@ -315,9 +315,8 @@ export default function AirportServicesDatabase() {
         {[...Array(5)].map((_, i) => (
           <Star
             key={i}
-            className={`w-4 h-4 ${interactive ? 'cursor-pointer hover:text-yellow-400' : ''} ${
-              i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-            }`}
+            className={`w-4 h-4 ${interactive ? 'cursor-pointer hover:text-yellow-400' : ''} ${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+              }`}
             onClick={interactive && onChange ? () => onChange(i + 1) : undefined}
           />
         ))}
@@ -326,7 +325,7 @@ export default function AirportServicesDatabase() {
   };
 
   const hasUpcomingFlights = (airport: Airport) => {
-    return airport.upcomingFlights.some(flight => 
+    return airport.upcomingFlights.some(flight =>
       new Date(flight.date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     );
   };
@@ -379,14 +378,17 @@ export default function AirportServicesDatabase() {
       randomNotes: ''
     });
 
-    const updateServiceRating = (category: keyof typeof formData.serviceCategories, rating: number) => {
+    const updateServiceRating = (category: string, rating: number) => {
       if (formData.serviceCategories) {
+        const currentCategories = formData.serviceCategories;
+        const categoryKey = category as keyof typeof currentCategories;
+
         setFormData({
           ...formData,
           serviceCategories: {
-            ...formData.serviceCategories,
-            [category]: {
-              ...formData.serviceCategories[category],
+            ...currentCategories,
+            [categoryKey]: {
+              ...currentCategories[categoryKey],
               rating
             }
           }
@@ -404,7 +406,7 @@ export default function AirportServicesDatabase() {
             <TabsTrigger value="operations">Operations</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="basic" className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -412,7 +414,7 @@ export default function AirportServicesDatabase() {
                 <Input
                   placeholder="KJFK"
                   value={formData.icaoCode || ''}
-                  onChange={(e) => setFormData({...formData, icaoCode: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, icaoCode: e.target.value })}
                 />
               </div>
               <div>
@@ -420,7 +422,7 @@ export default function AirportServicesDatabase() {
                 <Input
                   placeholder="JFK"
                   value={formData.iataCode || ''}
-                  onChange={(e) => setFormData({...formData, iataCode: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, iataCode: e.target.value })}
                 />
               </div>
               <div>
@@ -428,7 +430,7 @@ export default function AirportServicesDatabase() {
                 <Input
                   placeholder="EST"
                   value={formData.timezone || ''}
-                  onChange={(e) => setFormData({...formData, timezone: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
                 />
               </div>
             </div>
@@ -438,7 +440,7 @@ export default function AirportServicesDatabase() {
               <Input
                 placeholder="John F. Kennedy International Airport"
                 value={formData.name || ''}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
 
@@ -448,7 +450,7 @@ export default function AirportServicesDatabase() {
                 <Input
                   placeholder="New York"
                   value={formData.city || ''}
-                  onChange={(e) => setFormData({...formData, city: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 />
               </div>
               <div>
@@ -456,7 +458,7 @@ export default function AirportServicesDatabase() {
                 <Input
                   placeholder="United States"
                   value={formData.country || ''}
-                  onChange={(e) => setFormData({...formData, country: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                 />
               </div>
             </div>
@@ -464,8 +466,8 @@ export default function AirportServicesDatabase() {
             <div>
               <Label>Overall Rating</Label>
               <div className="flex items-center gap-2">
-                {renderStarRating(formData.overallRating || 3, true, (rating) => 
-                  setFormData({...formData, overallRating: rating})
+                {renderStarRating(formData.overallRating || 3, true, (rating) =>
+                  setFormData({ ...formData, overallRating: rating })
                 )}
                 <span className="text-sm text-muted-foreground">({formData.overallRating || 3}/5)</span>
               </div>
@@ -476,7 +478,7 @@ export default function AirportServicesDatabase() {
               <Input
                 placeholder="Recommended FBO, special considerations, etc."
                 value={formData.suggestedSupport || ''}
-                onChange={(e) => setFormData({...formData, suggestedSupport: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, suggestedSupport: e.target.value })}
               />
             </div>
           </TabsContent>
@@ -492,8 +494,8 @@ export default function AirportServicesDatabase() {
                   <div>
                     <Label>Rating</Label>
                     <div className="flex items-center gap-2">
-                      {renderStarRating(category.rating, true, (rating) => 
-                        updateServiceRating(key as keyof typeof formData.serviceCategories, rating)
+                      {renderStarRating(category.rating, true, (rating) =>
+                        updateServiceRating(key as any, rating)
                       )}
                       <span className="text-sm text-muted-foreground">({category.rating}/5)</span>
                     </div>
@@ -557,8 +559,8 @@ export default function AirportServicesDatabase() {
                     placeholder="24/7 or 06:00-22:00"
                     value={formData.operatingHours?.standard || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      operatingHours: {...formData.operatingHours, standard: e.target.value}
+                      ...formData,
+                      operatingHours: { weekend: '', emergency: '', ...(formData.operatingHours || {}), standard: e.target.value }
                     })}
                   />
                 </div>
@@ -568,8 +570,8 @@ export default function AirportServicesDatabase() {
                     placeholder="24/7 or 08:00-20:00"
                     value={formData.operatingHours?.weekend || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      operatingHours: {...formData.operatingHours, weekend: e.target.value}
+                      ...formData,
+                      operatingHours: { standard: '', emergency: '', ...(formData.operatingHours || {}), weekend: e.target.value }
                     })}
                   />
                 </div>
@@ -579,8 +581,8 @@ export default function AirportServicesDatabase() {
                     placeholder="24/7 or On-call"
                     value={formData.operatingHours?.emergency || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      operatingHours: {...formData.operatingHours, emergency: e.target.value}
+                      ...formData,
+                      operatingHours: { standard: '', weekend: '', ...(formData.operatingHours || {}), emergency: e.target.value }
                     })}
                   />
                 </div>
@@ -596,8 +598,8 @@ export default function AirportServicesDatabase() {
                     placeholder="$8.50/1000 lbs"
                     value={formData.fees?.landing || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      fees: {...formData.fees, landing: e.target.value}
+                      ...formData,
+                      fees: { parking: '', handling: '', fuel: '', ...(formData.fees || {}), landing: e.target.value }
                     })}
                   />
                 </div>
@@ -607,8 +609,8 @@ export default function AirportServicesDatabase() {
                     placeholder="$15/day"
                     value={formData.fees?.parking || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      fees: {...formData.fees, parking: e.target.value}
+                      ...formData,
+                      fees: { landing: '', handling: '', fuel: '', ...(formData.fees || {}), parking: e.target.value }
                     })}
                   />
                 </div>
@@ -618,8 +620,8 @@ export default function AirportServicesDatabase() {
                     placeholder="$125 flat"
                     value={formData.fees?.handling || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      fees: {...formData.fees, handling: e.target.value}
+                      ...formData,
+                      fees: { landing: '', parking: '', fuel: '', ...(formData.fees || {}), handling: e.target.value }
                     })}
                   />
                 </div>
@@ -629,8 +631,8 @@ export default function AirportServicesDatabase() {
                     placeholder="Market + $0.25"
                     value={formData.fees?.fuel || ''}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      fees: {...formData.fees, fuel: e.target.value}
+                      ...formData,
+                      fees: { landing: '', parking: '', handling: '', ...(formData.fees || {}), fuel: e.target.value }
                     })}
                   />
                 </div>
@@ -643,7 +645,7 @@ export default function AirportServicesDatabase() {
                 placeholder="Slot controlled, Noise restrictions, etc. (comma separated)"
                 value={formData.restrictions?.join(', ') || ''}
                 onChange={(e) => setFormData({
-                  ...formData, 
+                  ...formData,
                   restrictions: e.target.value.split(',').map(s => s.trim()).filter(s => s)
                 })}
               />
@@ -657,7 +659,7 @@ export default function AirportServicesDatabase() {
                 rows={8}
                 placeholder="Any additional information, special considerations, tips, warnings, local knowledge, etc..."
                 value={formData.randomNotes || ''}
-                onChange={(e) => setFormData({...formData, randomNotes: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, randomNotes: e.target.value })}
               />
             </div>
           </TabsContent>
@@ -678,7 +680,7 @@ export default function AirportServicesDatabase() {
           <h1>Airport Services Database</h1>
           <p className="text-muted-foreground">Star-rated airport services tracking for G650 operations</p>
         </div>
-        
+
         <Dialog open={isAddingAirport} onOpenChange={setIsAddingAirport}>
           <DialogTrigger asChild>
             <Button>
@@ -798,7 +800,7 @@ export default function AirportServicesDatabase() {
                 />
               </div>
             </div>
-            
+
             <Select value={regionFilter} onValueChange={setRegionFilter}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by region" />
@@ -837,16 +839,16 @@ export default function AirportServicesDatabase() {
             <CardContent>
               <div className="space-y-4">
                 {filteredAirports.map((airport) => (
-                  <Card 
-                    key={airport.id} 
-                    className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${needsUrgentReview(airport) 
-                      ? 'border-red-500 border-2 bg-red-50' 
+                  <Card
+                    key={airport.id}
+                    className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${needsUrgentReview(airport)
+                      ? 'border-red-500 border-2 bg-red-50'
                       : airport.reviewInfo.reviewStatus === 'Overdue'
                         ? 'border-red-300 border-2 bg-red-50'
                         : airport.reviewInfo.reviewStatus === 'Due Soon'
                           ? 'border-yellow-300 border-2 bg-yellow-50'
                           : ''
-                    }`}
+                      }`}
                     onClick={() => setSelectedAirport(airport)}
                   >
                     <div className="flex items-start justify-between">
@@ -943,7 +945,7 @@ export default function AirportServicesDatabase() {
                                 Update airport services, star ratings, and operational information.
                               </DialogDescription>
                             </DialogHeader>
-                            <AirportForm airport={airport} onClose={() => {}} />
+                            <AirportForm airport={airport} onClose={() => { }} />
                           </DialogContent>
                         </Dialog>
                       </div>
@@ -1008,7 +1010,7 @@ export default function AirportServicesDatabase() {
                     <TabsTrigger value="operations">Operations</TabsTrigger>
                     <TabsTrigger value="notes">Notes</TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="services" className="space-y-3">
                     <div>
                       <Label className="text-xs">Location</Label>

@@ -11,11 +11,11 @@ import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { 
+import {
   Utensils,
-  Plane, 
-  Users, 
-  Search, 
+  Plane,
+  Users,
+  Search,
   Calendar,
   Clock,
   MapPin,
@@ -124,7 +124,7 @@ export default function CateringOrders() {
       arrivalTime: '13:30',
       departureAirport: 'LAX',
       arrivalAirport: 'JFK',
-      aircraft: 'N123AB',
+      aircraft: 'N1PG',
       passengerIds: ['PAX001', 'PAX002'],
       cateringDetails: {
         caterer: 'Sky Gourmet',
@@ -196,7 +196,7 @@ export default function CateringOrders() {
       arrivalTime: '18:30',
       departureAirport: 'JFK',
       arrivalAirport: 'MIA',
-      aircraft: 'N123AB',
+      aircraft: 'N1PG',
       passengerIds: ['PAX003'],
       cateringDetails: {
         caterer: 'Metropolitan Catering',
@@ -245,7 +245,7 @@ export default function CateringOrders() {
       arrivalTime: '16:15',
       departureAirport: 'MIA',
       arrivalAirport: 'LAX',
-      aircraft: 'N456CD',
+      aircraft: 'N5PG',
       passengerIds: ['PAX001', 'PAX004'],
       cateringDetails: {
         caterer: 'Elite Catering Solutions',
@@ -310,17 +310,17 @@ export default function CateringOrders() {
       lastName: 'Johnson',
       vipLevel: 'VVIP',
       allergies: [
-        { 
-          allergen: 'Shellfish', 
-          severity: 'Critical', 
-          reaction: 'Anaphylaxis', 
-          medication: 'EpiPen - seat pocket' 
+        {
+          allergen: 'Shellfish',
+          severity: 'Critical',
+          reaction: 'Anaphylaxis',
+          medication: 'EpiPen - seat pocket'
         },
-        { 
-          allergen: 'Tree nuts', 
-          severity: 'Moderate', 
-          reaction: 'Hives, swelling', 
-          medication: 'Benadryl' 
+        {
+          allergen: 'Tree nuts',
+          severity: 'Moderate',
+          reaction: 'Hives, swelling',
+          medication: 'Benadryl'
         }
       ],
       dietaryRestrictions: ['Gluten-free', 'No shellfish'],
@@ -355,11 +355,11 @@ export default function CateringOrders() {
       lastName: 'Rodriguez',
       vipLevel: 'Standard',
       allergies: [
-        { 
-          allergen: 'Peanuts', 
-          severity: 'Critical', 
-          reaction: 'Severe breathing difficulty', 
-          medication: 'EpiPen required immediately' 
+        {
+          allergen: 'Peanuts',
+          severity: 'Critical',
+          reaction: 'Severe breathing difficulty',
+          medication: 'EpiPen required immediately'
         }
       ],
       dietaryRestrictions: ['Keto diet'],
@@ -378,17 +378,17 @@ export default function CateringOrders() {
       lastName: 'Watson',
       vipLevel: 'VIP',
       allergies: [
-        { 
-          allergen: 'Bee stings', 
-          severity: 'Moderate', 
-          reaction: 'Localized swelling', 
-          medication: 'Antihistamine' 
+        {
+          allergen: 'Bee stings',
+          severity: 'Moderate',
+          reaction: 'Localized swelling',
+          medication: 'Antihistamine'
         },
-        { 
-          allergen: 'Latex', 
-          severity: 'Mild', 
-          reaction: 'Skin irritation', 
-          medication: 'Avoid latex gloves' 
+        {
+          allergen: 'Latex',
+          severity: 'Mild',
+          reaction: 'Skin irritation',
+          medication: 'Avoid latex gloves'
         }
       ],
       dietaryRestrictions: ['Lactose intolerant'],
@@ -405,18 +405,18 @@ export default function CateringOrders() {
 
   // Filter orders based on search and filters
   const filteredOrders = cateringOrders.filter(order => {
-    const matchesSearch = 
+    const matchesSearch =
       order.flightNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.departureAirport.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.arrivalAirport.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.cateringDetails.caterer.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesAirport = airportFilter === 'all' || 
-      order.departureAirport === airportFilter || 
+
+    const matchesAirport = airportFilter === 'all' ||
+      order.departureAirport === airportFilter ||
       order.arrivalAirport === airportFilter;
-    
+
     const matchesStatus = statusFilter === 'all' || order.cateringDetails.status === statusFilter;
-    
+
     return matchesSearch && matchesAirport && matchesStatus;
   });
 
@@ -471,7 +471,7 @@ export default function CateringOrders() {
   };
 
   const hasAllergies = (order: CateringOrder) => order.allergyAlerts.length > 0;
-  const hasCriticalAllergies = (order: CateringOrder) => 
+  const hasCriticalAllergies = (order: CateringOrder) =>
     order.allergyAlerts.some(alert => alert.severity === 'Critical');
 
   return (
@@ -503,7 +503,7 @@ export default function CateringOrders() {
                 />
               </div>
             </div>
-            
+
             <Select value={airportFilter} onValueChange={setAirportFilter}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by airport" />
@@ -597,11 +597,11 @@ export default function CateringOrders() {
         {filteredOrders.map((order) => {
           const flightPassengers = getFlightPassengers(order);
           const isExpanded = expandedFlight === order.id;
-          
+
           return (
             <Card key={order.id} className="overflow-hidden">
-              <Collapsible 
-                open={isExpanded} 
+              <Collapsible
+                open={isExpanded}
                 onOpenChange={() => setExpandedFlight(isExpanded ? null : order.id)}
               >
                 <CollapsibleTrigger asChild>
@@ -671,7 +671,7 @@ export default function CateringOrders() {
                 <CollapsibleContent>
                   <CardContent className="pt-0">
                     <Separator className="mb-6" />
-                    
+
                     {/* Catering Details */}
                     <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                       <div className="flex items-center justify-between mb-3">
@@ -815,7 +815,7 @@ export default function CateringOrders() {
                       {flightPassengers.map((passenger) => {
                         const passengerAllergies = order.allergyAlerts.filter(alert => alert.passengerId === passenger.id);
                         const passengerDietary = order.dietaryRequirements.find(req => req.passengerId === passenger.id);
-                        
+
                         return (
                           <Card key={passenger.id} className="p-4">
                             <div className="flex items-start justify-between">
@@ -879,8 +879,8 @@ export default function CateringOrders() {
 
                               <Dialog>
                                 <DialogTrigger asChild>
-                                  <Button 
-                                    variant="outline" 
+                                  <Button
+                                    variant="outline"
                                     size="sm"
                                     onClick={() => setSelectedPassenger(passenger)}
                                   >
@@ -897,7 +897,7 @@ export default function CateringOrders() {
                                       Complete food and beverage preferences for catering preparation
                                     </DialogDescription>
                                   </DialogHeader>
-                                  
+
                                   <div className="space-y-4">
                                     {/* Critical Allergy Warning */}
                                     {passenger.allergies.some(a => a.severity === 'Critical') && (
@@ -923,7 +923,7 @@ export default function CateringOrders() {
                                         <TabsTrigger value="preferences">Food Preferences</TabsTrigger>
                                         <TabsTrigger value="restrictions">Restrictions & Allergies</TabsTrigger>
                                       </TabsList>
-                                      
+
                                       <TabsContent value="preferences" className="space-y-4">
                                         <div className="space-y-3">
                                           <div>
@@ -934,7 +934,7 @@ export default function CateringOrders() {
                                               ))}
                                             </div>
                                           </div>
-                                          
+
                                           <div>
                                             <Label className="text-xs">Favorite Dishes</Label>
                                             <div className="text-sm space-y-1">
@@ -994,15 +994,14 @@ export default function CateringOrders() {
                                             <Label className="text-xs text-red-600 font-semibold">⚠️ ALLERGIES - CATERING CRITICAL</Label>
                                             <div className="space-y-2 mt-2">
                                               {passenger.allergies.map((allergy, i) => (
-                                                <div 
-                                                  key={i} 
-                                                  className={`p-3 rounded border ${
-                                                    allergy.severity === 'Critical' 
-                                                      ? 'bg-red-100 border-red-300' 
+                                                <div
+                                                  key={i}
+                                                  className={`p-3 rounded border ${allergy.severity === 'Critical'
+                                                      ? 'bg-red-100 border-red-300'
                                                       : allergy.severity === 'Moderate'
                                                         ? 'bg-orange-100 border-orange-300'
                                                         : 'bg-yellow-100 border-yellow-300'
-                                                  }`}
+                                                    }`}
                                                 >
                                                   <div className="flex items-center gap-2 mb-2">
                                                     <Badge className={getAllergySeverityColor(allergy.severity)}>

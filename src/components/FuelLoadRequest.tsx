@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
+import {
   Fuel,
   Plane,
   Calendar,
@@ -70,8 +70,8 @@ export default function FuelLoadRequest() {
       time: '08:00',
       departure: 'KTEB',
       arrival: 'KPBI',
-      aircraft: 'Citation X',
-      tailNumber: 'N123AB',
+      aircraft: 'Gulfstream G650',
+      tailNumber: 'N1PG',
       flightNumber: 'FLT001',
       estimatedFlightTime: '2h 15m',
       pax: 8
@@ -83,7 +83,7 @@ export default function FuelLoadRequest() {
       departure: 'KPBI',
       arrival: 'KIAH',
       aircraft: 'Gulfstream G650',
-      tailNumber: 'N456CD',
+      tailNumber: 'N2PG',
       flightNumber: 'FLT002',
       estimatedFlightTime: '2h 45m',
       pax: 12
@@ -94,8 +94,8 @@ export default function FuelLoadRequest() {
       time: '09:15',
       departure: 'KIAH',
       arrival: 'KBOS',
-      aircraft: 'Citation X',
-      tailNumber: 'N789EF',
+      aircraft: 'Gulfstream G500',
+      tailNumber: 'N5PG',
       flightNumber: 'FLT003',
       estimatedFlightTime: '3h 20m',
       pax: 6
@@ -106,8 +106,8 @@ export default function FuelLoadRequest() {
       time: '16:00',
       departure: 'KBOS',
       arrival: 'KTEB',
-      aircraft: 'Gulfstream G650',
-      tailNumber: 'N101GH',
+      aircraft: 'Gulfstream G500',
+      tailNumber: 'N6PG',
       flightNumber: 'FLT004',
       estimatedFlightTime: '1h 45m',
       pax: 10
@@ -161,10 +161,10 @@ export default function FuelLoadRequest() {
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
       });
     } catch (error) {
       return dateString;
@@ -206,7 +206,7 @@ export default function FuelLoadRequest() {
     if (!selectedFlight || !fuelAmount) {
       return;
     }
-    
+
     // Here you would submit the fuel request
     console.log({
       flightId: selectedFlight.id,
@@ -214,7 +214,7 @@ export default function FuelLoadRequest() {
       priority,
       notes
     });
-    
+
     // Reset form
     setSelectedFlight(null);
     setFuelAmount('');
@@ -256,7 +256,7 @@ export default function FuelLoadRequest() {
               {/* Flight Selection */}
               <div>
                 <Label>Select Flight</Label>
-                <Select onValueChange={(value) => {
+                <Select onValueChange={(value: string) => {
                   const flight = upcomingFlights.find(f => f.id === value);
                   setSelectedFlight(flight || null);
                 }}>
@@ -300,9 +300,9 @@ export default function FuelLoadRequest() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <Label>Fuel Amount (thousands of pounds)</Label>
-                      <Input 
-                        type="number" 
-                        placeholder="e.g., 4.2" 
+                      <Input
+                        type="number"
+                        placeholder="e.g., 4.2"
                         step="0.1"
                         value={fuelAmount}
                         onChange={(e) => setFuelAmount(e.target.value)}
@@ -325,10 +325,10 @@ export default function FuelLoadRequest() {
                       </Select>
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label>Additional Notes</Label>
-                    <Textarea 
+                    <Textarea
                       placeholder="Any additional information for maintenance team..."
                       rows={4}
                       value={notes}
@@ -337,7 +337,7 @@ export default function FuelLoadRequest() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button 
+                    <Button
                       className="flex-1"
                       onClick={handleSubmit}
                       disabled={!fuelAmount}
@@ -345,8 +345,8 @@ export default function FuelLoadRequest() {
                       <Send className="w-4 h-4 mr-2" />
                       Submit Fuel Request
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => {
                         setSelectedFlight(null);
                         setFuelAmount('');
@@ -380,7 +380,7 @@ export default function FuelLoadRequest() {
                 {upcomingFlights.map((flight) => {
                   const hasRequest = fuelLoadRequests.some(req => req.flightId === flight.id);
                   const request = fuelLoadRequests.find(req => req.flightId === flight.id);
-                  
+
                   return (
                     <Card key={flight.id} className="p-4">
                       <div className="flex justify-between items-start">
@@ -426,7 +426,7 @@ export default function FuelLoadRequest() {
                         </div>
                         <div className="flex gap-2">
                           {!hasRequest ? (
-                            <Button 
+                            <Button
                               size="sm"
                               onClick={() => {
                                 setSelectedFlight(flight);

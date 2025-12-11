@@ -14,19 +14,19 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Alert, AlertDescription } from './ui/alert';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { toast } from "sonner";
-import { 
-  AlertTriangle, 
-  Plus, 
-  Send, 
-  Paperclip, 
-  Image, 
-  Clock, 
-  Users, 
-  Plane, 
-  MessageSquare, 
-  Bell, 
-  CheckCircle, 
-  XCircle, 
+import {
+  AlertTriangle,
+  Plus,
+  Send,
+  Paperclip,
+  Image,
+  Clock,
+  Users,
+  Plane,
+  MessageSquare,
+  Bell,
+  CheckCircle,
+  XCircle,
   Settings,
   Calendar,
   Mail,
@@ -114,8 +114,8 @@ export default function AOGManagement() {
         id: 'AOG-001',
         flightNumber: 'PJ 1001',
         aircraft: {
-          registration: 'N123AB',
-          type: 'Citation CJ3+',
+          registration: 'N1PG',
+          type: 'Gulfstream G650',
           location: 'KBOS - Boston Logan'
         },
         status: 'Active',
@@ -182,8 +182,8 @@ export default function AOGManagement() {
         id: 'AOG-002',
         flightNumber: 'PJ 1003',
         aircraft: {
-          registration: 'N789EF',
-          type: 'King Air 350i',
+          registration: 'N2PG',
+          type: 'Gulfstream G650',
           location: 'KDCA - Washington Reagan'
         },
         status: 'In Progress',
@@ -220,17 +220,17 @@ export default function AOGManagement() {
 
   // Mock flights for selection
   const availableFlights = [
-    { id: 'PJ1001', number: 'PJ 1001', aircraft: 'N123AB - Citation CJ3+', route: 'KBOS → KMIA' },
-    { id: 'PJ1002', number: 'PJ 1002', aircraft: 'N456CD - Phenom 300E', route: 'KTEB → KORD' },
-    { id: 'PJ1003', number: 'PJ 1003', aircraft: 'N789EF - King Air 350i', route: 'KDCA → KATL' },
-    { id: 'PJ1004', number: 'PJ 1004', aircraft: 'N901GH - Citation Latitude', route: 'KLAS → KJFK' },
-    { id: 'PJ1005', number: 'PJ 1005', aircraft: 'N234IJ - Hawker 900XP', route: 'KPHX → KDEN' }
+    { id: 'PJ1001', number: 'PJ 1001', aircraft: 'N1PG - Gulfstream G650', route: 'KBOS → KMIA' },
+    { id: 'PJ1002', number: 'PJ 1002', aircraft: 'N5PG - Gulfstream G500', route: 'KTEB → KORD' },
+    { id: 'PJ1003', number: 'PJ 1003', aircraft: 'N2PG - Gulfstream G650', route: 'KDCA → KATL' },
+    { id: 'PJ1004', number: 'PJ 1004', aircraft: 'N6PG - Gulfstream G500', route: 'KLAS → KJFK' },
+    { id: 'PJ1005', number: 'PJ 1005', aircraft: 'N1PG - Gulfstream G650', route: 'KPHX → KDEN' }
   ];
 
   // Mock teams and individuals
   const availableTeams = [
     'Maintenance',
-    'Scheduling', 
+    'Scheduling',
     'Safety',
     'Operations',
     'Dispatch',
@@ -239,7 +239,7 @@ export default function AOGManagement() {
 
   const availableIndividuals = [
     'Mike Johnson - Lead Mechanic',
-    'Lisa Chen - Parts Manager', 
+    'Lisa Chen - Parts Manager',
     'David Brown - Avionics Tech',
     'Sarah Williams - Inspector',
     'Tom Anderson - Scheduler',
@@ -277,7 +277,7 @@ export default function AOGManagement() {
 
   const handleSendMessage = () => {
     if (!newMessage.trim() || !selectedIncident) return;
-    
+
     const message: ChatMessage = {
       id: `msg-${Date.now()}`,
       timestamp: new Date(),
@@ -286,9 +286,9 @@ export default function AOGManagement() {
       type: 'message'
     };
 
-    setAOGIncidents(prev => 
-      prev.map(incident => 
-        incident.id === selectedIncident.id 
+    setAOGIncidents(prev =>
+      prev.map(incident =>
+        incident.id === selectedIncident.id
           ? { ...incident, chatMessages: [...incident.chatMessages, message] }
           : incident
       )
@@ -300,7 +300,7 @@ export default function AOGManagement() {
 
   const handleAddUpdate = () => {
     if (!newUpdate.trim() || !selectedIncident) return;
-    
+
     const update: AOGUpdate = {
       id: `update-${Date.now()}`,
       timestamp: new Date(),
@@ -309,9 +309,9 @@ export default function AOGManagement() {
       content: newUpdate
     };
 
-    setAOGIncidents(prev => 
-      prev.map(incident => 
-        incident.id === selectedIncident.id 
+    setAOGIncidents(prev =>
+      prev.map(incident =>
+        incident.id === selectedIncident.id
           ? { ...incident, updates: [...incident.updates, update] }
           : incident
       )
@@ -336,7 +336,7 @@ export default function AOGManagement() {
             Report an aircraft issue and notify the appropriate teams
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -358,7 +358,7 @@ export default function AOGManagement() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="priority">Priority Level</Label>
               <Select defaultValue="medium">
@@ -374,7 +374,7 @@ export default function AOGManagement() {
               </Select>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="description">Issue Description</Label>
             <Textarea
@@ -383,7 +383,7 @@ export default function AOGManagement() {
               className="min-h-[100px]"
             />
           </div>
-          
+
           <div className="space-y-4">
             <div>
               <Label>Notify Teams</Label>
@@ -396,7 +396,7 @@ export default function AOGManagement() {
                 ))}
               </div>
             </div>
-            
+
             <div>
               <Label>Notify Individuals</Label>
               <div className="space-y-2 mt-2">
@@ -409,7 +409,7 @@ export default function AOGManagement() {
               </div>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="reminder">Reminder Interval (minutes)</Label>
             <Select defaultValue="30">
@@ -425,7 +425,7 @@ export default function AOGManagement() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <Label>Attach Photos/Documents</Label>
             <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
@@ -434,7 +434,7 @@ export default function AOGManagement() {
               <input type="file" multiple accept="image/*,.pdf,.doc,.docx" className="hidden" />
             </div>
           </div>
-          
+
           <div className="flex space-x-2">
             <Button onClick={handleCreateAOG} className="flex-1">
               <AlertTriangle className="w-4 h-4 mr-2" />
@@ -474,7 +474,7 @@ export default function AOGManagement() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -488,7 +488,7 @@ export default function AOGManagement() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -500,7 +500,7 @@ export default function AOGManagement() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -531,10 +531,10 @@ export default function AOGManagement() {
             ) : (
               aogIncidents.map(incident => (
                 <Card key={incident.id} className="cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => {
-                        setSelectedIncident(incident);
-                        setActiveTab('details');
-                      }}>
+                  onClick={() => {
+                    setSelectedIncident(incident);
+                    setActiveTab('details');
+                  }}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
@@ -547,7 +547,7 @@ export default function AOGManagement() {
                           </Badge>
                           <span className="font-medium">{incident.id}</span>
                         </div>
-                        
+
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <div className="flex items-center">
                             <Plane className="w-4 h-4 mr-1" />
@@ -562,9 +562,9 @@ export default function AOGManagement() {
                             {incident.initiatedAt.toLocaleTimeString()}
                           </div>
                         </div>
-                        
+
                         <p className="text-sm">{incident.description}</p>
-                        
+
                         <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                           <span>Initiated by: {incident.initiatedBy}</span>
                           <span>Teams: {incident.assignedTeams.join(', ')}</span>
@@ -572,7 +572,7 @@ export default function AOGManagement() {
                           <span>Messages: {incident.chatMessages.length}</span>
                         </div>
                       </div>
-                      
+
                       <div className="text-right space-y-2">
                         {incident.estimatedResolution && (
                           <div className="text-sm">
@@ -641,7 +641,7 @@ export default function AOGManagement() {
             <TabsTrigger value="attachments">Files</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
@@ -653,7 +653,7 @@ export default function AOGManagement() {
                     <Label>Description</Label>
                     <p className="text-sm mt-1">{selectedIncident.description}</p>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Aircraft</Label>
@@ -664,7 +664,7 @@ export default function AOGManagement() {
                       <p className="text-sm mt-1">{selectedIncident.aircraft.location}</p>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Initiated By</Label>
@@ -675,7 +675,7 @@ export default function AOGManagement() {
                       <p className="text-sm mt-1">{selectedIncident.initiatedAt.toLocaleString()}</p>
                     </div>
                   </div>
-                  
+
                   {selectedIncident.estimatedResolution && (
                     <div>
                       <Label>Estimated Resolution</Label>
@@ -684,7 +684,7 @@ export default function AOGManagement() {
                   )}
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle>Assigned Personnel</CardTitle>
@@ -701,7 +701,7 @@ export default function AOGManagement() {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label>Individuals</Label>
                     <div className="space-y-2 mt-2">
@@ -713,7 +713,7 @@ export default function AOGManagement() {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label>Reminder Settings</Label>
                     <div className="flex items-center space-x-2 mt-2">
@@ -724,7 +724,7 @@ export default function AOGManagement() {
                 </CardContent>
               </Card>
             </div>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Add Status Update</CardTitle>
@@ -757,7 +757,7 @@ export default function AOGManagement() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="communication" className="space-y-6">
             <Card>
               <CardHeader>
@@ -794,7 +794,7 @@ export default function AOGManagement() {
                     ))}
                   </div>
                 </ScrollArea>
-                
+
                 <div className="flex space-x-2">
                   <Input
                     value={newMessage}
@@ -813,7 +813,7 @@ export default function AOGManagement() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="attachments" className="space-y-6">
             <Card>
               <CardHeader>
@@ -879,9 +879,9 @@ export default function AOGManagement() {
                       ))}
                     </div>
                   )}
-                  
+
                   <Separator />
-                  
+
                   <div className="space-y-2">
                     <Label>Upload New Files</Label>
                     <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
@@ -897,7 +897,7 @@ export default function AOGManagement() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="timeline" className="space-y-6">
             <Card>
               <CardHeader>
@@ -927,7 +927,7 @@ export default function AOGManagement() {
                       <p className="text-sm mt-2">{selectedIncident.description}</p>
                     </div>
                   </div>
-                  
+
                   {/* Updates */}
                   {selectedIncident.updates.map((update, index) => (
                     <div key={update.id} className="flex space-x-4">
@@ -969,11 +969,11 @@ export default function AOGManagement() {
           <TabsTrigger value="dashboard">AOG Dashboard</TabsTrigger>
           <TabsTrigger value="details">Incident Details</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="dashboard">
           <AOGDashboard />
         </TabsContent>
-        
+
         <TabsContent value="details">
           <AOGDetails />
         </TabsContent>

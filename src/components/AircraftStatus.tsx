@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 export default function AircraftStatus() {
-  const { aircraftPositions, aircraftStatuses, loading, error } = useSatcomDirect();
+  const { aircraftPositions, aircraftStatuses, loading, isRefreshing, error } = useSatcomDirect();
 
   // Filter flights by status (currently showing all)
   const [filter, setFilter] = React.useState('all');
@@ -112,6 +112,7 @@ export default function AircraftStatus() {
           <h1 className="flex items-center gap-3">
             <Plane className="w-8 h-8 text-blue-600" />
             Aircraft Status
+            {isRefreshing && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground ml-2" />}
           </h1>
           <p className="text-muted-foreground mt-2">
             Comprehensive fleet monitoring with flight, service, and cleaning status

@@ -41,6 +41,7 @@ export const useFlightNASImpact = () => {
     estimatedTotalDelay: 0
   });
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Mock flight schedule data - in real app this would come from flight planning system
@@ -183,7 +184,7 @@ export const useFlightNASImpact = () => {
         {
           facility: 'ZNY ARTCC Sector 12',
           type: 'Radar' as const,
-          status: 'Limited' as const,
+          status: 'Limited' as 'Limited' | 'Out of Service',
           impact: 'Reduced capacity in NY approach airspace',
           startTime: '12:45',
           affectedAirports: ['JFK', 'LGA', 'EWR']
@@ -303,13 +304,17 @@ export const useFlightNASImpact = () => {
     };
   }, []);
 
-  const fetchFlightImpacts = useCallback(async () => {
+  const fetchFlightImpacts = useCallback(async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate API call delay - reduced
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const impacts = analyzeFlightImpacts();
       setImpactData(impacts);
@@ -317,22 +322,24 @@ export const useFlightNASImpact = () => {
       setError(err instanceof Error ? err.message : 'Failed to analyze flight impacts');
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, [analyzeFlightImpacts]);
 
   useEffect(() => {
-    fetchFlightImpacts();
+    fetchFlightImpacts(true);
 
     // Refresh every 5 minutes
-    const interval = setInterval(fetchFlightImpacts, 5 * 60 * 1000);
+    const interval = setInterval(() => fetchFlightImpacts(false), 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [fetchFlightImpacts]);
 
   return {
     impactData,
     loading,
+    isRefreshing,
     error,
-    refetch: fetchFlightImpacts
+    refetch: () => fetchFlightImpacts(false)
   };
 };
 

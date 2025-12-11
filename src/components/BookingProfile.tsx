@@ -10,18 +10,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Separator } from './ui/separator';
 import { Alert, AlertDescription } from './ui/alert';
 import { toast } from "sonner";
-import { 
-  Plus, 
-  Calendar, 
-  Users, 
-  Clock, 
-  MessageSquare, 
-  Send, 
-  CheckCircle, 
-  Plane, 
-  Hotel, 
-  Car, 
-  Building, 
+import {
+  Plus,
+  Calendar,
+  Users,
+  Clock,
+  MessageSquare,
+  Send,
+  CheckCircle,
+  Plane,
+  Hotel,
+  Car,
+  Building,
   Coffee,
   X,
   Mail,
@@ -123,10 +123,10 @@ export default function BookingProfile() {
   const [filter, setFilter] = useState<'all' | 'requested' | 'approved' | 'in-progress' | 'completed'>('all');
   const [outlookEvents, setOutlookEvents] = useState<OutlookEvent[]>([]);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
-  const [newPassengerEmails, setNewPassengerEmails] = useState<{[key: string]: string}>({});
-  const [newMessages, setNewMessages] = useState<{[key: string]: string}>({});
-  const [newItineraryItems, setNewItineraryItems] = useState<{[key: string]: any}>({});
-  
+  const [newPassengerEmails, setNewPassengerEmails] = useState<{ [key: string]: string }>({});
+  const [newMessages, setNewMessages] = useState<{ [key: string]: string }>({});
+  const [newItineraryItems, setNewItineraryItems] = useState<{ [key: string]: any }>({});
+
   const [newTrip, setNewTrip] = useState({
     tripName: '',
     clientName: '',
@@ -195,7 +195,7 @@ export default function BookingProfile() {
           },
           {
             id: 'm2', sender: 'Mike Johnson', senderRole: 'scheduling',
-            content: 'Gulfstream G650 (N123AB) confirmed and ready. All systems go!',
+            content: 'Gulfstream G650 (N1PG) confirmed and ready. All systems go!',
             timestamp: new Date('2025-01-26T14:15:00'), isRead: true
           }
         ],
@@ -320,17 +320,17 @@ export default function BookingProfile() {
   const getTripsForDay = (day: Date) => {
     return trips.filter(trip => {
       if (filter !== 'all' && trip.status !== filter) return false;
-      
+
       const tripStart = new Date(trip.departureDate);
       const tripEnd = new Date(trip.returnDate);
-      
+
       return day >= new Date(tripStart.getFullYear(), tripStart.getMonth(), tripStart.getDate()) &&
-             day <= new Date(tripEnd.getFullYear(), tripEnd.getMonth(), tripEnd.getDate());
+        day <= new Date(tripEnd.getFullYear(), tripEnd.getMonth(), tripEnd.getDate());
     });
   };
 
   const getOutlookEventsForDay = (day: Date) => {
-    return outlookEvents.filter(event => 
+    return outlookEvents.filter(event =>
       isSameDay(event.start, day)
     );
   };
@@ -338,7 +338,7 @@ export default function BookingProfile() {
   const handleTripClick = (trip: Trip) => {
     setSelectedTrip(trip);
     setIsFloatingCardOpen(true);
-    toast(`Opening ${trip.tripName}`, { 
+    toast(`Opening ${trip.tripName}`, {
       description: "Managing trip details and itinerary",
       duration: 2000
     });
@@ -373,16 +373,16 @@ export default function BookingProfile() {
       formCompleted: !!existingPassenger
     };
 
-    setTrips(trips.map(trip => 
-      trip.id === tripId 
+    setTrips(trips.map(trip =>
+      trip.id === tripId
         ? { ...trip, passengers: [...trip.passengers, passenger] }
         : trip
     ));
 
-    setNewPassengerEmails({...newPassengerEmails, [tripId]: ''});
-    
+    setNewPassengerEmails({ ...newPassengerEmails, [tripId]: '' });
+
     toast(existingPassenger ? "Passenger added from database" : "Passenger added - form sent", {
-      description: existingPassenger 
+      description: existingPassenger
         ? `${passenger.name} was found in the database`
         : `Passenger information form sent to ${email}`
     });
@@ -397,8 +397,8 @@ export default function BookingProfile() {
   };
 
   const handleRemovePassenger = (tripId: string, passengerId: string) => {
-    setTrips(trips.map(trip => 
-      trip.id === tripId 
+    setTrips(trips.map(trip =>
+      trip.id === tripId
         ? { ...trip, passengers: trip.passengers.filter(p => p.id !== passengerId) }
         : trip
     ));
@@ -432,13 +432,13 @@ export default function BookingProfile() {
 
     const updatedItinerary = [...trips.find(t => t.id === tripId)!.itinerary, item].sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
-    setTrips(trips.map(trip => 
-      trip.id === tripId 
+    setTrips(trips.map(trip =>
+      trip.id === tripId
         ? { ...trip, itinerary: updatedItinerary }
         : trip
     ));
 
-    setNewItineraryItems({...newItineraryItems, [tripId]: {}});
+    setNewItineraryItems({ ...newItineraryItems, [tripId]: {} });
     toast("Itinerary item added", { description: `${item.title} added to itinerary` });
 
     // Update selected trip if it's the same one
@@ -463,13 +463,13 @@ export default function BookingProfile() {
       isRead: true
     };
 
-    setTrips(trips.map(trip => 
-      trip.id === tripId 
+    setTrips(trips.map(trip =>
+      trip.id === tripId
         ? { ...trip, messages: [...trip.messages, newMessageObj] }
         : trip
     ));
 
-    setNewMessages({...newMessages, [tripId]: ''});
+    setNewMessages({ ...newMessages, [tripId]: '' });
     toast("Message sent", { description: "Your message has been sent to scheduling" });
 
     // Update selected trip if it's the same one
@@ -522,7 +522,7 @@ export default function BookingProfile() {
 
   const handleImportOutlook = async () => {
     toast("Importing from Outlook...", { description: "Connecting to Microsoft Graph API" });
-    
+
     setTimeout(() => {
       const importedEvent: OutlookEvent = {
         id: `outlook-${Date.now()}`,
@@ -534,7 +534,7 @@ export default function BookingProfile() {
         body: 'Imported from Outlook calendar',
         isAllDay: false
       };
-      
+
       setOutlookEvents([...outlookEvents, importedEvent]);
       setIsImportOpen(false);
       toast("Import successful", { description: "Calendar events imported from Outlook" });
@@ -546,7 +546,7 @@ export default function BookingProfile() {
     const endDate = format(trip.returnDate, "yyyyMMdd'T'HHmmss");
     const title = encodeURIComponent(trip.tripName);
     const description = encodeURIComponent(`Client: ${trip.clientName}\n\nPassengers: ${trip.passengers.map(p => p.name).join(', ')}\n\nItinerary:\n${trip.itinerary.map(item => `${format(item.startTime, 'MMM dd, HH:mm')} - ${item.title}`).join('\n')}`);
-    
+
     const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&startdt=${startDate}&enddt=${endDate}&body=${description}`;
     window.open(outlookUrl, '_blank');
     toast("Export initiated", { description: "Opening Outlook calendar" });
@@ -569,7 +569,7 @@ export default function BookingProfile() {
 
   const renderCalendarView = () => {
     const days = getCalendarDays();
-    
+
     return (
       <div className="grid grid-cols-7 gap-1">
         {/* Header */}
@@ -578,30 +578,29 @@ export default function BookingProfile() {
             {day}
           </div>
         ))}
-        
+
         {/* Days */}
         {days.map(day => {
           const dayTrips = getTripsForDay(day);
           const outlookEvents = getOutlookEventsForDay(day);
           const isCurrentMonth = isSameMonth(day, currentDate);
           const isToday = isSameDay(day, new Date());
-          
+
           return (
-            <div 
-              key={day.toString()} 
-              className={`min-h-24 p-1 border border-border/50 ${
-                !isCurrentMonth ? 'bg-muted/30 text-muted-foreground' : 'bg-background'
-              } ${isToday ? 'ring-2 ring-primary/50' : ''}`}
+            <div
+              key={day.toString()}
+              className={`min-h-24 p-1 border border-border/50 ${!isCurrentMonth ? 'bg-muted/30 text-muted-foreground' : 'bg-background'
+                } ${isToday ? 'ring-2 ring-primary/50' : ''}`}
             >
               <div className={`text-sm mb-1 ${isToday ? 'font-bold' : ''}`}>
                 {format(day, 'd')}
               </div>
-              
+
               {/* Trip Events */}
               {dayTrips.map(trip => {
                 const isStartDay = isSameDay(day, trip.departureDate);
                 const isEndDay = isSameDay(day, trip.returnDate);
-                
+
                 return (
                   <div
                     key={trip.id}
@@ -627,7 +626,7 @@ export default function BookingProfile() {
                   </div>
                 );
               })}
-              
+
               {/* Outlook Events */}
               {outlookEvents.map(event => (
                 <div
@@ -650,7 +649,7 @@ export default function BookingProfile() {
     );
   };
 
-  const filteredTrips = trips.filter(trip => 
+  const filteredTrips = trips.filter(trip =>
     filter === 'all' || trip.status === filter
   );
 
@@ -664,7 +663,7 @@ export default function BookingProfile() {
             Manage client trips and sync with Outlook calendar
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
             <SelectTrigger className="w-32">
@@ -678,7 +677,7 @@ export default function BookingProfile() {
               <SelectItem value="completed">Complete</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
             <SelectTrigger className="w-32">
               <SelectValue />
@@ -689,7 +688,7 @@ export default function BookingProfile() {
               <SelectItem value="agenda">Agenda</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
@@ -711,7 +710,7 @@ export default function BookingProfile() {
                     This will connect to your Microsoft 365 account using Microsoft Graph API to import calendar events.
                   </AlertDescription>
                 </Alert>
-                
+
                 <div className="space-y-2">
                   <Label>Import Options</Label>
                   <div className="space-y-2">
@@ -729,7 +728,7 @@ export default function BookingProfile() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>Date Range</Label>
                   <div className="grid grid-cols-2 gap-2">
@@ -749,7 +748,7 @@ export default function BookingProfile() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          
+
           <Dialog open={isCreateTripOpen} onOpenChange={setIsCreateTripOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
@@ -768,7 +767,7 @@ export default function BookingProfile() {
                   <Input
                     id="tripName"
                     value={newTrip.tripName}
-                    onChange={(e) => setNewTrip({...newTrip, tripName: e.target.value})}
+                    onChange={(e) => setNewTrip({ ...newTrip, tripName: e.target.value })}
                     placeholder="Executive Meeting - Miami"
                   />
                 </div>
@@ -777,7 +776,7 @@ export default function BookingProfile() {
                   <Input
                     id="clientName"
                     value={newTrip.clientName}
-                    onChange={(e) => setNewTrip({...newTrip, clientName: e.target.value})}
+                    onChange={(e) => setNewTrip({ ...newTrip, clientName: e.target.value })}
                     placeholder="Company or Individual"
                   />
                 </div>
@@ -788,7 +787,7 @@ export default function BookingProfile() {
                       id="departureDate"
                       type="datetime-local"
                       value={newTrip.departureDate}
-                      onChange={(e) => setNewTrip({...newTrip, departureDate: e.target.value})}
+                      onChange={(e) => setNewTrip({ ...newTrip, departureDate: e.target.value })}
                     />
                   </div>
                   <div className="space-y-1">
@@ -797,13 +796,13 @@ export default function BookingProfile() {
                       id="returnDate"
                       type="datetime-local"
                       value={newTrip.returnDate}
-                      onChange={(e) => setNewTrip({...newTrip, returnDate: e.target.value})}
+                      onChange={(e) => setNewTrip({ ...newTrip, returnDate: e.target.value })}
                     />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <Label>Priority</Label>
-                  <Select value={newTrip.priority} onValueChange={(value: any) => setNewTrip({...newTrip, priority: value})}>
+                  <Select value={newTrip.priority} onValueChange={(value: any) => setNewTrip({ ...newTrip, priority: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -818,7 +817,7 @@ export default function BookingProfile() {
                   <Label>Notes</Label>
                   <Textarea
                     value={newTrip.notes}
-                    onChange={(e) => setNewTrip({...newTrip, notes: e.target.value})}
+                    onChange={(e) => setNewTrip({ ...newTrip, notes: e.target.value })}
                     placeholder="Special requirements..."
                     rows={2}
                   />
@@ -855,7 +854,7 @@ export default function BookingProfile() {
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -882,22 +881,22 @@ export default function BookingProfile() {
             </div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTrips.map((trip) => {
             const isExpanded = expandedCards.has(trip.id);
             const unreadCount = getUnreadCount(trip);
-            
+
             return (
-              <Card 
-            key={trip.id} 
-            className="relative cursor-pointer hover:shadow-lg hover:shadow-blue-100 transition-all transform hover:scale-[1.02] border-l-4 border-l-transparent hover:border-l-blue-500" 
-            onClick={(e) => {
-              e.stopPropagation();
-              handleTripClick(trip);
-            }}
-            title={`Click to manage ${trip.tripName}`}
-          >
+              <Card
+                key={trip.id}
+                className="relative cursor-pointer hover:shadow-lg hover:shadow-blue-100 transition-all transform hover:scale-[1.02] border-l-4 border-l-transparent hover:border-l-blue-500"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleTripClick(trip);
+                }}
+                title={`Click to manage ${trip.tripName}`}
+              >
                 <CardContent className="p-4">
                   {/* Header Row */}
                   <div className="flex items-start justify-between mb-3">
@@ -938,7 +937,7 @@ export default function BookingProfile() {
                       <span>{trip.messages.length} messages</span>
                     </div>
                   </div>
-                  
+
                   {trip.estimatedCost && (
                     <div className="mt-2 pt-2 border-t">
                       <div className="flex items-center justify-between text-xs">
@@ -952,15 +951,15 @@ export default function BookingProfile() {
             );
           })}
         </div>
-        
+
         {filteredTrips.length === 0 && (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Plane className="w-12 h-12 text-muted-foreground mb-3 opacity-50" />
               <h3 className="font-medium mb-2">No trips found</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {filter === 'all' 
-                  ? 'Create your first trip request to get started' 
+                {filter === 'all'
+                  ? 'Create your first trip request to get started'
                   : `No trips with status "${filter}"`
                 }
               </p>
@@ -977,7 +976,7 @@ export default function BookingProfile() {
 
       {/* Floating Trip Detail Card */}
       {isFloatingCardOpen && selectedTrip && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in-0 duration-200"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -1076,14 +1075,14 @@ export default function BookingProfile() {
                         {selectedTrip.passengers.length} passengers
                       </Badge>
                     </div>
-                    
+
                     {selectedTrip.status === 'approved' && (
                       <div className="mb-3 p-2 bg-blue-50 rounded border">
                         <div className="flex gap-2">
                           <Input
                             placeholder="passenger@company.com"
                             value={newPassengerEmails[selectedTrip.id] || ''}
-                            onChange={(e) => setNewPassengerEmails({...newPassengerEmails, [selectedTrip.id]: e.target.value})}
+                            onChange={(e) => setNewPassengerEmails({ ...newPassengerEmails, [selectedTrip.id]: e.target.value })}
                             className="h-8 text-sm"
                           />
                           <Button
@@ -1101,7 +1100,7 @@ export default function BookingProfile() {
                         </p>
                       </div>
                     )}
-                    
+
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {selectedTrip.passengers.map((passenger) => (
                         <div key={passenger.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border">
@@ -1139,7 +1138,7 @@ export default function BookingProfile() {
                           )}
                         </div>
                       ))}
-                      
+
                       {selectedTrip.passengers.length === 0 && (
                         <div className="text-center py-6 text-muted-foreground">
                           <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -1161,16 +1160,15 @@ export default function BookingProfile() {
                         {selectedTrip.messages.length} messages
                       </Badge>
                     </div>
-                    
+
                     <div className="space-y-2 mb-3 max-h-40 overflow-y-auto">
                       {selectedTrip.messages.map((message) => (
-                        <div 
-                          key={message.id} 
-                          className={`p-3 rounded text-sm ${
-                            message.senderRole === 'admin-assistant' 
-                              ? 'bg-blue-50 border-l-2 border-l-blue-500' 
-                              : 'bg-gray-50 border-l-2 border-l-gray-400'
-                          }`}
+                        <div
+                          key={message.id}
+                          className={`p-3 rounded text-sm ${message.senderRole === 'admin-assistant'
+                            ? 'bg-blue-50 border-l-2 border-l-blue-500'
+                            : 'bg-gray-50 border-l-2 border-l-gray-400'
+                            }`}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-medium text-xs">{message.sender}</span>
@@ -1181,7 +1179,7 @@ export default function BookingProfile() {
                           <p className="text-sm">{message.content}</p>
                         </div>
                       ))}
-                      
+
                       {selectedTrip.messages.length === 0 && (
                         <div className="text-center py-4 text-muted-foreground">
                           <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
@@ -1189,13 +1187,13 @@ export default function BookingProfile() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="border-t pt-3">
                       <div className="flex gap-2">
                         <Input
                           placeholder="Message to scheduling team..."
                           value={newMessages[selectedTrip.id] || ''}
-                          onChange={(e) => setNewMessages({...newMessages, [selectedTrip.id]: e.target.value})}
+                          onChange={(e) => setNewMessages({ ...newMessages, [selectedTrip.id]: e.target.value })}
                           className="h-8 text-sm"
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
@@ -1203,8 +1201,8 @@ export default function BookingProfile() {
                             }
                           }}
                         />
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           onClick={() => handleSendMessage(selectedTrip.id)}
                           disabled={!newMessages[selectedTrip.id]?.trim()}
                           className="h-8 px-3"
@@ -1247,11 +1245,11 @@ export default function BookingProfile() {
                       <div className="mb-4 p-3 bg-purple-50 rounded border">
                         <p className="text-xs font-medium text-purple-800 mb-2">Quick Add G650 Trip Item</p>
                         <div className="grid grid-cols-3 gap-2 mb-2">
-                          <Select 
-                            value={newItineraryItems[selectedTrip.id]?.type || 'meeting'} 
-                            onValueChange={(value) => setNewItineraryItems({
-                              ...newItineraryItems, 
-                              [selectedTrip.id]: {...(newItineraryItems[selectedTrip.id] || {}), type: value}
+                          <Select
+                            value={newItineraryItems[selectedTrip.id]?.type || 'meeting'}
+                            onValueChange={(value: string) => setNewItineraryItems({
+                              ...newItineraryItems,
+                              [selectedTrip.id]: { ...(newItineraryItems[selectedTrip.id] || {}), type: value }
                             })}
                           >
                             <SelectTrigger className="h-7 text-xs">
@@ -1271,7 +1269,7 @@ export default function BookingProfile() {
                             value={newItineraryItems[selectedTrip.id]?.title || ''}
                             onChange={(e) => setNewItineraryItems({
                               ...newItineraryItems,
-                              [selectedTrip.id]: {...(newItineraryItems[selectedTrip.id] || {}), title: e.target.value}
+                              [selectedTrip.id]: { ...(newItineraryItems[selectedTrip.id] || {}), title: e.target.value }
                             })}
                             className="h-7 text-xs"
                           />
@@ -1280,7 +1278,7 @@ export default function BookingProfile() {
                             value={newItineraryItems[selectedTrip.id]?.location || ''}
                             onChange={(e) => setNewItineraryItems({
                               ...newItineraryItems,
-                              [selectedTrip.id]: {...(newItineraryItems[selectedTrip.id] || {}), location: e.target.value}
+                              [selectedTrip.id]: { ...(newItineraryItems[selectedTrip.id] || {}), location: e.target.value }
                             })}
                             className="h-7 text-xs"
                           />
@@ -1291,7 +1289,7 @@ export default function BookingProfile() {
                             value={newItineraryItems[selectedTrip.id]?.startTime || ''}
                             onChange={(e) => setNewItineraryItems({
                               ...newItineraryItems,
-                              [selectedTrip.id]: {...(newItineraryItems[selectedTrip.id] || {}), startTime: e.target.value}
+                              [selectedTrip.id]: { ...(newItineraryItems[selectedTrip.id] || {}), startTime: e.target.value }
                             })}
                             className="h-7 text-xs"
                           />
@@ -1300,7 +1298,7 @@ export default function BookingProfile() {
                             value={newItineraryItems[selectedTrip.id]?.endTime || ''}
                             onChange={(e) => setNewItineraryItems({
                               ...newItineraryItems,
-                              [selectedTrip.id]: {...(newItineraryItems[selectedTrip.id] || {}), endTime: e.target.value}
+                              [selectedTrip.id]: { ...(newItineraryItems[selectedTrip.id] || {}), endTime: e.target.value }
                             })}
                             className="h-7 text-xs"
                           />
@@ -1310,7 +1308,7 @@ export default function BookingProfile() {
                             value={newItineraryItems[selectedTrip.id]?.cost || ''}
                             onChange={(e) => setNewItineraryItems({
                               ...newItineraryItems,
-                              [selectedTrip.id]: {...(newItineraryItems[selectedTrip.id] || {}), cost: e.target.value}
+                              [selectedTrip.id]: { ...(newItineraryItems[selectedTrip.id] || {}), cost: e.target.value }
                             })}
                             className="h-7 text-xs"
                           />
@@ -1326,12 +1324,12 @@ export default function BookingProfile() {
                           {index < selectedTrip.itinerary.length - 1 && (
                             <div className="absolute left-4 top-8 w-0.5 h-12 bg-gray-200"></div>
                           )}
-                          
+
                           {/* Icon */}
                           <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center">
                             {getItemIcon(item.type)}
                           </div>
-                          
+
                           {/* Content */}
                           <div className="flex-1 min-w-0 bg-gray-50 rounded-lg p-3 border">
                             <div className="flex items-start justify-between">
@@ -1354,7 +1352,7 @@ export default function BookingProfile() {
                                   <p className="text-xs text-gray-600 mt-1">{item.description}</p>
                                 )}
                               </div>
-                              
+
                               <div className="flex items-center gap-2">
                                 {item.cost && (
                                   <Badge variant="outline" className="text-xs">
@@ -1369,7 +1367,7 @@ export default function BookingProfile() {
                           </div>
                         </div>
                       ))}
-                      
+
                       {selectedTrip.itinerary.length === 0 && (
                         <div className="text-center py-8 text-muted-foreground">
                           <Navigation className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -1379,7 +1377,7 @@ export default function BookingProfile() {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Trip Notes */}
                   {selectedTrip.notes && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
