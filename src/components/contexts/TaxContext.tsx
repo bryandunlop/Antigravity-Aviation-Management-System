@@ -13,7 +13,24 @@ export interface SIFLRates {
 interface TaxContextType {
     currentRates: SIFLRates;
     updateRates: (newRates: SIFLRates) => void;
+    profiles: TaxProfile[];
+    addProfile: (profile: TaxProfile) => void;
+    updateProfile: (id: string, updates: Partial<TaxProfile>) => void;
+    deleteProfile: (id: string) => void;
 }
+
+export interface TaxProfile {
+    id: string;
+    name: string;
+    tNumber?: string;
+    title?: string;
+    designation: 'Standard' | 'Band 7' | 'CEO' | 'Board Member';
+}
+
+const defaultProfiles: TaxProfile[] = [
+    { id: 'tp1', name: 'Executive A', tNumber: 'T-8842', title: 'CEO', designation: 'CEO' },
+    { id: 'tp2', name: 'Executive B', tNumber: 'T-1193', title: 'CFO', designation: 'Band 7' },
+];
 
 const defaultRates: SIFLRates = {
     effectiveDate: '2025-07-01',
@@ -29,6 +46,19 @@ const TaxContext = createContext<TaxContextType | undefined>(undefined);
 
 export function TaxProvider({ children }: { children: ReactNode }) {
     const [currentRates, setCurrentRates] = useState<SIFLRates>(defaultRates);
+    const [profiles, setProfiles] = useState<TaxProfile[]>(defaultProfiles);
+
+    const addProfile = (profile: TaxProfile) => {
+        setProfiles(prev => [...prev, profile]);
+    };
+
+    const updateProfile = (id: string, updates: Partial<TaxProfile>) => {
+        setProfiles(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    };
+
+    const deleteProfile = (id: string) => {
+        setProfiles(prev => prev.filter(p => p.id !== id));
+    };
 
     const updateRates = (newRates: SIFLRates) => {
         setCurrentRates(newRates);
@@ -37,7 +67,7 @@ export function TaxProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <TaxContext.Provider value={{ currentRates, updateRates }}>
+        <TaxContext.Provider value={{ currentRates, updateRates, profiles, addProfile, updateProfile, deleteProfile }}>
             {children}
         </TaxContext.Provider>
     );

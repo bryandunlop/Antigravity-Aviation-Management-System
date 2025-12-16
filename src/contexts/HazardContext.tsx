@@ -41,14 +41,71 @@ export interface Hazard {
         severity: number;
         likelihood: number;
     };
+
+    // 5 Whys Analysis
+    // Index 0: "Why did this make sense for the person to do what they did?"
+    // Index 1-4: Subsequent Whys
     whyAnalysis?: string[];
+
     investigationNotes?: string;
+
+    // Evidence / Attachments
+    attachments?: Array<{
+        id: string;
+        name: string;
+        type: string;
+        size: number;
+        url?: string; // Mock URL
+        uploadedBy: string;
+        uploadedDate: string;
+    }>;
+
+    // PACE Model Assignments & Responses
     paceAssignments?: {
-        processOwner: { type: string; value: string; customName?: string; customEmail?: string };
-        approver: { type: string; value: string; customName?: string; customEmail?: string };
-        contributors: Array<{ type: string; value: string; customName?: string; customEmail?: string }>;
-        executers: Array<{ type: string; value: string; customName?: string; customEmail?: string }>;
+        processOwner: {
+            type: string;
+            value: string;
+            customName?: string;
+            customEmail?: string;
+            customMessage?: string; // Message from Safety Team to Process Owner
+            response?: string; // Input from Process Owner
+            responseDate?: string;
+            status?: 'pending' | 'submitted';
+        };
+        approver: {
+            type: string;
+            value: string;
+            customName?: string;
+            customEmail?: string;
+            customMessage?: string;
+            response?: string;
+            responseDate?: string;
+            status?: 'pending' | 'approved' | 'rejected';
+        };
+        contributors: Array<{
+            id: string; // added ID for easier tracking
+            type: string;
+            value: string;
+            customName?: string;
+            customEmail?: string;
+            customMessage?: string;
+            response?: string;
+            responseDate?: string;
+            status?: 'pending' | 'submitted';
+        }>;
+        executers: Array<{
+            id: string;
+            type: string;
+            value: string;
+            customName?: string;
+            customEmail?: string;
+            customMessage?: string;
+            response?: string; // Confirmation of implementation
+            responseDate?: string;
+            status?: 'pending' | 'completed';
+        }>;
     };
+
     correctiveActionComponents?: {
         communications: boolean;
         training: boolean;
@@ -69,6 +126,12 @@ export interface Hazard {
             approved: boolean;
             approvedBy?: string;
             approvedDate?: string;
+            comments?: string;
+        };
+        finalSafetyClosure?: {
+            approved: boolean;
+            approvedBy?: string;
+            date?: string;
             comments?: string;
         };
     };

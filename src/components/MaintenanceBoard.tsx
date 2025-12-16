@@ -823,7 +823,7 @@ export default function MaintenanceBoard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -905,7 +905,7 @@ export default function MaintenanceBoard() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="aircraft" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 h-auto">
           <TabsTrigger value="aircraft">Aircraft Status</TabsTrigger>
           <TabsTrigger value="operations">Daily Operations</TabsTrigger>
           <TabsTrigger value="grats">GRATS</TabsTrigger>
@@ -927,11 +927,11 @@ export default function MaintenanceBoard() {
                       <Card
                         key={plane.id}
                         className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${plane.status === 'aog' ? 'border-red-500 border-2 bg-red-50' :
-                            plane.status === 'in-work' ? 'border-yellow-300 border-2 bg-yellow-50' : ''
+                          plane.status === 'in-work' ? 'border-yellow-300 border-2 bg-yellow-50' : ''
                           }`}
                         onClick={() => setSelectedAircraft(plane)}
                       >
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                           <div className="flex items-center gap-3">
                             <div className={`w-3 h-3 rounded-full ${getAircraftStatusColor(plane.status)}`}></div>
                             <div>
@@ -954,12 +954,12 @@ export default function MaintenanceBoard() {
                           </div>
 
                           {plane.nextFlight && (
-                            <div className="text-right text-sm">
+                            <div className="mt-4 sm:mt-0 sm:text-right text-sm">
                               <div className="font-medium">{plane.nextFlight.flightNumber}</div>
                               <div className="text-muted-foreground">
                                 {plane.nextFlight.departure} → {plane.nextFlight.destination}
                               </div>
-                              <div className="flex items-center gap-1 justify-end mt-1">
+                              <div className="flex items-center gap-1 justify-start sm:justify-end mt-1">
                                 <Fuel className="w-3 h-3" />
                                 {plane.nextFlight.fuelLoad.toLocaleString()} lbs
                               </div>
@@ -1093,8 +1093,8 @@ export default function MaintenanceBoard() {
               <div className="space-y-4">
                 {dailyOperations.map((operation) => (
                   <Card key={operation.id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex flex-wrap items-center gap-4">
                         <div className="flex items-center gap-2">
                           {operation.type === 'departure' ? (
                             <ArrowUp className="w-4 h-4 text-blue-600" />
@@ -1226,8 +1226,8 @@ export default function MaintenanceBoard() {
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
                     className={`h-3 rounded-full ${averagePercentage < 40 ? 'bg-green-500' :
-                        averagePercentage < 60 ? 'bg-yellow-500' :
-                          averagePercentage < 80 ? 'bg-orange-500' : 'bg-red-500'
+                      averagePercentage < 60 ? 'bg-yellow-500' :
+                        averagePercentage < 80 ? 'bg-orange-500' : 'bg-red-500'
                       }`}
                     style={{ width: `${averagePercentage}%` }}
                   ></div>
@@ -1699,7 +1699,7 @@ export default function MaintenanceBoard() {
               <div className="space-y-4">
                 {fuelLoadRequests.map((request) => (
                   <Card key={request.id} className="p-4">
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h4 className="font-medium">{request.flightNumber}</h4>
@@ -1710,7 +1710,7 @@ export default function MaintenanceBoard() {
                             {request.status}
                           </Badge>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm mb-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
                           <div className="flex items-center gap-2">
                             <Plane className="w-3 h-3" />
                             {request.tailNumber} ({request.aircraft})
@@ -1892,7 +1892,7 @@ export default function MaintenanceBoard() {
                                   </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4">
-                                  <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                       <Label>Aircraft</Label>
                                       <p className="font-medium">{task.aircraft}</p>
