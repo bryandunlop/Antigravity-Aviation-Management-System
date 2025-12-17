@@ -94,9 +94,13 @@ export default function HazardReporting() {
   const getWorkflowStageColor = (stage: string) => {
     switch (stage) {
       case WORKFLOW_STAGES.SUBMITTED: return 'bg-blue-100 text-blue-800 border-blue-200';
-      case WORKFLOW_STAGES.SM_INITIAL_REVIEW: return 'bg-purple-100 text-purple-800 border-purple-200';
+      case WORKFLOW_STAGES.SM_INVESTIGATION: return 'bg-purple-100 text-purple-800 border-purple-200';
+      case WORKFLOW_STAGES.ASSIGN_MITIGATION: return 'bg-pink-100 text-pink-800 border-pink-200';
+      case WORKFLOW_STAGES.MITIGATION_DEVELOPMENT: return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+      case WORKFLOW_STAGES.SM_REVIEW: return 'bg-violet-100 text-violet-800 border-violet-200';
       case WORKFLOW_STAGES.LINE_MANAGER_APPROVAL: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case WORKFLOW_STAGES.EXEC_APPROVAL: return 'bg-orange-100 text-orange-800 border-orange-200';
+      case WORKFLOW_STAGES.IMPLEMENTATION: return 'bg-teal-100 text-teal-800 border-teal-200';
       case WORKFLOW_STAGES.EFFECTIVENESS_REVIEW: return 'bg-cyan-100 text-cyan-800 border-cyan-200';
       case WORKFLOW_STAGES.CLOSED: return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -413,7 +417,7 @@ export default function HazardReporting() {
               <div>
                 <p className="text-sm text-muted-foreground">In Review</p>
                 <p className="text-2xl">
-                  {hazards.filter(h => h.workflowStage === WORKFLOW_STAGES.SM_INITIAL_REVIEW).length}
+                  {hazards.filter(h => [WORKFLOW_STAGES.SM_INVESTIGATION, WORKFLOW_STAGES.ASSIGN_MITIGATION, WORKFLOW_STAGES.MITIGATION_DEVELOPMENT, WORKFLOW_STAGES.SM_REVIEW].includes(h.workflowStage)).length}
                 </p>
               </div>
             </div>
@@ -501,9 +505,14 @@ export default function HazardReporting() {
               <SelectContent>
                 <SelectItem value="all">All Stages</SelectItem>
                 <SelectItem value={WORKFLOW_STAGES.SUBMITTED.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.SUBMITTED}</SelectItem>
-                <SelectItem value={WORKFLOW_STAGES.SM_INITIAL_REVIEW.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.SM_INITIAL_REVIEW}</SelectItem>
+                <SelectItem value={WORKFLOW_STAGES.SM_INVESTIGATION.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.SM_INVESTIGATION}</SelectItem>
+                <SelectItem value={WORKFLOW_STAGES.ASSIGN_MITIGATION.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.ASSIGN_MITIGATION}</SelectItem>
+                <SelectItem value={WORKFLOW_STAGES.MITIGATION_DEVELOPMENT.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.MITIGATION_DEVELOPMENT}</SelectItem>
+                <SelectItem value={WORKFLOW_STAGES.SM_REVIEW.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.SM_REVIEW}</SelectItem>
                 <SelectItem value={WORKFLOW_STAGES.LINE_MANAGER_APPROVAL.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.LINE_MANAGER_APPROVAL}</SelectItem>
                 <SelectItem value={WORKFLOW_STAGES.EXEC_APPROVAL.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.EXEC_APPROVAL}</SelectItem>
+                <SelectItem value={WORKFLOW_STAGES.IMPLEMENTATION.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.IMPLEMENTATION}</SelectItem>
+                <SelectItem value={WORKFLOW_STAGES.EFFECTIVENESS_REVIEW.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.EFFECTIVENESS_REVIEW}</SelectItem>
                 <SelectItem value={WORKFLOW_STAGES.CLOSED.replace(/\s/g, '').toLowerCase()}>{WORKFLOW_STAGES.CLOSED}</SelectItem>
               </SelectContent>
             </Select>
@@ -580,9 +589,11 @@ export default function HazardReporting() {
                               ? hazard.submitterLineManager
                               : hazard.workflowStage === WORKFLOW_STAGES.EXEC_APPROVAL
                                 ? 'VP Operations'
-                                : hazard.workflowStage === WORKFLOW_STAGES.SM_INITIAL_REVIEW
-                                  ? 'Safety Manager'
-                                  : 'N/A'}
+                                : hazard.workflowStage === WORKFLOW_STAGES.MITIGATION_DEVELOPMENT
+                                  ? 'Process Owner'
+                                  : [WORKFLOW_STAGES.SM_INVESTIGATION, WORKFLOW_STAGES.ASSIGN_MITIGATION, WORKFLOW_STAGES.SM_REVIEW].includes(hazard.workflowStage)
+                                    ? 'Safety Manager'
+                                    : 'N/A'}
                           </span>
                         </div>
                       </TableCell>

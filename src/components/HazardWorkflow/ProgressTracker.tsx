@@ -8,22 +8,22 @@ interface ProgressTrackerProps {
     allowNavigation?: boolean;
 }
 
-// Map the detailed 11 stages to 4 high-level phases
+// Map the detailed stages to high-level phases
 export const PHASES = [
+    {
+        id: 'submission',
+        label: 'Submission',
+        stages: [WORKFLOW_STAGES.SUBMITTED]
+    },
     {
         id: 'investigation',
         label: 'Investigation',
-        stages: [WORKFLOW_STAGES.SUBMITTED, WORKFLOW_STAGES.SM_INITIAL_REVIEW]
+        stages: [WORKFLOW_STAGES.SM_INVESTIGATION]
     },
     {
-        id: 'action_plan',
-        label: 'Action Plan',
-        stages: [WORKFLOW_STAGES.ASSIGNED_CORRECTIVE_ACTION]
-    },
-    {
-        id: 'collection',
-        label: 'Collection',
-        stages: [WORKFLOW_STAGES.SM_CA_REVIEW]
+        id: 'mitigation',
+        label: 'Mitigation',
+        stages: [WORKFLOW_STAGES.ASSIGN_MITIGATION, WORKFLOW_STAGES.MITIGATION_DEVELOPMENT, WORKFLOW_STAGES.SM_REVIEW]
     },
     {
         id: 'approvals',
@@ -31,12 +31,10 @@ export const PHASES = [
         stages: [WORKFLOW_STAGES.LINE_MANAGER_APPROVAL, WORKFLOW_STAGES.EXEC_APPROVAL]
     },
     {
-        id: 'resolution',
-        label: 'Resolution',
+        id: 'closure',
+        label: 'Closure',
         stages: [
-            WORKFLOW_STAGES.IMPLEMENTATION_ASSIGNMENT,
-            WORKFLOW_STAGES.IMPLEMENTATION_IN_PROGRESS,
-            WORKFLOW_STAGES.PUBLISHED,
+            WORKFLOW_STAGES.IMPLEMENTATION,
             WORKFLOW_STAGES.EFFECTIVENESS_REVIEW,
             WORKFLOW_STAGES.CLOSED
         ]

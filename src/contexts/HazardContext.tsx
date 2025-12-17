@@ -3,15 +3,21 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 // Define types based on existing components
 export const WORKFLOW_STAGES = {
     SUBMITTED: 'Submitted',
-    SM_INITIAL_REVIEW: 'Safety Manager Initial Review',
-    ASSIGNED_CORRECTIVE_ACTION: 'Assigned for Corrective Action',
-    SM_CA_REVIEW: 'SM Review of Corrective Action',
+    // Safety Manager Phase 1
+    SM_INVESTIGATION: 'Safety Manger Investigation', // Includes Risk Assessment & 5 Whys
+    // PACE Assignment Phase
+    ASSIGN_MITIGATION: 'Assign Mitigation Task',
+    // Process Owner Phase
+    MITIGATION_DEVELOPMENT: 'Mitigation Development',
+    // Safety Manager Phase 2
+    SM_REVIEW: 'Safety Manager Review',
+    // Approvals
     LINE_MANAGER_APPROVAL: 'Line Manager Approval',
     EXEC_APPROVAL: 'Accountable Executive Approval',
-    IMPLEMENTATION_ASSIGNMENT: 'Implementation Assignment',
-    IMPLEMENTATION_IN_PROGRESS: 'Implementation in Progress',
-    PUBLISHED: 'Published',
-    EFFECTIVENESS_REVIEW: 'Review for Effectiveness',
+    // Implementation Phase
+    IMPLEMENTATION: 'Implementation', // Send Info & R&I
+    // Effectiveness Phase
+    EFFECTIVENESS_REVIEW: 'Review for Effectiveness', // 6 months later
     CLOSED: 'Closed'
 };
 
@@ -38,8 +44,8 @@ export interface Hazard {
     // Workflow specifics
     riskFactors?: string[];
     riskAnalysis?: {
-        severity: number;
-        likelihood: number;
+        severity: number; // 1-5
+        likelihood: number; // 0-4
     };
 
     // 5 Whys Analysis
@@ -68,7 +74,7 @@ export interface Hazard {
             customName?: string;
             customEmail?: string;
             customMessage?: string; // Message from Safety Team to Process Owner
-            response?: string; // Input from Process Owner
+            response?: string; // Input from Process Owner (Proposed Mitigation)
             responseDate?: string;
             status?: 'pending' | 'submitted';
         };
@@ -93,7 +99,7 @@ export interface Hazard {
             responseDate?: string;
             status?: 'pending' | 'submitted';
         }>;
-        executers: Array<{
+        executers: Array<{ // Used for implementation tasks
             id: string;
             type: string;
             value: string;
@@ -112,7 +118,8 @@ export interface Hazard {
         policy: boolean;
         equipment: boolean;
     };
-    correctiveActionDetails?: string;
+    // Final Corrective Action (Curated by SM after receiving input from Process Owner)
+    finalCorrectiveAction?: string;
 
     // Approvals
     approvals?: {
@@ -138,7 +145,8 @@ export interface Hazard {
 
     // Implementation tracking
     implementationNotes?: string;
-    publicationContent?: string;
+    publicationContent?: string; // Content sent to group
+    documentComplianceId?: string; // Link to R&I
     effectivenessReviewNotes?: string;
 
     // Audit trail
@@ -164,7 +172,7 @@ const INITIAL_HAZARDS: Hazard[] = [
         title: 'Runway Surface Contamination - LAX Runway 24L',
         category: 'Airport Infrastructure',
         severity: 'Critical',
-        workflowStage: WORKFLOW_STAGES.LINE_MANAGER_APPROVAL, // Mapped to LINE_MANAGER_REVIEW in one file, normalized here
+        workflowStage: WORKFLOW_STAGES.LINE_MANAGER_APPROVAL,
         location: 'LAX - Runway 24L',
         reportedBy: 'John Smith',
         submitterLineManager: 'Sarah Johnson',
@@ -183,7 +191,7 @@ const INITIAL_HAZARDS: Hazard[] = [
         title: 'Bird Strike Risk - Approach Path DEN',
         category: 'Wildlife',
         severity: 'High',
-        workflowStage: WORKFLOW_STAGES.EXEC_APPROVAL, // Mapped to VP_APPROVAL
+        workflowStage: WORKFLOW_STAGES.EXEC_APPROVAL,
         location: 'DEN - Approach Path Runway 16R',
         reportedBy: 'Sarah Wilson',
         submitterLineManager: 'Tom Anderson',
@@ -220,7 +228,7 @@ const INITIAL_HAZARDS: Hazard[] = [
         title: 'Fuel System Leak - Fuel Farm',
         category: 'Fuel System',
         severity: 'High',
-        workflowStage: WORKFLOW_STAGES.SM_INITIAL_REVIEW,
+        workflowStage: WORKFLOW_STAGES.SM_INVESTIGATION, // Was SM_INITIAL_REVIEW
         location: 'Fuel Farm - Tank 2',
         reportedBy: 'Mark Anderson',
         submitterLineManager: 'Lisa Martinez',
@@ -247,6 +255,22 @@ const INITIAL_HAZARDS: Hazard[] = [
         potentialConsequences: 'Trip hazard, vehicle collision.',
         effectivenessReviewDate: '2024-07-15',
         priority: 'Low'
+    },
+    {
+        id: 'HZ-006',
+        title: 'Unsecured Cargo Pallet - Flight 303',
+        category: 'Cargo Handling',
+        severity: 'Medium',
+        workflowStage: WORKFLOW_STAGES.SUBMITTED,
+        location: 'Cargo Apron - Spot 4',
+        reportedBy: 'Mike Johnson',
+        submitterLineManager: 'David Wilson',
+        reportedDate: new Date().toISOString().split('T')[0],
+        description: 'Cargo pallet observed without proper netting during transport to aircraft.',
+        immediateActions: 'Transport stopped, netting secured before proceeding.',
+        potentialConsequences: 'Cargo falling during transport, injury to personnel or damage to aircraft.',
+        priority: 'Medium',
+        riskFactors: ['Complacency']
     }
 ];
 
