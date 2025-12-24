@@ -332,9 +332,9 @@ export default function LeadDashboard() {
       departing: 2,
       arriving: 1,
       flights: [
-        { id: 'FLT001', tail: 'N1PG', route: 'KTEB → KMIA', status: 'In Air', eta: '45 min', altitude: 41000, speed: 485 },
-        { id: 'FLT002', tail: 'N5PG', route: 'KJFK → EGLL', status: 'In Air', eta: '5h 20m', altitude: 43000, speed: 520 },
-        { id: 'FLT003', tail: 'N2PG', route: 'KLAS → KSFO', status: 'In Air', eta: '1h 10m', altitude: 39000, speed: 465 }
+        { id: 'FLT001', tail: 'N1PG', route: 'KTEB → KMIA', status: 'In Air', eta: '45 min', altitude: 41000, speed: 485, passengers: 8 },
+        { id: 'FLT002', tail: 'N5PG', route: 'KJFK → EGLL', status: 'In Air', eta: '5h 20m', altitude: 43000, speed: 520, passengers: 11 },
+        { id: 'FLT003', tail: 'N2PG', route: 'KLAS → KSFO', status: 'In Air', eta: '1h 10m', altitude: 39000, speed: 465, passengers: 12 }
       ]
     },
     maintenance: {
@@ -895,6 +895,32 @@ export default function LeadDashboard() {
                   <Badge className="bg-orange-100 text-orange-800 border-orange-200">
                     {liveOpsData.activeFlights.arriving} Arriving
                   </Badge>
+                  {(() => {
+                    const flights = liveOpsData.activeFlights.flights as any[];
+                    let totalOpenSeats = 0;
+                    let fullFlightsCount = 0;
+
+                    flights.forEach(flight => {
+                      const capacity = flight.tail.includes('G650') || flight.tail.includes('N1PG') || flight.tail.includes('N2PG') ? 12 : 11; // Basic mapping based on existing data
+                      const open = Math.max(0, capacity - (flight.passengers || 0));
+                      totalOpenSeats += open;
+                      if (open === 0) fullFlightsCount++;
+                    });
+
+                    const percentFull = Math.round((fullFlightsCount / flights.length) * 100);
+                    const avgOpen = (totalOpenSeats / flights.length).toFixed(1);
+
+                    return (
+                      <>
+                        <Badge variant="outline" className="ml-2">
+                          {percentFull}% Full
+                        </Badge>
+                        <Badge variant="outline">
+                          Avg Open: {avgOpen}
+                        </Badge>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </CardHeader>
@@ -926,6 +952,17 @@ export default function LeadDashboard() {
                         <p className="font-medium">{flight.speed} kts</p>
                       </div>
                     </div>
+                    {(() => {
+                      const capacity = flight.tail.includes('G650') || flight.tail.includes('N1PG') || flight.tail.includes('N2PG') ? 12 : 11;
+                      const open = Math.max(0, capacity - ((flight as any).passengers || 0));
+                      return (
+                        <div className="mt-2 text-xs text-center border-t pt-2">
+                          <span className={open === 0 ? "font-bold text-red-600" : "text-green-600"}>
+                            {open === 0 ? "Flight Full" : `${open} Open Seats`}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>
@@ -1128,6 +1165,21 @@ export default function LeadDashboard() {
                                       <p className="text-sm text-muted-foreground">
                                         {flight.route} • {flight.aircraft}
                                       </p>
+                                      {(() => {
+                                        const getCapacity = (aircraft: string) => {
+                                          if (aircraft.includes('G650')) return 12;
+                                          if (aircraft.includes('G500')) return 11;
+                                          return 12; // Default fallback
+                                        };
+                                        const capacity = getCapacity(flight.aircraft);
+                                        const openSeats = capacity - flight.passengers.length;
+                                        return (
+                                          <Badge variant="outline" className={`mt-1 ${openSeats < 3 ? 'text-orange-600 border-orange-200 bg-orange-50' : 'text-green-600 border-green-200 bg-green-50'}`}>
+                                            <Users className="w-3 h-3 mr-1" />
+                                            {openSeats} Open Seat{openSeats !== 1 ? 's' : ''}
+                                          </Badge>
+                                        );
+                                      })()}
                                     </div>
                                   </div>
                                   <Button variant="ghost" size="sm" onClick={() => {

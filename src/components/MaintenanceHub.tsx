@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
-import { 
+import {
   AlertTriangle,
   AlertCircle,
   Clock,
@@ -29,15 +29,16 @@ import {
   Shield
 } from 'lucide-react';
 import { useMaintenanceContext } from './contexts/MaintenanceContext';
-import { 
-  getPriorityConfig, 
-  getStatusConfig, 
-  formatRelativeTime, 
+import {
+  getPriorityConfig,
+  getStatusConfig,
+  formatRelativeTime,
   getDeferralAlertStatus,
   formatHours
 } from './utils/maintenanceUtils';
 import LifecycleProgress from './LifecycleProgress';
 import ProactiveAlerts from './ProactiveAlerts';
+import ResourceManagement from './ResourceManagement';
 
 export default function MaintenanceHub() {
   const {
@@ -48,6 +49,7 @@ export default function MaintenanceHub() {
     calculateMTTR,
     updateAircraftAvailability,
   } = useMaintenanceContext();
+  const navigate = useNavigate();
 
   const [selectedView, setSelectedView] = useState<'overview' | 'by-aircraft' | 'alerts'>('overview');
 
@@ -70,12 +72,13 @@ export default function MaintenanceHub() {
   const activeDeferrals = squawks.filter(s => s.status === 'deferred' && s.deferral);
   const expiringDeferrals = activeDeferrals.filter(s => {
     if (!s.deferral) return false;
-    const daysRemaining = Math.ceil((s.deferral.expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    const expiryDate = new Date(s.deferral.expiryDate);
+    const daysRemaining = Math.ceil((expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     return daysRemaining <= 5 && daysRemaining >= 0;
   });
   const expiredDeferrals = activeDeferrals.filter(s => {
     if (!s.deferral) return false;
-    return s.deferral.expiryDate < new Date();
+    return new Date(s.deferral.expiryDate) < new Date();
   });
 
   // Pattern alerts
@@ -86,8 +89,9 @@ export default function MaintenanceHub() {
   const limitedAircraft = aircraftAvailability.filter(a => a.status === 'limited').length;
 
   // Recent activity (last 10 items)
+  // Recent activity (last 10 items)
   const recentActivity = [
-    ...squawks.map(s => ({ type: 'squawk', data: s, timestamp: s.reportedAt })),
+    ...squawks.map(s => ({ type: 'squawk', data: s, timestamp: new Date(s.reportedAt) })),
     ...workOrders.map(wo => ({ type: 'workorder', data: wo, timestamp: new Date(wo.createdAt) })),
   ]
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
@@ -214,6 +218,7 @@ export default function MaintenanceHub() {
       <Tabs defaultValue="workflow" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="workflow">Workflow Pipeline</TabsTrigger>
+          <TabsTrigger value="resources">Resources (New)</TabsTrigger>
           <TabsTrigger value="aircraft">By Aircraft</TabsTrigger>
           <TabsTrigger value="activity">Recent Activity</TabsTrigger>
           <TabsTrigger value="quick-actions">Quick Actions</TabsTrigger>
@@ -388,22 +393,20 @@ export default function MaintenanceHub() {
                 {aircraftAvailability.map(aircraft => (
                   <Card
                     key={aircraft.aircraftId}
-                    className={`p-4 ${
-                      aircraft.status === 'grounded'
-                        ? 'border-red-500 bg-red-50'
-                        : aircraft.status === 'limited'
+                    className={`p-4 ${aircraft.status === 'grounded'
+                      ? 'border-red-500 bg-red-50'
+                      : aircraft.status === 'limited'
                         ? 'border-yellow-500 bg-yellow-50'
                         : 'border-green-500 bg-green-50'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
-                          <Plane className={`w-5 h-5 ${
-                            aircraft.status === 'grounded' ? 'text-red-600' :
+                          <Plane className={`w-5 h-5 ${aircraft.status === 'grounded' ? 'text-red-600' :
                             aircraft.status === 'limited' ? 'text-yellow-600' :
-                            'text-green-600'
-                          }`} />
+                              'text-green-600'
+                            }`} />
                           <div>
                             <h4 className="font-bold">{aircraft.tail}</h4>
                             <Badge
@@ -411,8 +414,8 @@ export default function MaintenanceHub() {
                                 aircraft.status === 'grounded'
                                   ? 'bg-red-100 text-red-800 border-red-200'
                                   : aircraft.status === 'limited'
-                                  ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                                  : 'bg-green-100 text-green-800 border-green-200'
+                                    ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                    : 'bg-green-100 text-green-800 border-green-200'
                               }
                             >
                               {aircraft.status.toUpperCase()}
@@ -478,9 +481,8 @@ export default function MaintenanceHub() {
                   {recentActivity.map((activity, idx) => (
                     <div key={idx} className="flex gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
                       <div className="flex flex-col items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          activity.type === 'squawk' ? 'bg-blue-100' : 'bg-violet-100'
-                        }`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.type === 'squawk' ? 'bg-blue-100' : 'bg-violet-100'
+                          }`}>
                           {activity.type === 'squawk' ? (
                             <FileText className="w-4 h-4 text-blue-600" />
                           ) : (
@@ -496,7 +498,7 @@ export default function MaintenanceHub() {
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="font-medium text-sm">
-                              {activity.type === 'squawk' 
+                              {activity.type === 'squawk'
                                 ? `Squawk ${(activity.data as any).id} reported`
                                 : `Work Order ${(activity.data as any).id} created`
                               }
@@ -592,15 +594,15 @@ export default function MaintenanceHub() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => window.location.href = '/parts-inventory'}>
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigate('/maintenance/technician')}>
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
-                    <Settings className="w-6 h-6 text-purple-600" />
+                  <div className="p-3 bg-cyan-100 rounded-lg group-hover:bg-cyan-200 transition-colors">
+                    <Target className="w-6 h-6 text-cyan-600" />
                   </div>
                   <div>
-                    <h4 className="font-medium">Parts Inventory</h4>
-                    <p className="text-sm text-muted-foreground mt-1">Check stock levels</p>
+                    <h4 className="font-medium">Technician Workspace</h4>
+                    <p className="text-sm text-muted-foreground mt-1">My assigned jobs</p>
                   </div>
                 </div>
               </CardContent>
@@ -620,6 +622,10 @@ export default function MaintenanceHub() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="resources" className="space-y-4">
+          <ResourceManagement />
         </TabsContent>
       </Tabs>
     </div>

@@ -32,6 +32,7 @@ export interface Squawk {
   relatedSquawks?: string[]; // For pattern detection
   patternDetected?: boolean;
   patternInfo?: PatternInfo;
+  notes?: string;
 }
 
 export interface MaintenanceAction {
@@ -49,14 +50,15 @@ export interface MaintenanceAction {
 }
 
 export interface Deferral {
-  melReference: string;
-  deferralCategory: 'A' | 'B' | 'C' | 'D';
-  expiryDate: Date;
-  authorizedBy: string;
-  conditions: string;
-  operationalLimitations: string[];
-  daysRemaining?: number;
-  alertStatus?: 'ok' | 'warning' | 'critical' | 'expired';
+  id: string;
+  squawkId: string;
+  melItemId: string;
+  category: 'A' | 'B' | 'C' | 'D';
+  deferredAt: string; // ISO date
+  expiresAt: string; // ISO date
+  deferredBy: string; // technician name/id
+  limitations?: string;
+  status: 'active' | 'cleared' | 'expired';
 }
 
 export interface PartUsed {
@@ -128,28 +130,28 @@ export interface WorkOrderExtended {
   status: 'pending' | 'assigned' | 'in-progress' | 'on-hold' | 'completed' | 'cancelled';
   type: 'scheduled' | 'unscheduled' | 'aog';
   category: 'minor' | 'major' | 'ancillary';
-  
+
   assignedTo: string[];
   assignedShift?: 'AM' | 'PM' | 'Night';
-  
+
   cmpJobCard?: string;
   cmpSyncRequired: boolean;
   cmpLastSync?: string;
-  
+
   estimatedHours: number;
   actualHours: number;
   startDate?: string;
   completedDate?: string;
   dueDate: string;
-  
+
   subTasks: SubTask[];
-  
+
   createdBy: string;
   createdAt: string;
   updatedAt: string;
   location: string;
   notes?: string;
-  
+
   // New fields
   linkedSquawks: string[];
   lifecycleStage: LifecycleStage;
@@ -160,6 +162,19 @@ export interface WorkOrderExtended {
   documentLinks: DocumentLink[];
   airworthinessRelease?: AirworthinessRelease;
   notificationsSent: Notification[];
+  laborLog: LaborEntry[];
+}
+
+export interface LaborEntry {
+  id: string;
+  technicianId: string;
+  technicianName: string;
+  startTime: Date;
+  endTime: Date;
+  durationMinutes: number;
+  notes?: string;
+  loggedAt: Date;
+  loggedBy: string;
 }
 
 export interface SubTask {
@@ -260,6 +275,128 @@ export interface AircraftAvailability {
   };
 }
 
+// ==================== TURNDOWN REPORT TYPES ====================
+
+export type ShiftType = 'AM' | 'PM';
+export type AircraftStatus = 'Away' | 'In Service' | 'Not in Service' | string;
+export type CleaningStatus = 'Apex' | 'Maintenance' | 'Crew' | 'N/A';
+
+export interface AircraftReport {
+  tailNumber: string;
+  status: AircraftStatus;
+  discrepancies: string;
+  cleaned: CleaningStatus;
+  fuelOnBoard: string;
+  additionalInfo: string;
+}
+
+export interface TurndownReport {
+  id: string;
+  date: string;
+  shift: ShiftType;
+  submittedBy: string;
+  submittedAt: string;
+  facilityChecks: Record<string, boolean>;
+  aircraftReports: AircraftReport[];
+  additionalNotes: Record<string, string>;
+}
+
+export interface AircraftConfig {
+  id: string;
+  tailNumber: string;
+  isActive: boolean;
+}
+
+export interface FacilityCheckConfig {
+  id: string;
+  label: string;
+  isActive: boolean;
+}
+
+export interface AircraftStatusConfig {
+  id: string;
+  value: string;
+  isActive: boolean;
+}
+
+export interface AdditionalNoteConfig {
+  id: string;
+  label: string;
+  isActive: boolean;
+}
+
+// ==================== RESOURCE MANAGEMENT TYPES ====================
+
+export interface Technician {
+  id: string;
+  name: string;
+  role: 'Lead' | 'Mechanic' | 'Apprentice' | 'Avionics' | 'Inspector';
+  email: string;
+  phone?: string;
+  status: 'on-shift' | 'off-shift' | 'on-break' | 'vacation';
+  skills: string[]; // e.g., "Airframe", "Powerplant", "G650ER"
+  currentJobId?: string; // If working on something right now
+  avatar?: string;
+  shift: 'AM' | 'PM' | 'Night';
+}
+
+const INITIAL_TECHNICIANS: Technician[] = [
+  { id: 'TECH-001', name: 'John Smith', role: 'Lead', email: 'john.smith@hangar.next', status: 'on-shift', skills: ['Airframe', 'Powerplant', 'Inspector'], shift: 'AM' },
+  { id: 'TECH-002', name: 'Sarah Johnson', role: 'Avionics', email: 'sarah.j@hangar.next', status: 'on-shift', skills: ['Avionics', 'G1000', 'WiFi'], shift: 'AM' },
+  { id: 'TECH-003', name: 'Mike Davis', role: 'Mechanic', email: 'mike.d@hangar.next', status: 'on-break', skills: ['Airframe'], shift: 'AM' },
+  { id: 'TECH-004', name: 'Lisa Chen', role: 'Apprentice', email: 'lisa.c@hangar.next', status: 'off-shift', skills: ['General'], shift: 'PM' },
+  { id: 'TECH-005', name: 'Tom Wilson', role: 'Inspector', email: 'tom.w@hangar.next', status: 'off-shift', skills: ['Inspector', 'QA'], shift: 'PM' },
+];
+
+// ==================== VACATION REQUEST TYPES ====================
+
+export type MaintenanceRequestType = 'Vacation' | 'Sick' | 'Personal' | 'Jury Duty' | 'Bereavement' | 'Comp Time';
+export type MaintenanceRequestStatus = 'pending_lead' | 'denied_by_lead' | 'pending_manager' | 'denied_by_manager' | 'approved';
+
+export interface MaintenanceVacationRequest {
+  id: string;
+  technicianId: string;
+  technicianName: string;
+  type: MaintenanceRequestType;
+  startDate: Date;
+  endDate: Date;
+  returnDate: Date;
+  reason: string;
+  status: MaintenanceRequestStatus;
+  submittedAt: Date;
+  approvalChain: {
+    lead?: {
+      approverId: string;
+      approverName: string;
+      date: Date;
+      notes?: string;
+      approved: boolean;
+    };
+    manager?: {
+      approverId: string;
+      approverName: string;
+      date: Date;
+      notes?: string;
+      approved: boolean;
+    };
+  };
+}
+
+// ==================== MEL & DEFERRALS ====================
+
+export type MELCategory = 'A' | 'B' | 'C' | 'D';
+
+export interface MELItem {
+  id: string;
+  ataChapter: string;
+  description: string;
+  category: MELCategory;
+  remarks?: string;
+  procedures?: string[]; // (O) or (M) procedures
+}
+
+// Deferral interface moved to top with other types
+
 // ==================== CONTEXT ====================
 
 interface MaintenanceContextType {
@@ -267,27 +404,61 @@ interface MaintenanceContextType {
   workOrders: WorkOrderExtended[];
   mttrData: MTTRData;
   aircraftAvailability: AircraftAvailability[];
-  
+
+  // Turndown Report Data
+  reports: TurndownReport[];
+  aircraftConfig: AircraftConfig[];
+  facilityCheckConfig: FacilityCheckConfig[];
+  aircraftStatusConfig: AircraftStatusConfig[];
+  additionalNoteConfig: AdditionalNoteConfig[];
+
+  // Vacation Requests
+  vacationRequests: MaintenanceVacationRequest[];
+  submitVacationRequest: (request: Omit<MaintenanceVacationRequest, 'id' | 'submittedAt' | 'approvalChain' | 'status'>) => void;
+  updateVacationRequestStatus: (requestId: string, level: 'lead' | 'manager', approved: boolean, approverId: string, approverName: string, notes?: string) => void;
+
+  // Resource Management
+  technicians: Technician[];
+  addTechnician: (tech: Technician) => void;
+  updateTechnician: (id: string, updates: Partial<Technician>) => void;
+  removeTechnician: (id: string) => void;
+  assignTechnicianToJob: (techId: string, workOrderId: string) => void;
+
   addSquawk: (squawk: Omit<Squawk, 'id' | 'lifecycleStage' | 'auditTrail'>) => void;
   updateSquawk: (id: string, updates: Partial<Squawk>) => void;
   deleteSquawk: (id: string) => void;
-  
-  addWorkOrder: (workOrder: Omit<WorkOrderExtended, 'id' | 'lifecycleStage' | 'auditTrail' | 'notificationsSent'>) => void;
+
+  addWorkOrder: (workOrder: Omit<WorkOrderExtended, 'id' | 'lifecycleStage' | 'auditTrail' | 'notificationsSent' | 'laborLog'>) => void;
   updateWorkOrder: (id: string, updates: Partial<WorkOrderExtended>) => void;
   deleteWorkOrder: (id: string) => void;
-  
+
+  addLaborEntry: (workOrderId: string, entry: Omit<LaborEntry, 'id' | 'loggedAt'>) => void;
+
   createWorkOrderFromSquawks: (squawkIds: string[], workOrderData: any) => void;
   linkDocumentsToWorkOrder: (workOrderId: string, ataChapter: string) => void;
   reserveParts: (workOrderId: string, parts: PartUsed[]) => void;
   completeInspection: (workOrderId: string, checkpointId: string, inspectionData: any) => void;
   generateAirworthinessRelease: (workOrderId: string, releaseData: any) => void;
-  
+
+  // Turndown Actions
+  submitReport: (report: Omit<TurndownReport, 'id' | 'submittedAt'>) => void;
+  updateAircraftConfig: (configs: AircraftConfig[]) => void;
+  updateFacilityCheckConfig: (configs: FacilityCheckConfig[]) => void;
+  updateAircraftStatusConfig: (configs: AircraftStatusConfig[]) => void;
+  updateAdditionalNoteConfig: (configs: AdditionalNoteConfig[]) => void;
+  getReportById: (id: string) => TurndownReport | undefined;
+
+  // MEL Actions
+  activeDeferrals: Deferral[];
+  deferSquawk: (squawkId: string, melItemId: string, category: MELCategory, limitations: string, user: string) => void;
+  getDeferralExpiry: (category: MELCategory, startDate?: Date) => Date;
+
   detectPatterns: () => void;
   calculateMTTR: () => void;
   updateAircraftAvailability: () => void;
-  
+
   sendNotification: (notification: Omit<Notification, 'id' | 'sentAt' | 'read'>) => void;
-  
+
   currentUser: string;
   setCurrentUser: (user: string) => void;
 }
@@ -302,6 +473,36 @@ export const useMaintenanceContext = () => {
   return context;
 };
 
+// ==================== INITIAL DATA ====================
+
+const INITIAL_AIRCRAFT_CONFIG: AircraftConfig[] = [
+  { id: 'AC-1', tailNumber: 'N1PG', isActive: true },
+  { id: 'AC-2', tailNumber: 'N5PG', isActive: true },
+  { id: 'AC-3', tailNumber: 'N2PG', isActive: true },
+  { id: 'AC-4', tailNumber: 'N6PG', isActive: true },
+];
+
+const INITIAL_FACILITY_CHECKS: FacilityCheckConfig[] = [
+  { id: 'FC-1', label: 'Commissary Dishwasher Started', isActive: true },
+  { id: 'FC-2', label: 'International Garbage on Arrivals', isActive: true },
+  { id: 'FC-3', label: 'Hangar Close Up', isActive: true },
+  { id: 'FC-4', label: 'Fuel Farm Inspection', isActive: true },
+  { id: 'FC-5', label: 'Check Tool Sign Out', isActive: true },
+];
+
+const INITIAL_AIRCRAFT_STATUS: AircraftStatusConfig[] = [
+  { id: 'AS-1', value: 'In Service', isActive: true },
+  { id: 'AS-2', value: 'Away', isActive: true },
+  { id: 'AS-3', value: 'Not in Service', isActive: true },
+];
+
+const INITIAL_ADDITIONAL_NOTES: AdditionalNoteConfig[] = [
+  { id: 'AN-1', label: 'Additional Tasks', isActive: true },
+  { id: 'AN-2', label: 'Stockroom', isActive: true },
+  { id: 'AN-3', label: 'Additional Facility Information', isActive: true },
+  { id: 'AN-4', label: 'Customs and Border Protection', isActive: true },
+];
+
 // ==================== PROVIDER ====================
 
 interface MaintenanceProviderProps {
@@ -315,7 +516,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     const aircraft = ['N650GS', 'N651GS', 'N652GS'];
     const technicians = ['John Smith', 'Sarah Johnson', 'Mike Davis', 'Lisa Chen', 'Tom Wilson'];
     const pilots = ['Capt. Anderson', 'Capt. Martinez', 'Capt. Taylor', 'FO Williams'];
-    
+
     return [
       {
         id: 'SQ-2025-001',
@@ -370,12 +571,15 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
         ataChapter: '34',
         description: 'Weather radar display intermittent on copilot side. Blanks out for 2-3 seconds then recovers.',
         deferral: {
-          melReference: 'MEL 34-11-01',
-          deferralCategory: 'B',
-          expiryDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000), // 2 days
-          authorizedBy: 'Chief Inspector',
-          conditions: 'Operate with captain\'s radar only',
-          operationalLimitations: ['Avoid IMC conditions when possible', 'Captain must monitor weather radar']
+          id: 'DEF-001',
+          squawkId: 'SQ-2025-002',
+          melItemId: 'MEL 34-11-01',
+          category: 'B',
+          deferredAt: new Date(now.getTime() - 4.5 * 60 * 60 * 1000).toISOString(),
+          expiresAt: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+          deferredBy: 'Chief Inspector',
+          limitations: 'Avoid IMC conditions when possible. Captain must monitor weather radar.',
+          status: 'active'
         },
         maintenanceActions: [],
         requiresInspection: false,
@@ -483,12 +687,15 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
         ataChapter: '52',
         description: 'Passenger door emergency exit light illuminated. Emergency evacuation slide indicator shows armed when door locked.',
         deferral: {
-          melReference: 'MEL 52-20-01',
-          deferralCategory: 'C',
-          expiryDate: new Date(now.getTime() - 12 * 60 * 60 * 1000), // EXPIRED!
-          authorizedBy: 'DO',
-          conditions: 'Passenger door emergency exit must not be used',
-          operationalLimitations: ['Use alternative emergency exit only', 'Brief passengers', 'No revenue flights']
+          id: 'DEF-002',
+          squawkId: 'SQ-2025-005',
+          melItemId: 'MEL 52-20-01',
+          category: 'C',
+          deferredAt: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(),
+          expiresAt: new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString(), // EXPIRED!
+          deferredBy: 'DO',
+          limitations: 'Passenger door emergency exit must not be used. Use alternative emergency exit only. Brief passengers. No revenue flights.',
+          status: 'expired'
         },
         maintenanceActions: [],
         requiresInspection: true,
@@ -546,7 +753,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
 
   const generateSampleWorkOrders = (): WorkOrderExtended[] => {
     const now = new Date();
-    
+
     return [
       {
         id: 'WO-2025-001',
@@ -631,7 +838,8 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
         ],
         completedInspections: [],
         documentLinks: [],
-        notificationsSent: []
+        notificationsSent: [],
+        laborLog: []
       },
       {
         id: 'WO-2025-002',
@@ -697,7 +905,8 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
         requiredInspections: [],
         completedInspections: [],
         documentLinks: [],
-        notificationsSent: []
+        notificationsSent: [],
+        laborLog: []
       },
       {
         id: 'WO-2025-003',
@@ -775,7 +984,8 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
         ],
         completedInspections: [],
         documentLinks: [],
-        notificationsSent: []
+        notificationsSent: [],
+        laborLog: []
       },
       {
         id: 'WO-2024-987',
@@ -848,7 +1058,8 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
         requiredInspections: [],
         completedInspections: [],
         documentLinks: [],
-        notificationsSent: []
+        notificationsSent: [],
+        laborLog: []
       },
       {
         id: 'WO-2024-988',
@@ -941,12 +1152,125 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
         requiredInspections: [],
         completedInspections: [],
         documentLinks: [],
-        notificationsSent: []
+        notificationsSent: [],
+        laborLog: []
       }
     ];
   };
 
   const [squawks, setSquawks] = useState<Squawk[]>(generateSampleSquawks());
+
+  // ==================== TURNDOWN STATE ====================
+  const [reports, setReports] = useState<TurndownReport[]>([]);
+  const [currentUser, setCurrentUser] = useState('John Smith');
+  const [vacationRequests, setVacationRequests] = useState<MaintenanceVacationRequest[]>([
+    {
+      id: 'VR-001',
+      technicianId: 'TECH-003',
+      technicianName: 'Mike Davis',
+      type: 'Vacation',
+      startDate: new Date(new Date().setDate(new Date().getDate() + 14)), // 2 weeks from now
+      endDate: new Date(new Date().setDate(new Date().getDate() + 21)),
+      returnDate: new Date(new Date().setDate(new Date().getDate() + 22)),
+      reason: 'Family reunion',
+      status: 'pending_lead',
+      submittedAt: new Date(new Date().setDate(new Date().getDate() - 2)),
+      approvalChain: {}
+    },
+    {
+      id: 'VR-002',
+      technicianId: 'TECH-002',
+      technicianName: 'Sarah Johnson',
+      type: 'Personal',
+      startDate: new Date(new Date().setDate(new Date().getDate() + 5)),
+      endDate: new Date(new Date().setDate(new Date().getDate() + 6)),
+      returnDate: new Date(new Date().setDate(new Date().getDate() + 7)),
+      reason: 'Personal appointment',
+      status: 'pending_manager',
+      submittedAt: new Date(new Date().setDate(new Date().getDate() - 5)),
+      approvalChain: {
+        lead: {
+          approverId: 'TECH-001',
+          approverName: 'John Smith',
+          date: new Date(new Date().setDate(new Date().getDate() - 4)),
+          approved: true,
+          notes: 'Approved, schedule clear'
+        }
+      }
+    }
+  ]);
+  const [aircraftConfig, setAircraftConfig] = useState<AircraftConfig[]>([]);
+  const [facilityCheckConfig, setFacilityCheckConfig] = useState<FacilityCheckConfig[]>([]);
+  const [aircraftStatusConfig, setAircraftStatusConfig] = useState<AircraftStatusConfig[]>([]);
+  const [additionalNoteConfig, setAdditionalNoteConfig] = useState<AdditionalNoteConfig[]>([]);
+
+  // Helper to load/save config
+  const usePersistentState = <T,>(key: string, initialValue: T, setter: React.Dispatch<React.SetStateAction<T>>) => {
+    useEffect(() => {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        setter(JSON.parse(stored));
+      } else {
+        setter(initialValue);
+        localStorage.setItem(key, JSON.stringify(initialValue));
+      }
+    }, []);
+  };
+
+  // Load configurations
+  usePersistentState('maintenance_aircraft_config', INITIAL_AIRCRAFT_CONFIG, setAircraftConfig);
+  usePersistentState('maintenance_facility_check_config', INITIAL_FACILITY_CHECKS, setFacilityCheckConfig);
+  usePersistentState('maintenance_aircraft_status_config', INITIAL_AIRCRAFT_STATUS, setAircraftStatusConfig);
+  usePersistentState('maintenance_additional_note_config', INITIAL_ADDITIONAL_NOTES, setAdditionalNoteConfig);
+
+  // Load Reports separate from config helpers as it doesn't have a default
+  useEffect(() => {
+    const storedReports = localStorage.getItem('maintenance_turndown_reports');
+    if (storedReports) {
+      setReports(JSON.parse(storedReports));
+    }
+  }, []);
+
+  // Sync helpers
+  const saveToStorage = (key: string, data: any) => {
+    localStorage.setItem(key, JSON.stringify(data));
+  };
+
+  // Actions
+  const submitReport = (reportData: Omit<TurndownReport, 'id' | 'submittedAt'>) => {
+    const newReport: TurndownReport = {
+      ...reportData,
+      id: `TR - ${Date.now()} `,
+      submittedAt: new Date().toISOString(),
+    };
+    const updatedReports = [newReport, ...reports];
+    setReports(updatedReports);
+    saveToStorage('maintenance_turndown_reports', updatedReports);
+  };
+
+  const updateAircraftConfig = (configs: AircraftConfig[]) => {
+    setAircraftConfig(configs);
+    saveToStorage('maintenance_aircraft_config', configs);
+  };
+
+  const updateFacilityCheckConfig = (configs: FacilityCheckConfig[]) => {
+    setFacilityCheckConfig(configs);
+    saveToStorage('maintenance_facility_check_config', configs);
+  };
+
+  const updateAircraftStatusConfig = (configs: AircraftStatusConfig[]) => {
+    setAircraftStatusConfig(configs);
+    saveToStorage('maintenance_aircraft_status_config', configs);
+  };
+
+  const updateAdditionalNoteConfig = (configs: AdditionalNoteConfig[]) => {
+    setAdditionalNoteConfig(configs);
+    saveToStorage('maintenance_additional_note_config', configs);
+  };
+
+  const getReportById = (id: string) => {
+    return reports.find(r => r.id === id);
+  };
   const [workOrders, setWorkOrders] = useState<WorkOrderExtended[]>(generateSampleWorkOrders());
   const [mttrData, setMttrData] = useState<MTTRData>({
     byAircraft: {
@@ -971,10 +1295,60 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     lastCalculated: new Date()
   });
   const [aircraftAvailability, setAircraftAvailability] = useState<AircraftAvailability[]>([]);
-  const [currentUser, setCurrentUser] = useState('Current User');
+  // ==================== RESOURCE MANAGEMENT STATE ====================
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  usePersistentState('maintenance_technicians', INITIAL_TECHNICIANS, setTechnicians);
+
+  // Resource Actions
+  const addTechnician = (tech: Technician) => {
+    const newTechList = [...technicians, tech];
+    setTechnicians(newTechList);
+    saveToStorage('maintenance_technicians', newTechList);
+  };
+
+  const updateTechnician = (id: string, updates: Partial<Technician>) => {
+    const updatedList = technicians.map(t => t.id === id ? { ...t, ...updates } : t);
+    setTechnicians(updatedList);
+    saveToStorage('maintenance_technicians', updatedList);
+  };
+
+  const removeTechnician = (id: string) => {
+    const filteredList = technicians.filter(t => t.id !== id);
+    setTechnicians(filteredList);
+    saveToStorage('maintenance_technicians', filteredList);
+  };
+
+  const assignTechnicianToJob = (techId: string, workOrderId: string) => {
+    // Update Technician
+    const techUpdates = technicians.map(t =>
+      t.id === techId ? { ...t, currentJobId: workOrderId, status: 'on-shift' as const } : t
+    );
+    setTechnicians(techUpdates);
+    saveToStorage('maintenance_technicians', techUpdates);
+
+    // Update Work Order
+    const wo = workOrders.find(w => w.id === workOrderId);
+    if (wo && !wo.assignedTo.includes(techId)) {
+      updateWorkOrder(workOrderId, {
+        assignedTo: [...wo.assignedTo, techId],
+        status: 'assigned',
+        lifecycleStage: {
+          ...wo.lifecycleStage,
+          current: 'assigned',
+          history: [...wo.lifecycleStage.history, {
+            stage: 'assigned',
+            timestamp: new Date(),
+            performedBy: 'System', // In a real app, this would be current user
+            notes: `Assigned to ${techId} `,
+            automated: false
+          }]
+        }
+      });
+    }
+  };
 
   // ==================== AUDIT TRAIL ====================
-  
+
   const createAuditEntry = (
     action: string,
     field?: string,
@@ -982,7 +1356,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     newValue?: any,
     metadata?: any
   ): AuditEntry => ({
-    id: `AUDIT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `AUDIT - ${Date.now()} - ${Math.random().toString(36).substr(2, 9)} `,
     timestamp: new Date(),
     userId: 'USER-001',
     userName: currentUser,
@@ -995,7 +1369,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
   });
 
   // ==================== LIFECYCLE ====================
-  
+
   const createLifecycleStage = (initial: string): LifecycleStage => ({
     current: initial as any,
     history: [{
@@ -1026,11 +1400,11 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
   });
 
   // ==================== SQUAWK OPERATIONS ====================
-  
+
   const addSquawk = (squawkData: Omit<Squawk, 'id' | 'lifecycleStage' | 'auditTrail'>) => {
     const newSquawk: Squawk = {
       ...squawkData,
-      id: `SQ-${Date.now()}`,
+      id: `SQ - ${Date.now()} `,
       lifecycleStage: createLifecycleStage('reported'),
       auditTrail: [createAuditEntry('Squawk created')]
     };
@@ -1043,7 +1417,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
         type: 'critical',
         recipient: 'DOM',
         recipientRole: 'Director of Maintenance',
-        message: `${newSquawk.priority.toUpperCase()} Priority Squawk Reported: ${newSquawk.description.substring(0, 100)}`,
+        message: `${newSquawk.priority.toUpperCase()} Priority Squawk Reported: ${newSquawk.description.substring(0, 100)} `,
         actionRequired: 'Review and assign',
         relatedEntity: 'squawk',
         relatedEntityId: newSquawk.id
@@ -1053,7 +1427,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
         type: 'critical',
         recipient: 'Lead Inspector',
         recipientRole: 'Lead Inspector',
-        message: `${newSquawk.priority.toUpperCase()} Priority Squawk Reported on ${newSquawk.aircraftTail}: ${newSquawk.description.substring(0, 100)}`,
+        message: `${newSquawk.priority.toUpperCase()} Priority Squawk Reported on ${newSquawk.aircraftTail}: ${newSquawk.description.substring(0, 100)} `,
         actionRequired: 'Inspection may be required',
         relatedEntity: 'squawk',
         relatedEntityId: newSquawk.id
@@ -1072,7 +1446,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     setSquawks(prev => prev.map(squawk => {
       if (squawk.id === id) {
         const auditEntries = Object.keys(updates).map(key =>
-          createAuditEntry(`Updated ${key}`, key, squawk[key as keyof Squawk], updates[key as keyof Partial<Squawk>])
+          createAuditEntry(`Updated ${key} `, key, squawk[key as keyof Squawk], updates[key as keyof Partial<Squawk>])
         );
 
         return {
@@ -1089,15 +1463,60 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     setSquawks(prev => prev.filter(s => s.id !== id));
   };
 
+  // ==================== MEL DEFERRAL OPERATIONS ====================
+
+  const [activeDeferrals, setActiveDeferrals] = useState<Deferral[]>([]);
+  usePersistentState<Deferral[]>('maintenance_deferrals', [], setActiveDeferrals);
+
+  const getDeferralExpiry = (category: MELCategory, startDate: Date = new Date()): Date => {
+    const expiry = new Date(startDate);
+    switch (category) {
+      case 'A': return expiry; // Custom, usually specified in remarks
+      case 'B': expiry.setDate(expiry.getDate() + 3); break;
+      case 'C': expiry.setDate(expiry.getDate() + 10); break;
+      case 'D': expiry.setDate(expiry.getDate() + 120); break;
+    }
+    return expiry;
+  };
+
+  const deferSquawk = (squawkId: string, melItemId: string, category: MELCategory, limitations: string, user: string) => {
+    const expiryDate = getDeferralExpiry(category);
+
+    const newDeferral: Deferral = {
+      id: `DEF-${Date.now()}`,
+      squawkId,
+      melItemId,
+      category,
+      deferredAt: new Date().toISOString(),
+      expiresAt: expiryDate.toISOString(),
+      deferredBy: user,
+      limitations,
+      status: 'active'
+    };
+
+    setActiveDeferrals(prev => [...prev, newDeferral]);
+
+    // Update Squawk Status
+    updateSquawk(squawkId, {
+      status: 'deferred', // Ensure 'deferred' is a valid status in Squawk type or add it
+      notes: `Deferred per MEL ${melItemId}. Cat ${category}. Expires ${expiryDate.toLocaleDateString()}. Limitations: ${limitations}`
+    });
+
+    toast.success(`Squawk Deferred (Cat ${category})`, {
+      description: `Expires on ${expiryDate.toLocaleDateString()}`
+    });
+  };
+
   // ==================== WORK ORDER OPERATIONS ====================
-  
-  const addWorkOrder = (woData: Omit<WorkOrderExtended, 'id' | 'lifecycleStage' | 'auditTrail' | 'notificationsSent'>) => {
+
+  const addWorkOrder = (woData: Omit<WorkOrderExtended, 'id' | 'lifecycleStage' | 'auditTrail' | 'notificationsSent' | 'laborLog'>) => {
     const newWO: WorkOrderExtended = {
       ...woData,
-      id: `WO-${Date.now()}`,
+      id: `WO - ${Date.now()} `,
       lifecycleStage: createLifecycleStage('wo-created'),
       auditTrail: [createAuditEntry('Work Order created')],
-      notificationsSent: []
+      notificationsSent: [],
+      laborLog: []
     };
 
     setWorkOrders(prev => [...prev, newWO]);
@@ -1121,7 +1540,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     setWorkOrders(prev => prev.map(wo => {
       if (wo.id === id) {
         const auditEntries = Object.keys(updates).map(key =>
-          createAuditEntry(`Updated ${key}`, key, wo[key as keyof WorkOrderExtended], updates[key as keyof Partial<WorkOrderExtended>])
+          createAuditEntry(`Updated ${key} `, key, wo[key as keyof WorkOrderExtended], updates[key as keyof Partial<WorkOrderExtended>])
         );
 
         // Check for completion and notify
@@ -1133,7 +1552,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
               type: 'info',
               recipient: 'DOM',
               recipientRole: 'Director of Maintenance',
-              message: `Major Work Order ${wo.id} completed on ${wo.tailNumber}`,
+              message: `Major Work Order ${wo.id} completed on ${wo.tailNumber} `,
               actionRequired: 'Review completion',
               relatedEntity: 'workorder',
               relatedEntityId: wo.id
@@ -1143,7 +1562,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
               type: 'info',
               recipient: 'Lead Inspector',
               recipientRole: 'Lead Inspector',
-              message: `Major Work Order ${wo.id} completed on ${wo.tailNumber}`,
+              message: `Major Work Order ${wo.id} completed on ${wo.tailNumber} `,
               actionRequired: 'Final inspection completed',
               relatedEntity: 'workorder',
               relatedEntityId: wo.id
@@ -1163,16 +1582,39 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
   };
 
   const deleteWorkOrder = (id: string) => {
-    setWorkOrders(prev => prev.filter(wo => wo.id !== id));
+    setWorkOrders(prev => prev.filter(w => w.id !== id));
+  };
+
+  const addLaborEntry = (workOrderId: string, entry: Omit<LaborEntry, 'id' | 'loggedAt'>) => {
+    const newEntry: LaborEntry = {
+      ...entry,
+      id: `LOG - ${Date.now()} `,
+      loggedAt: new Date(),
+      loggedBy: currentUser
+    };
+
+    setWorkOrders(prev => prev.map(wo => {
+      if (wo.id === workOrderId) {
+        const updatedLog = [...(wo.laborLog || []), newEntry];
+        // Recalculate total actual hours
+        const totalMinutes = updatedLog.reduce((acc, log) => acc + log.durationMinutes, 0);
+        return {
+          ...wo,
+          laborLog: updatedLog,
+          actualHours: parseFloat((totalMinutes / 60).toFixed(2))
+        };
+      }
+      return wo;
+    }));
   };
 
   // ==================== MULTI-SQUAWK WORK ORDERS ====================
-  
+
   const createWorkOrderFromSquawks = (squawkIds: string[], workOrderData: any) => {
     const linkedSquawks = squawks.filter(s => squawkIds.includes(s.id));
-    
-    const combinedDescription = linkedSquawks.map(s => 
-      `[${s.id}] ${s.description}`
+
+    const combinedDescription = linkedSquawks.map(s =>
+      `[${s.id}] ${s.description} `
     ).join('\n\n');
 
     const highestPriority = linkedSquawks.reduce((highest, squawk) => {
@@ -1180,7 +1622,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
       return priorities.indexOf(squawk.priority) > priorities.indexOf(highest) ? squawk.priority : highest;
     }, 'low');
 
-    const newWO: Omit<WorkOrderExtended, 'id' | 'lifecycleStage' | 'auditTrail' | 'notificationsSent'> = {
+    const newWO: Omit<WorkOrderExtended, 'id' | 'lifecycleStage' | 'auditTrail' | 'notificationsSent' | 'laborLog'> = {
       title: workOrderData.title || `Combined Work Order - ${linkedSquawks.length} squawks`,
       description: combinedDescription,
       aircraft: linkedSquawks[0].aircraftTail,
@@ -1204,7 +1646,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
       requiredInspections: [],
       completedInspections: [],
       documentLinks: [],
-      notificationsSent: []
+
     };
 
     addWorkOrder(newWO);
@@ -1215,7 +1657,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
   };
 
   // ==================== PARTS INTEGRATION ====================
-  
+
   const reserveParts = (workOrderId: string, parts: PartUsed[]) => {
     const reservedParts = parts.map(part => ({
       ...part,
@@ -1234,7 +1676,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
   };
 
   // ==================== INSPECTION CHECKPOINTS ====================
-  
+
   const completeInspection = (workOrderId: string, checkpointId: string, inspectionData: any) => {
     const wo = workOrders.find(w => w.id === workOrderId);
     if (!wo) return;
@@ -1254,12 +1696,12 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     });
 
     toast.success('Inspection Completed', {
-      description: `Inspection signed off by ${inspectionData.inspector}`
+      description: `Inspection signed off by ${inspectionData.inspector} `
     });
   };
 
   // ==================== DOCUMENT CENTER LINKS ====================
-  
+
   const linkDocumentsToWorkOrder = (workOrderId: string, ataChapter: string) => {
     const wo = workOrders.find(w => w.id === workOrderId);
     if (!wo) return;
@@ -1267,18 +1709,18 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     // Simulate linking relevant documents based on ATA chapter
     const mockDocuments: DocumentLink[] = [
       {
-        id: `DOC-${Date.now()}-1`,
-        documentId: `MAN-${ataChapter}`,
-        documentTitle: `Maintenance Manual - ATA ${ataChapter}`,
+        id: `DOC - ${Date.now()} -1`,
+        documentId: `MAN - ${ataChapter} `,
+        documentTitle: `Maintenance Manual - ATA ${ataChapter} `,
         documentType: 'manual',
         ataChapter,
         linkedAt: new Date(),
         linkedBy: currentUser
       },
       {
-        id: `DOC-${Date.now()}-2`,
-        documentId: `PROC-${ataChapter}`,
-        documentTitle: `Procedures - ATA ${ataChapter}`,
+        id: `DOC - ${Date.now()} -2`,
+        documentId: `PROC - ${ataChapter} `,
+        documentTitle: `Procedures - ATA ${ataChapter} `,
         documentType: 'procedure',
         ataChapter,
         linkedAt: new Date(),
@@ -1292,7 +1734,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
   };
 
   // ==================== AIRWORTHINESS RELEASE ====================
-  
+
   const generateAirworthinessRelease = (workOrderId: string, releaseData: any) => {
     const wo = workOrders.find(w => w.id === workOrderId);
     if (!wo) return;
@@ -1310,14 +1752,14 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     }
 
     const release: AirworthinessRelease = {
-      id: `RTS-${Date.now()}`,
+      id: `RTS - ${Date.now()} `,
       workOrderId,
       aircraftTail: wo.tailNumber,
       releasedBy: currentUser,
       releasedAt: new Date(),
       signOffData: releaseData.signOffData,
       maintenancePerformed: wo.description,
-      certificateNumber: `AWR-${Date.now()}`,
+      certificateNumber: `AWR - ${Date.now()} `,
       returnToService: true,
       discrepancies: releaseData.discrepancies || [],
       limitations: releaseData.limitations || []
@@ -1344,14 +1786,14 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
   };
 
   // ==================== PATTERN DETECTION ====================
-  
+
   const detectPatterns = () => {
     const patterns: Map<string, Squawk[]> = new Map();
 
     // Group squawks by ATA chapter
     squawks.forEach(squawk => {
       if (squawk.status !== 'closed') {
-        const key = `${squawk.ataChapter}-${squawk.aircraftTail}`;
+        const key = `${squawk.ataChapter} -${squawk.aircraftTail} `;
         if (!patterns.has(key)) {
           patterns.set(key, []);
         }
@@ -1392,7 +1834,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
             type: 'warning',
             recipient: 'DOM',
             recipientRole: 'Director of Maintenance',
-            message: `Recurring issue pattern detected: ${recentSquawks.length} similar squawks on ATA ${recentSquawks[0].ataChapter}`,
+            message: `Recurring issue pattern detected: ${recentSquawks.length} similar squawks on ATA ${recentSquawks[0].ataChapter} `,
             actionRequired: 'Investigate root cause',
             relatedEntity: 'pattern',
             relatedEntityId: key
@@ -1403,7 +1845,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
   };
 
   // ==================== MTTR CALCULATION ====================
-  
+
   const calculateMTTR = () => {
     const completedWOs = workOrders.filter(wo => wo.status === 'completed' && wo.startDate && wo.completedDate);
 
@@ -1415,7 +1857,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     completedWOs.forEach(wo => {
       if (wo.startDate && wo.completedDate) {
         const mttr = (new Date(wo.completedDate).getTime() - new Date(wo.startDate).getTime()) / (1000 * 60 * 60);
-        
+
         allMTTRs.push(mttr);
 
         if (!byAircraft[wo.tailNumber]) byAircraft[wo.tailNumber] = [];
@@ -1431,7 +1873,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
       }
     });
 
-    const calculateAverage = (values: number[]) => 
+    const calculateAverage = (values: number[]) =>
       values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
 
     setMttrData({
@@ -1450,7 +1892,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
   };
 
   // ==================== AIRCRAFT AVAILABILITY ====================
-  
+
   const updateAircraftAvailability = () => {
     const aircraftMap = new Map<string, Squawk[]>();
 
@@ -1474,8 +1916,8 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
       const limitations: string[] = [];
 
       squawkList.forEach(s => {
-        if (s.deferral) {
-          limitations.push(...s.deferral.operationalLimitations);
+        if (s.deferral && s.deferral.limitations) {
+          limitations.push(s.deferral.limitations);
         }
       });
 
@@ -1497,11 +1939,11 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
   };
 
   // ==================== NOTIFICATIONS ====================
-  
+
   const sendNotification = (notificationData: Omit<Notification, 'id' | 'sentAt' | 'read'>) => {
     const notification: Notification = {
       ...notificationData,
-      id: `NOTIF-${Date.now()}`,
+      id: `NOTIF - ${Date.now()} `,
       sentAt: new Date(),
       read: false
     };
@@ -1512,23 +1954,23 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     // Show toast for critical notifications
     if (notification.type === 'critical') {
       toast.error(notification.message, {
-        description: `To: ${notification.recipient}`,
+        description: `To: ${notification.recipient} `,
         duration: 10000
       });
     } else if (notification.type === 'warning') {
       toast.warning(notification.message, {
-        description: `To: ${notification.recipient}`,
+        description: `To: ${notification.recipient} `,
         duration: 7000
       });
     } else {
       toast.info(notification.message, {
-        description: `To: ${notification.recipient}`
+        description: `To: ${notification.recipient} `
       });
     }
   };
 
   // ==================== EFFECTS ====================
-  
+
   useEffect(() => {
     // Recalculate MTTR when work orders change
     calculateMTTR();
@@ -1540,33 +1982,105 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
   }, [squawks]);
 
   // ==================== CONTEXT VALUE ====================
-  
+
   const value: MaintenanceContextType = {
     squawks,
     workOrders,
     mttrData,
     aircraftAvailability,
-    
+
+    // Turndown Values
+    reports,
+    aircraftConfig,
+    facilityCheckConfig,
+    aircraftStatusConfig,
+    additionalNoteConfig,
+
+    // Resource Management
+    technicians,
+    addTechnician,
+    updateTechnician,
+    removeTechnician,
+    assignTechnicianToJob,
+
+    // Vacation Requests
+    vacationRequests,
+    submitVacationRequest: (requestData) => {
+      const newRequest: MaintenanceVacationRequest = {
+        id: `VR - ${Date.now()} `,
+        ...requestData,
+        status: 'pending_lead',
+        submittedAt: new Date(),
+        approvalChain: {}
+      };
+      setVacationRequests(prev => [...prev, newRequest]);
+      toast.success('Vacation request submitted successfully');
+    },
+    updateVacationRequestStatus: (requestId, level, approved, approverId, approverName, notes) => {
+      setVacationRequests(prev => prev.map(req => {
+        if (req.id !== requestId) return req;
+
+        const updatedReq = { ...req };
+
+        if (level === 'lead') {
+          updatedReq.approvalChain.lead = {
+            approverId,
+            approverName,
+            date: new Date(),
+            notes,
+            approved
+          };
+          updatedReq.status = approved ? 'pending_manager' : 'denied_by_lead';
+        } else if (level === 'manager') {
+          updatedReq.approvalChain.manager = {
+            approverId,
+            approverName,
+            date: new Date(),
+            notes,
+            approved
+          };
+          updatedReq.status = approved ? 'approved' : 'denied_by_manager';
+        }
+
+        const action = approved ? 'approved' : 'denied';
+        toast.success(`Request ${action} by ${level === 'lead' ? 'Lead' : 'Manager'} `);
+        return updatedReq;
+      }));
+    },
+
     addSquawk,
     updateSquawk,
     deleteSquawk,
-    
+
+    activeDeferrals,
+    deferSquawk,
+    getDeferralExpiry,
+
     addWorkOrder,
     updateWorkOrder,
     deleteWorkOrder,
-    
+    addLaborEntry,
+
     createWorkOrderFromSquawks,
     linkDocumentsToWorkOrder,
     reserveParts,
     completeInspection,
     generateAirworthinessRelease,
-    
+
+    // Turndown Actions
+    submitReport,
+    updateAircraftConfig,
+    updateFacilityCheckConfig,
+    updateAircraftStatusConfig,
+    updateAdditionalNoteConfig,
+    getReportById,
+
     detectPatterns,
     calculateMTTR,
     updateAircraftAvailability,
-    
+
     sendNotification,
-    
+
     currentUser,
     setCurrentUser
   };
@@ -1577,3 +2091,7 @@ export const MaintenanceProvider: React.FC<MaintenanceProviderProps> = ({ childr
     </MaintenanceContext.Provider>
   );
 };
+
+export const useMaintenance = useMaintenanceContext;
+
+

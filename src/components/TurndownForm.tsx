@@ -16,7 +16,7 @@ import {
   FileText,
   Settings
 } from 'lucide-react';
-import { useMaintenance, AircraftStatus, CleaningStatus, TurndownReport } from '../contexts/MaintenanceContext';
+import { useMaintenance, AircraftStatus, CleaningStatus, TurndownReport } from './contexts/MaintenanceContext';
 import { toast } from 'sonner';
 import MaintenanceSettings from './MaintenanceSettings';
 

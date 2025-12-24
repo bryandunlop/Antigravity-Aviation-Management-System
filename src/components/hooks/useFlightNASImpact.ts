@@ -26,11 +26,47 @@ interface NASImpact {
   recommendation: string;
 }
 
+export interface NASData {
+  groundStops: {
+    airport: string;
+    reason: string;
+    startTime: string;
+    endTime?: string;
+    affectedFlights: number;
+    severity: 'High' | 'Medium' | 'Low';
+  }[];
+  groundDelays: {
+    airport: string;
+    averageDelay: number;
+    reason: string;
+    trend: 'Decreasing' | 'Stable' | 'Increasing';
+    affectedFlights: number;
+  }[];
+  airspaceFlowPrograms: {
+    name: string;
+    type: 'Ground Delay Program' | 'Airspace Flow Program';
+    affectedAirports: string[];
+    reason: string;
+    startTime: string;
+    estimatedEndTime: string;
+    impact: 'High' | 'Medium' | 'Low';
+  }[];
+  facilityOutages: {
+    facility: string;
+    type: 'Radar' | 'Comms' | 'Nav';
+    status: 'Limited' | 'Out of Service';
+    impact: string;
+    startTime: string;
+    affectedAirports: string[];
+  }[];
+}
+
 interface FlightImpactData {
   impactedFlights: (Flight & { impacts: NASImpact[] })[];
   totalImpacted: number;
   highSeverityCount: number;
   estimatedTotalDelay: number;
+  nasData?: NASData; // Added field
 }
 
 export const useFlightNASImpact = () => {
@@ -300,7 +336,8 @@ export const useFlightNASImpact = () => {
       impactedFlights,
       totalImpacted,
       highSeverityCount,
-      estimatedTotalDelay
+      estimatedTotalDelay,
+      nasData // Return raw data
     };
   }, []);
 

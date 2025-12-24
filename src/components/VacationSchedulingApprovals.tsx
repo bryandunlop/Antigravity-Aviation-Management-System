@@ -17,10 +17,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 
-type RequestType = 'Vacation' | 'Payback Stop' | 'Off' | 'Medical';
-type RequestStatus = 'pending_scheduling' | 'denied_by_scheduling' | 'tentative_scheduling' | 'pending_manager' | 'denied_by_manager' | 'tentative_manager' | 'approved_awaiting_confirmation' | 'confirmed';
+export type RequestType = 'Vacation' | 'Payback Stop' | 'Off' | 'Medical';
+export type RequestStatus = 'pending_scheduling' | 'denied_by_scheduling' | 'tentative_scheduling' | 'pending_manager' | 'denied_by_manager' | 'tentative_manager' | 'approved_awaiting_confirmation' | 'confirmed';
 
-interface Comment {
+export interface Comment {
   id: string;
   author: string;
   role: 'submitter' | 'scheduling' | 'manager';
@@ -28,7 +28,7 @@ interface Comment {
   timestamp: Date;
 }
 
-interface VacationRequest {
+export interface VacationRequest {
   id: string;
   submitterId: string;
   submitterName: string;
@@ -45,121 +45,12 @@ interface VacationRequest {
   lastModified: Date;
 }
 
-export function VacationSchedulingApprovals() {
-  const [requests, setRequests] = useState<VacationRequest[]>([
-    {
-      id: 'req1',
-      submitterId: 'user1',
-      submitterName: 'John Smith',
-      submitterPosition: 'Captain',
-      requestType: 'Vacation',
-      startDate: '2025-01-15',
-      endDate: '2025-01-22',
-      daysRequested: 7,
-      status: 'pending_scheduling',
-      comments: [
-        {
-          id: 'c1',
-          author: 'John Smith',
-          role: 'submitter',
-          comment: 'Requesting vacation for family trip to Hawaii.',
-          timestamp: new Date('2024-12-01T10:00:00')
-        }
-      ],
-      submittedDate: new Date('2024-12-01T10:00:00'),
-      lastModified: new Date('2024-12-01T10:00:00')
-    },
-    {
-      id: 'req2',
-      submitterId: 'user2',
-      submitterName: 'Mike Johnson',
-      submitterPosition: 'First Officer',
-      requestType: 'Payback Stop',
-      startDate: '2025-01-10',
-      endDate: '2025-01-11',
-      daysRequested: 1,
-      status: 'pending_scheduling',
-      comments: [
-        {
-          id: 'c2',
-          author: 'Mike Johnson',
-          role: 'submitter',
-          comment: 'Using PBST day from November STOP coverage.',
-          timestamp: new Date('2024-12-02T14:00:00')
-        }
-      ],
-      submittedDate: new Date('2024-12-02T14:00:00'),
-      lastModified: new Date('2024-12-02T14:00:00')
-    },
-    {
-      id: 'req3',
-      submitterId: 'user3',
-      submitterName: 'Sarah Williams',
-      submitterPosition: 'Captain',
-      requestType: 'Medical',
-      startDate: '2025-01-05',
-      endDate: '2025-01-12',
-      daysRequested: 7,
-      status: 'approved_awaiting_confirmation',
-      schedulingApproval: 'tentative',
-      managerApproval: 'approved',
-      comments: [
-        {
-          id: 'c3',
-          author: 'Sarah Williams',
-          role: 'submitter',
-          comment: 'Medical procedure scheduled - documentation attached.',
-          timestamp: new Date('2024-11-28T09:00:00')
-        },
-        {
-          id: 'c4',
-          author: 'Scheduling - Tom Brown',
-          role: 'scheduling',
-          comment: 'Marked as tentative - need manager approval for medical leave.',
-          timestamp: new Date('2024-11-29T10:00:00')
-        },
-        {
-          id: 'c5',
-          author: 'Chief Pilot - Sarah Johnson',
-          role: 'manager',
-          comment: 'Approved - documentation verified.',
-          timestamp: new Date('2024-11-30T14:00:00')
-        }
-      ],
-      submittedDate: new Date('2024-11-28T09:00:00'),
-      lastModified: new Date('2024-11-30T14:00:00')
-    },
-    {
-      id: 'req4',
-      submitterId: 'user4',
-      submitterName: 'David Lee',
-      submitterPosition: 'First Officer',
-      requestType: 'Off',
-      startDate: '2025-01-20',
-      endDate: '2025-01-21',
-      daysRequested: 2,
-      status: 'tentative_scheduling',
-      schedulingApproval: 'tentative',
-      comments: [
-        {
-          id: 'c6',
-          author: 'David Lee',
-          role: 'submitter',
-          comment: 'Personal days needed for family matters.',
-          timestamp: new Date('2024-12-03T11:00:00')
-        },
-        {
-          id: 'c7',
-          author: 'Scheduling - Tom Brown',
-          role: 'scheduling',
-          comment: 'Tentative - will confirm after reviewing schedule for that week.',
-          timestamp: new Date('2024-12-04T09:00:00')
-        }
-      ],
-      submittedDate: new Date('2024-12-03T11:00:00'),
-      lastModified: new Date('2024-12-04T09:00:00')
-    }
-  ]);
+export interface VacationSchedulingApprovalsProps {
+  requests: VacationRequest[];
+  onUpdateRequests: (updatedRequests: VacationRequest[]) => void;
+}
+
+export function VacationSchedulingApprovals({ requests, onUpdateRequests }: VacationSchedulingApprovalsProps) {
 
   const [selectedRequest, setSelectedRequest] = useState<VacationRequest | null>(null);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
@@ -196,8 +87,8 @@ export function VacationSchedulingApprovals() {
       comments: [...selectedRequest.comments, newComment],
       status: (
         actionType === 'denied' ? 'denied_by_scheduling' :
-        actionType === 'tentative' ? 'pending_manager' :
-        'approved_awaiting_confirmation'
+          actionType === 'tentative' ? 'pending_manager' :
+            'approved_awaiting_confirmation'
       ) as RequestStatus,
       lastModified: new Date()
     };
@@ -206,7 +97,7 @@ export function VacationSchedulingApprovals() {
     setActionDialogOpen(false);
     setSchedulingComment('');
     setActionType(null);
-    
+
     // Would trigger notification here
     if (actionType === 'denied') {
       alert(`Request denied. ${selectedRequest.submitterName} has been notified.`);
@@ -233,7 +124,7 @@ export function VacationSchedulingApprovals() {
 
     setRequests(requests.map(r => r.id === selectedRequest.id ? updatedRequest : r));
     setConfirmDialogOpen(false);
-    
+
     alert(`Request confirmed and added to Vacation Master Calendar. ${selectedRequest.submitterName} has been notified.`);
   };
 
@@ -270,7 +161,7 @@ export function VacationSchedulingApprovals() {
             Review and approve vacation, payback stop, and time off requests
           </p>
         </div>
-        
+
         <Card className="w-64">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -417,14 +308,14 @@ export function VacationSchedulingApprovals() {
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3 pt-4 border-t">
-                    <Button 
+                    <Button
                       onClick={() => handleSchedulingAction(request, 'approved')}
                       className="bg-green-600 hover:bg-green-700"
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Approve
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={() => handleSchedulingAction(request, 'tentative')}
                       className="border-yellow-500 text-yellow-700 hover:bg-yellow-50"
@@ -432,7 +323,7 @@ export function VacationSchedulingApprovals() {
                       <Clock className="h-4 w-4 mr-2" />
                       Mark Tentative
                     </Button>
-                    <Button 
+                    <Button
                       variant="destructive"
                       onClick={() => handleSchedulingAction(request, 'denied')}
                     >
@@ -489,11 +380,10 @@ export function VacationSchedulingApprovals() {
                       Comment History
                     </Label>
                     {request.comments.map((comment) => (
-                      <div key={comment.id} className={`p-3 rounded-lg border-l-4 ${
-                        comment.role === 'submitter' ? 'bg-blue-50 border-blue-500' :
+                      <div key={comment.id} className={`p-3 rounded-lg border-l-4 ${comment.role === 'submitter' ? 'bg-blue-50 border-blue-500' :
                         comment.role === 'scheduling' ? 'bg-purple-50 border-purple-500' :
-                        'bg-orange-50 border-orange-500'
-                      }`}>
+                          'bg-orange-50 border-orange-500'
+                        }`}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-medium text-sm">{comment.author}</span>
                           <span className="text-xs text-muted-foreground">{comment.timestamp.toLocaleString()}</span>
@@ -532,7 +422,7 @@ export function VacationSchedulingApprovals() {
                         <strong>{request.requestType}</strong> | {new Date(request.startDate).toLocaleDateString()} - {new Date(request.endDate).toLocaleDateString()} ({request.daysRequested} days)
                       </CardDescription>
                     </div>
-                    <Button 
+                    <Button
                       onClick={() => handleConfirmToCalendar(request)}
                       className="bg-green-600 hover:bg-green-700"
                     >
@@ -574,11 +464,10 @@ export function VacationSchedulingApprovals() {
                       Full Comment History
                     </Label>
                     {request.comments.map((comment) => (
-                      <div key={comment.id} className={`p-3 rounded-lg border-l-4 ${
-                        comment.role === 'submitter' ? 'bg-blue-50 border-blue-500' :
+                      <div key={comment.id} className={`p-3 rounded-lg border-l-4 ${comment.role === 'submitter' ? 'bg-blue-50 border-blue-500' :
                         comment.role === 'scheduling' ? 'bg-purple-50 border-purple-500' :
-                        'bg-orange-50 border-orange-500'
-                      }`}>
+                          'bg-orange-50 border-orange-500'
+                        }`}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-medium text-sm">{comment.author}</span>
                           <span className="text-xs text-muted-foreground">{comment.timestamp.toLocaleString()}</span>
@@ -634,7 +523,7 @@ export function VacationSchedulingApprovals() {
               {selectedRequest && `${selectedRequest.submitterName} - ${selectedRequest.requestType} (${selectedRequest.daysRequested} days)`}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {actionType === 'denied' && (
               <Alert className="border-red-200 bg-red-50">
@@ -662,8 +551,8 @@ export function VacationSchedulingApprovals() {
                 id="schedulingComment"
                 placeholder={
                   actionType === 'denied' ? 'Please explain why this request is being denied...' :
-                  actionType === 'tentative' ? 'Add any notes or concerns for manager review...' :
-                  'Add any additional comments...'
+                    actionType === 'tentative' ? 'Add any notes or concerns for manager review...' :
+                      'Add any additional comments...'
                 }
                 value={schedulingComment}
                 onChange={(e) => setSchedulingComment(e.target.value)}
@@ -680,13 +569,13 @@ export function VacationSchedulingApprovals() {
             }}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={confirmSchedulingAction}
               disabled={actionType === 'denied' && !schedulingComment.trim()}
               className={
                 actionType === 'approved' ? 'bg-green-600 hover:bg-green-700' :
-                actionType === 'denied' ? 'bg-red-600 hover:bg-red-700' :
-                ''
+                  actionType === 'denied' ? 'bg-red-600 hover:bg-red-700' :
+                    ''
               }
             >
               Confirm {actionType === 'approved' ? 'Approval' : actionType === 'tentative' ? 'Tentative' : 'Denial'}
@@ -704,7 +593,7 @@ export function VacationSchedulingApprovals() {
               {selectedRequest && `${selectedRequest.submitterName} - ${selectedRequest.requestType}`}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
@@ -750,7 +639,7 @@ export function VacationSchedulingApprovals() {
             <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={confirmAddToCalendar}
               className="bg-green-600 hover:bg-green-700"
             >

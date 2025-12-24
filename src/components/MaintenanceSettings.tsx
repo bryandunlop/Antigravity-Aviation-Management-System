@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { Settings, Save, ArrowLeft, Plus, Trash2 } from 'lucide-react';
-import { useMaintenance, AircraftConfig, FacilityCheckConfig, AircraftStatusConfig, AdditionalNoteConfig } from '../contexts/MaintenanceContext';
+import { useMaintenanceContext, AircraftConfig, FacilityCheckConfig, AircraftStatusConfig, AdditionalNoteConfig } from './contexts/MaintenanceContext';
 import { toast } from 'sonner';
 
 interface MaintenanceSettingsProps {

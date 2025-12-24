@@ -166,9 +166,10 @@ export function getLifecycleStageIndex(stage: string): number {
 /**
  * Format relative time (e.g., "2 hours ago", "3 days ago")
  */
-export function formatRelativeTime(date: Date): string {
+export function formatRelativeTime(date: Date | string): string {
   const now = new Date();
-  const diff = now.getTime() - date.getTime();
+  const d = new Date(date);
+  const diff = now.getTime() - d.getTime();
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
@@ -189,12 +190,13 @@ export function formatRelativeTime(date: Date): string {
 /**
  * Calculate time in stage (duration)
  */
-export function calculateTimeInStage(startDate: Date): string {
+export function calculateTimeInStage(startDate: Date | string): string {
   const now = new Date();
-  const diff = now.getTime() - startDate.getTime();
+  const start = new Date(startDate);
+  const diff = now.getTime() - start.getTime();
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const days = Math.floor(hours / 24);
-  
+
   if (days > 0) {
     const remainingHours = hours % 24;
     return `${days}d ${remainingHours}h`;

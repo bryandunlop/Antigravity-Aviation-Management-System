@@ -16,10 +16,10 @@ import {
   XCircle,
   Plane
 } from 'lucide-react';
-import { useMaintenance, TurndownReport } from '../contexts/MaintenanceContext';
+import { useMaintenanceContext, TurndownReport } from './contexts/MaintenanceContext';
 
 export default function TurndownReports() {
-  const { reports, aircraftStatusConfig } = useMaintenance();
+  const { reports, aircraftStatusConfig } = useMaintenanceContext();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');

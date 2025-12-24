@@ -49,7 +49,9 @@ import {
   BookOpen,
   MessageSquare,
   Package,
-  Info
+  Info,
+  Check,
+  X
 } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell } from 'recharts';
 
@@ -186,6 +188,7 @@ interface CrewMember {
     paybackStopAccumulated: number;
     paybackStopUsed: number;
     paybackStopPending: number;
+    paybackRequests: PaybackRequest[];
   };
   historicalAverage: {
     monthlyTripDays: number;
@@ -233,6 +236,14 @@ interface CrewMember {
       familiarityScore: number; // 0-100
     };
   };
+}
+
+interface PaybackRequest {
+  id: string;
+  date: string; // Date of the stop day worked
+  days: number; // Number of payback days earned (e.g. 2 for 1 worked)
+  status: 'pending' | 'approved' | 'rejected';
+  reason?: string;
 }
 
 interface WorkloadMetric {
@@ -302,6 +313,10 @@ export default function CrewSchedulingWorkload() {
   const [showExcludedCrew, setShowExcludedCrew] = useState(false);
   const isInitialLoadRef = useRef(true);
   const configurationChangedRef = useRef(false);
+
+  // Payback Review Logic has been moved to PaybackEarningsReview.tsx integrated in VacationRequest.tsx
+
+
 
   // Default metric configurations - using days instead of percentages
   const defaultMetrics: WorkloadMetric[] = [
@@ -754,7 +769,15 @@ export default function CrewSchedulingWorkload() {
             nextFullWeekOff: new Date(Date.now() + (8 - (index % 8)) * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             paybackStopAccumulated: currentPaybackStopDays + Math.floor(Math.random() * 4),
             paybackStopUsed: Math.floor(Math.random() * 2),
-            paybackStopPending: Math.floor(Math.random() * 2)
+            paybackStopPending: Math.floor(Math.random() * 2),
+            paybackRequests: Math.random() > 0.7 ? [
+              {
+                id: `pr-${index}-${Date.now()}`,
+                date: new Date(Date.now() - Math.floor(Math.random() * 10) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                days: 2,
+                status: 'pending'
+              }
+            ] : []
           },
           historicalAverage: {
             monthlyTripDays: avgTripDays,
@@ -1865,6 +1888,7 @@ export default function CrewSchedulingWorkload() {
             <BarChart3 className="h-4 w-4 mr-2" />
             Balance Recommendations
           </Button>
+
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Export Data
@@ -3213,6 +3237,8 @@ export default function CrewSchedulingWorkload() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+
+
+    </div >
   );
 }

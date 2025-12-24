@@ -17,10 +17,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
-type RequestType = 'Vacation' | 'Payback Stop' | 'Off' | 'Medical';
-type RequestStatus = 'pending_manager' | 'denied_by_manager' | 'tentative_manager' | 'approved_awaiting_confirmation';
+export type RequestType = 'Vacation' | 'Payback Stop' | 'Off' | 'Medical';
+export type RequestStatus = 'pending_manager' | 'denied_by_manager' | 'tentative_manager' | 'approved_awaiting_confirmation';
 
-interface Comment {
+export interface Comment {
   id: string;
   author: string;
   role: 'submitter' | 'scheduling' | 'manager';
@@ -28,7 +28,7 @@ interface Comment {
   timestamp: Date;
 }
 
-interface VacationRequest {
+export interface VacationRequest {
   id: string;
   submitterId: string;
   submitterName: string;
@@ -63,77 +63,12 @@ interface PaybackStopDay {
   used: boolean;
 }
 
-export function VacationManagerReview() {
-  const [requests, setRequests] = useState<VacationRequest[]>([
-    {
-      id: 'req1',
-      submitterId: 'user2',
-      submitterName: 'Mike Johnson',
-      submitterPosition: 'First Officer',
-      requestType: 'Payback Stop',
-      startDate: '2025-01-10',
-      endDate: '2025-01-11',
-      daysRequested: 1,
-      status: 'pending_manager',
-      schedulingApproval: 'tentative',
-      comments: [
-        {
-          id: 'c1',
-          author: 'Mike Johnson',
-          role: 'submitter',
-          comment: 'Using PBST day from November STOP coverage.',
-          timestamp: new Date('2024-12-02T14:00:00')
-        },
-        {
-          id: 'c2',
-          author: 'Scheduling - Tom Brown',
-          role: 'scheduling',
-          comment: 'Marked as tentative - need manager approval to ensure coverage.',
-          timestamp: new Date('2024-12-03T09:00:00')
-        }
-      ],
-      submittedDate: new Date('2024-12-02T14:00:00'),
-      lastModified: new Date('2024-12-03T09:00:00')
-    },
-    {
-      id: 'req2',
-      submitterId: 'user5',
-      submitterName: 'Jennifer Brown',
-      submitterPosition: 'Captain',
-      requestType: 'Vacation',
-      startDate: '2025-02-10',
-      endDate: '2025-02-17',
-      daysRequested: 7,
-      status: 'tentative_manager',
-      schedulingApproval: 'tentative',
-      managerApproval: 'tentative',
-      comments: [
-        {
-          id: 'c3',
-          author: 'Jennifer Brown',
-          role: 'submitter',
-          comment: 'Planning family vacation to Colorado - ski trip.',
-          timestamp: new Date('2024-11-25T10:00:00')
-        },
-        {
-          id: 'c4',
-          author: 'Scheduling - Tom Brown',
-          role: 'scheduling',
-          comment: 'Tentative - awaiting manager approval due to busy period.',
-          timestamp: new Date('2024-11-26T11:00:00')
-        },
-        {
-          id: 'c5',
-          author: 'Chief Pilot - Sarah Johnson',
-          role: 'manager',
-          comment: 'Marked as tentative - need to see full crew availability for February before final approval.',
-          timestamp: new Date('2024-11-27T14:00:00')
-        }
-      ],
-      submittedDate: new Date('2024-11-25T10:00:00'),
-      lastModified: new Date('2024-11-27T14:00:00')
-    }
-  ]);
+export interface VacationManagerReviewProps {
+  requests: VacationRequest[];
+  onUpdateRequests: (updatedRequests: VacationRequest[]) => void;
+}
+
+export function VacationManagerReview({ requests, onUpdateRequests }: VacationManagerReviewProps) {
 
   const [pbstDays, setPbstDays] = useState<PaybackStopDay[]>([
     {
@@ -190,17 +125,17 @@ export function VacationManagerReview() {
       comments: [...selectedRequest.comments, newComment],
       status: (
         actionType === 'denied' ? 'denied_by_manager' :
-        actionType === 'tentative' ? 'tentative_manager' :
-        'approved_awaiting_confirmation'
+          actionType === 'tentative' ? 'tentative_manager' :
+            'approved_awaiting_confirmation'
       ) as RequestStatus,
       lastModified: new Date()
     };
 
-    setRequests(requests.map(r => r.id === selectedRequest.id ? updatedRequest : r));
+    onUpdateRequests(requests.map(r => r.id === selectedRequest.id ? updatedRequest : r));
     setActionDialogOpen(false);
     setManagerComment('');
     setActionType(null);
-    
+
     if (actionType === 'denied') {
       alert(`Request denied. ${selectedRequest.submitterName} has been notified.`);
     } else if (actionType === 'tentative') {
@@ -307,7 +242,7 @@ export function VacationManagerReview() {
         <Alert className="border-yellow-200 bg-yellow-50">
           <Bell className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
-            <strong>Weekly Reminder:</strong> You have {tentativeRequests.length} tentative request(s) pending final approval. 
+            <strong>Weekly Reminder:</strong> You have {tentativeRequests.length} tentative request(s) pending final approval.
             You will receive a reminder every Wednesday at 12pm until these are resolved.
           </AlertDescription>
         </Alert>
@@ -380,11 +315,10 @@ export function VacationManagerReview() {
                       Comment History
                     </Label>
                     {request.comments.map((comment) => (
-                      <div key={comment.id} className={`p-3 rounded-lg border-l-4 ${
-                        comment.role === 'submitter' ? 'bg-blue-50 border-blue-500' :
+                      <div key={comment.id} className={`p-3 rounded-lg border-l-4 ${comment.role === 'submitter' ? 'bg-blue-50 border-blue-500' :
                         comment.role === 'scheduling' ? 'bg-purple-50 border-purple-500' :
-                        'bg-orange-50 border-orange-500'
-                      }`}>
+                          'bg-orange-50 border-orange-500'
+                        }`}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-medium text-sm">{comment.author}</span>
                           <span className="text-xs text-muted-foreground">{comment.timestamp.toLocaleString()}</span>
@@ -396,14 +330,14 @@ export function VacationManagerReview() {
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3 pt-4 border-t">
-                    <Button 
+                    <Button
                       onClick={() => handleManagerAction(request, 'approved')}
                       className="bg-green-600 hover:bg-green-700"
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Approve
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={() => handleManagerAction(request, 'tentative')}
                       className="border-yellow-500 text-yellow-700 hover:bg-yellow-50"
@@ -411,7 +345,7 @@ export function VacationManagerReview() {
                       <Clock className="h-4 w-4 mr-2" />
                       Mark Tentative
                     </Button>
-                    <Button 
+                    <Button
                       variant="destructive"
                       onClick={() => handleManagerAction(request, 'denied')}
                     >
@@ -467,11 +401,10 @@ export function VacationManagerReview() {
                         Full Comment History
                       </Label>
                       {request.comments.map((comment) => (
-                        <div key={comment.id} className={`p-3 rounded-lg border-l-4 ${
-                          comment.role === 'submitter' ? 'bg-blue-50 border-blue-500' :
+                        <div key={comment.id} className={`p-3 rounded-lg border-l-4 ${comment.role === 'submitter' ? 'bg-blue-50 border-blue-500' :
                           comment.role === 'scheduling' ? 'bg-purple-50 border-purple-500' :
-                          'bg-orange-50 border-orange-500'
-                        }`}>
+                            'bg-orange-50 border-orange-500'
+                          }`}>
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-medium text-sm">{comment.author}</span>
                             <span className="text-xs text-muted-foreground">{comment.timestamp.toLocaleString()}</span>
@@ -483,14 +416,14 @@ export function VacationManagerReview() {
 
                     {/* Review Actions */}
                     <div className="flex items-center gap-3 pt-4 border-t">
-                      <Button 
+                      <Button
                         onClick={() => handleManagerAction(request, 'approved')}
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Approve Now
                       </Button>
-                      <Button 
+                      <Button
                         variant="destructive"
                         onClick={() => handleManagerAction(request, 'denied')}
                       >
@@ -509,7 +442,7 @@ export function VacationManagerReview() {
           <Alert className="border-blue-200 bg-blue-50">
             <Calendar className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
-              <strong>PBST Policy:</strong> Crew members have 91 days to submit a request after being awarded a Payback Stop day. 
+              <strong>PBST Policy:</strong> Crew members have 91 days to submit a request after being awarded a Payback Stop day.
               As manager, you can override expiration dates with a documented reason.
             </AlertDescription>
           </Alert>
@@ -544,7 +477,7 @@ export function VacationManagerReview() {
                         {pbst.reason}
                       </CardDescription>
                     </div>
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={() => handleOverrideExpiration(pbst)}
                     >
@@ -574,20 +507,19 @@ export function VacationManagerReview() {
                     <Alert className="border-red-200 bg-red-50">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                       <AlertDescription className="text-red-800">
-                        <strong>{pbst.daysRemaining <= 3 ? 'URGENT: ' : ''}Expiring soon!</strong> Crew member has been notified. 
+                        <strong>{pbst.daysRemaining <= 3 ? 'URGENT: ' : ''}Expiring soon!</strong> Crew member has been notified.
                         Consider extending the deadline if circumstances warrant.
                       </AlertDescription>
                     </Alert>
                   )}
 
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-                    <div 
-                      className={`h-2 rounded-full ${
-                        pbst.daysRemaining <= 3 ? 'bg-red-500' :
+                    <div
+                      className={`h-2 rounded-full ${pbst.daysRemaining <= 3 ? 'bg-red-500' :
                         pbst.daysRemaining <= 7 ? 'bg-orange-500' :
-                        pbst.daysRemaining <= 30 ? 'bg-yellow-500' :
-                        'bg-green-500'
-                      }`}
+                          pbst.daysRemaining <= 30 ? 'bg-yellow-500' :
+                            'bg-green-500'
+                        }`}
                       style={{ width: `${(pbst.daysRemaining / 91) * 100}%` }}
                     />
                   </div>
@@ -611,7 +543,7 @@ export function VacationManagerReview() {
               {selectedRequest && `${selectedRequest.submitterName} - ${selectedRequest.requestType} (${selectedRequest.daysRequested} days)`}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {actionType === 'denied' && (
               <Alert className="border-red-200 bg-red-50">
@@ -648,8 +580,8 @@ export function VacationManagerReview() {
                 id="managerComment"
                 placeholder={
                   actionType === 'denied' ? 'Please explain why this request is being denied...' :
-                  actionType === 'tentative' ? 'Explain why this is tentative and what you need before final approval...' :
-                  'Add any additional comments...'
+                    actionType === 'tentative' ? 'Explain why this is tentative and what you need before final approval...' :
+                      'Add any additional comments...'
                 }
                 value={managerComment}
                 onChange={(e) => setManagerComment(e.target.value)}
@@ -666,13 +598,13 @@ export function VacationManagerReview() {
             }}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={confirmManagerAction}
               disabled={actionType === 'denied' && !managerComment.trim()}
               className={
                 actionType === 'approved' ? 'bg-green-600 hover:bg-green-700' :
-                actionType === 'denied' ? 'bg-red-600 hover:bg-red-700' :
-                ''
+                  actionType === 'denied' ? 'bg-red-600 hover:bg-red-700' :
+                    ''
               }
             >
               Confirm {actionType === 'approved' ? 'Approval' : actionType === 'tentative' ? 'Tentative' : 'Denial'}
@@ -690,12 +622,12 @@ export function VacationManagerReview() {
               {selectedPbst && `${selectedPbst.crewMemberName} - Awarded ${selectedPbst.awardedDate.toLocaleDateString()}`}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <Alert className="border-orange-200 bg-orange-50">
               <AlertTriangle className="h-4 w-4 text-orange-600" />
               <AlertDescription className="text-orange-800">
-                <strong>Manager Override:</strong> You are extending the 91-day policy deadline. 
+                <strong>Manager Override:</strong> You are extending the 91-day policy deadline.
                 A documented reason is required for audit purposes.
               </AlertDescription>
             </Alert>
@@ -750,7 +682,7 @@ export function VacationManagerReview() {
             }}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={confirmOverride}
               disabled={!overrideReason.trim() || !newExpirationDate}
               className="bg-orange-600 hover:bg-orange-700"

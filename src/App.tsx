@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
 import { HazardProvider } from './contexts/HazardContext';
-import { MaintenanceProvider } from './contexts/MaintenanceContext';
+import { MaintenanceProvider } from './components/contexts/MaintenanceContext';
 import { NotificationProvider } from './components/contexts/NotificationContext';
 import { PassengerFormProvider } from './components/contexts/PassengerFormContext';
 import { FuelRequestProvider } from './components/contexts/FuelRequestContext';
@@ -96,6 +96,10 @@ import HazardWorkflow from './components/HazardWorkflow';
 import PreflightWorkflow from './components/PreflightWorkflow';
 import TaxComplianceDashboard from './components/TaxComplianceDashboard';
 import { TaxProvider } from './components/contexts/TaxContext';
+import TechnicianDashboard from './components/maintenance/TechnicianDashboard';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import ElectronicLogbook from './components/ElectronicLogbook';
+
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -169,7 +173,13 @@ export default function App() {
                               <Route path="/aircraft-cleaning/manager-dashboard" element={<CleaningManagerDashboard />} />
                               <Route path="/aircraft-cleaning/new-workflow" element={<NewCleaningWorkflow />} />
                               <Route path="/maintenance" element={<MaintenanceBoard />} />
-                              <Route path="/maintenance-hub" element={<MaintenanceHub />} />
+                              <Route path="/maintenance-hub" element={
+                                <ErrorBoundary>
+                                  <MaintenanceHub />
+                                </ErrorBoundary>
+                              } />
+                              <Route path="/maintenance/technician" element={<TechnicianDashboard />} />
+                              <Route path="/pilot/elb" element={<ElectronicLogbook />} />
                               <Route path="/grat/enhanced" element={<EnhancedGRATForm userRole={userRole} />} />
                               <Route path="/work-orders" element={<WorkOrders />} />
                               <Route path="/tech-work-analytics" element={<TechWorkAnalytics />} />

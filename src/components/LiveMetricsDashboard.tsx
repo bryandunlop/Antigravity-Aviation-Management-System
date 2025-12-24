@@ -54,6 +54,11 @@ const generateMockData = () => {
     dispatchReliability: 97.8,
     dispatchTrend: 'up',
 
+    // Seat Availability
+    flightsFullPercent: 33,
+    avgOpenSeats: 2.7,
+    seatAvailabilityTrend: 'stable',
+
     // Safety & Risk
     fratGreen: 145,
     fratYellow: 23,
@@ -401,6 +406,16 @@ export default function LiveMetricsDashboard() {
             trendValue="-1.2%"
             status={getOTPStatus(data.onTimePerformance) as any}
             delay={400}
+          />
+          <MetricCard
+            title="Seat Availability"
+            value={`${data.flightsFullPercent}%`}
+            subtitle="Flights Full"
+            icon={Users}
+            trend={data.seatAvailabilityTrend as any}
+            trendValue={`Avg ${data.avgOpenSeats} Open`}
+            status="good"
+            delay={450}
           />
         </div>
 

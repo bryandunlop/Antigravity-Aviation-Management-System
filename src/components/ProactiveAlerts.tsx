@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { 
-  AlertTriangle, 
-  Clock, 
-  TrendingUp, 
+import {
+  AlertTriangle,
+  Clock,
+  TrendingUp,
   Info,
   ArrowRight,
   AlertCircle,
@@ -40,14 +40,14 @@ export default function ProactiveAlerts() {
     const expiringDeferrals = squawks.filter(s => {
       if (!s.deferral || s.status !== 'deferred') return false;
       const daysRemaining = Math.ceil(
-        (s.deferral.expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+        (new Date(s.deferral.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
       );
       return daysRemaining > 0 && daysRemaining <= 2;
     });
 
     const expiredDeferrals = squawks.filter(s => {
       if (!s.deferral || s.status !== 'deferred') return false;
-      return s.deferral.expiryDate < new Date();
+      return new Date(s.deferral.expiryDate) < new Date();
     });
 
     if (expiredDeferrals.length > 0) {
